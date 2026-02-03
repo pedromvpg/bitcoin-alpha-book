@@ -1,0 +1,32 @@
+# Annotation for market.cpp - Market Interface
+file: "market.cpp"
+
+title: "The Road Not Taken"
+
+introduction: |
+  <p>
+    An early experimental feature for a built-in eBay-style marketplace where
+    users could trade goods for bitcoins directly within the application.
+    Satoshi described this as one of his unfinished projects: "I was trying
+    to implement an eBay-style marketplace built into the client" (2011 email
+    to Mike Hearn). The feature was never completed.
+  </p>
+
+annotations:
+  - line: 21
+    type: margin
+    text: "mapMyProducts - your products for sale"
+
+  - line: 26
+    type: margin
+    text: "mapProducts - global marketplace listing"
+
+  - line: 29
+    type: margin
+    text: "AdvertInsert - adds a product to the marketplace"
+
+conclusion: |
+  <p>
+    It shows Satoshi's early vision of Bitcoin as not just a currency but
+    a complete economic system with integrated commerce.
+  </p>

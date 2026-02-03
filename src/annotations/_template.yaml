@@ -1,0 +1,51 @@
+# Annotation Template for Bitcoin Source Files
+# Copy this file and rename it to match your source file (e.g., main.cpp.yaml)
+
+# The source file this annotation applies to
+file: "example.cpp"
+
+# Display title for the chapter (optional, defaults to filename)
+title: "Chapter Title"
+
+# Introduction text shown before the code
+# Use | for multi-line text, supports basic HTML
+introduction: |
+  This is the introduction that appears before the source code.
+  
+  You can use multiple paragraphs and basic formatting like
+  <strong>bold</strong> and <em>italic</em> text.
+
+# Line-specific annotations
+annotations:
+  # Margin note - appears in the margin next to the line
+  - line: 10
+    type: margin
+    text: "Short note explaining this line"
+  
+  # Block annotation - appears as a highlighted box
+  - lines: [25, 50]
+    type: block
+    title: "Important Section"
+    text: |
+      This is a longer explanation that appears as a 
+      highlighted block between lines 25-50.
+      
+      Use this for explaining complex logic or
+      important concepts.
+  
+  # Highlight - just highlights the line(s) without text
+  - lines: [100, 105]
+    type: highlight
+    category: "genesis-block"  # Options: genesis-block, proof-of-work, transaction, crypto
+
+# Conclusion text shown after the code (optional)
+conclusion: |
+  Summary of what this file accomplishes and how it fits
+  into the broader Bitcoin system.
+
+# Glossary terms used in this file (optional)
+glossary:
+  - term: "hash"
+    definition: "A fixed-size output from a cryptographic function"
+  - term: "nonce"
+    definition: "A number used once, changed to find valid proof-of-work"

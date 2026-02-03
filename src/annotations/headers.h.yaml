@@ -1,0 +1,30 @@
+# Annotation for headers.h - Common Headers
+file: "headers.h"
+
+title: "The Gathering of Includes"
+
+introduction: |
+  <p>
+    A convenience header that includes all the commonly needed system
+    headers and Bitcoin headers in one place. Most source files include
+    this rather than listing dozens of individual includes.
+  </p>
+
+annotations:
+  - line: 18
+    type: margin
+    text: "OpenSSL includes - cryptographic functions"
+
+  - line: 23
+    type: margin
+    text: "Windows networking headers for sockets"
+
+  - line: 15
+    type: margin
+    text: "wxWidgets - the GUI framework used by Bitcoin"
+
+conclusion: |
+  <p>
+    This was a common C++ pattern in 2009 to simplify compilation and
+    ensure consistent include ordering across the project.
+  </p>

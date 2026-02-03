@@ -1,0 +1,30 @@
+# Annotation for ui.rc - Windows Resources
+file: "ui.rc"
+
+title: "The Bitcoin Icon"
+
+introduction: |
+  <p>
+    A Windows resource file that defines the application icon and other
+    Windows-specific resources. This is what gave the original Bitcoin
+    client its distinctive icon in the Windows taskbar.
+  </p>
+
+annotations:
+  - line: 1
+    type: margin
+    text: "bitcoin.ico - the original Bitcoin application icon"
+
+  - line: 5
+    type: margin
+    text: "check.ico - checkmark icon for confirmed transactions"
+
+  - line: 6
+    type: margin
+    text: "send16 - toolbar icons for send functionality"
+
+conclusion: |
+  <p>
+    These resources defined the visual identity of the first Bitcoin
+    client that users would see on their Windows desktops.
+  </p>

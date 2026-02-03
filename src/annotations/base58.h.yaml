@@ -1,0 +1,136 @@
+# Annotation for base58.h - Bitcoin Address Encoding
+file: "base58.h"
+
+title: "Human-Readable Money"
+
+introduction: |
+  <p>
+    Every Bitcoin address you've ever seen—those strings starting with "1" or "3"—
+    uses Base58Check encoding defined in this file. Base58 is a binary-to-text
+    encoding designed specifically for human readability: it uses all alphanumeric
+    characters except those easily confused with each other.
+  </p>
+  <p>
+    The excluded characters are: <strong>0</strong> (zero, confused with O),
+    <strong>O</strong> (confused with 0), <strong>I</strong> (confused with l or 1),
+    and <strong>l</strong> (lowercase L, confused with I or 1). This careful
+    character selection means you can read a Bitcoin address aloud over the phone
+    with minimal ambiguity.
+  </p>
+  <p>
+    <strong>Base58Check</strong> adds a crucial feature: a 4-byte checksum appended
+    to the data. If you mistype a single character, the checksum almost certainly
+    won't match, and the address will be rejected as invalid. The probability of
+    a typo accidentally producing a valid address is approximately 1 in 4 billion.
+    This protects users from losing funds to typos.
+  </p>
+  <p>
+    The encoding process: (1) prepend version byte (0x00 for mainnet addresses),
+    (2) compute SHA256(SHA256(data)) and take first 4 bytes as checksum, (3)
+    append checksum to data, (4) convert to Base58. The version byte is why
+    mainnet addresses start with "1"—0x00 in Base58 is represented as leading "1"s.
+  </p>
+
+annotations:
+  - line: 7
+    type: margin
+    text: "Satoshi's original comment explaining Base58's design rationale. This is one of the best-documented design decisions in v0.1. The four reasons: (1) avoid confusable characters 0/O and I/l, (2) alphanumeric-only is friendlier for account numbers, (3) email clients won't line-break pure alphanumeric strings, (4) double-click selects the entire address. These practical considerations show Satoshi thinking about real-world usability, not just cryptographic elegance."
+
+  - line: 16
+    type: margin
+    text: "The Base58 alphabet: <code>123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz</code>. Note the missing characters: no <code>0</code> (zero), <code>O</code> (oh), <code>I</code> (eye), or <code>l</code> (ell). This 58-character set maps directly to values 0-57. The character <code>1</code> represents value 0, <code>2</code> represents 1, etc. This is why addresses starting with many <code>1</code>s have many leading zero bytes in their decoded form—the genesis coinbase's output had hash160 starting with zeros, giving an address full of <code>1</code>s."
+
+  - line: 19
+    type: margin
+    text: "<code class=\"function\">EncodeBase58()</code>—converts arbitrary binary data to Base58 string. The algorithm is essentially base conversion: treat input bytes as a big-endian number, repeatedly divide by 58, and map remainders to characters. The use of <code class=\"class\">CBigNum</code> handles the arbitrary-precision arithmetic needed for 20+ byte inputs. The string is built in reverse (least significant digit first), then reversed at the end."
+
+  - line: 27
+    type: margin
+    text: "Extra zero byte ensures the bignum is interpreted as positive. Without this, a byte sequence starting with <code>0x80</code>+ would be treated as negative in MPI format. The <code class=\"function\">reverse_copy()</code> converts from the input's byte order to bignum's expected format."
+
+  - line: 36
+    type: margin
+    text: "Space reservation: <code>(pend - pbegin) * 138 / 100 + 1</code>. Base58 encoding expands data by factor log(256)/log(58) ≈ 1.37. The calculation 138/100 ≈ 1.38 provides a safe upper bound. Pre-allocating avoids repeated reallocations as the string grows."
+
+  - line: 39
+    type: margin
+    text: "The encoding loop: repeatedly divide by 58, taking remainders. Each remainder (0-57) maps to one Base58 character via the alphabet lookup. The loop continues until the number reaches zero. This produces digits from least to most significant, hence the later reversal."
+
+  - line: 48
+    type: margin
+    text: "Preserving leading zeros—a crucial detail. In Base58, leading <code>1</code> characters represent leading zero bytes in the original data. Without this loop, input <code>0x00 0x00 0xAB</code> would encode the same as <code>0xAB</code>, losing information. By counting leading zero bytes and prepending that many <code>1</code>s, the encoding becomes invertible. This is essential for addresses: the version byte <code>0x00</code> must be preserved."
+
+  - line: 62
+    type: margin
+    text: "<code class=\"function\">DecodeBase58()</code>—converts Base58 string back to binary. The inverse of EncodeBase58: treat the string as a base-58 number, convert to binary. Each character is looked up in the alphabet to get its value (0-57), then the running total is multiplied by 58 and the value added. The final result is converted to a byte vector."
+
+  - line: 75
+    type: margin
+    text: "Character validation: <code>strchr(pszBase58, *p)</code> returns <code>NULL</code> if the character isn't in the Base58 alphabet. Invalid characters (including the excluded <code>0</code>, <code>O</code>, <code>I</code>, <code>l</code>) cause decoding to fail rather than silently producing wrong results. This is important for security—a corrupted address should be detected, not misinterpreted."
+
+  - line: 94
+    type: margin
+    text: "Sign byte trimming: if the high bit of the first data byte is set, MPI format prepends a <code>0x00</code> to indicate positive. This extra byte must be removed during decoding to recover the original data. The condition checks for this case: size ≥ 2, last byte is <code>0</code>, second-to-last has high bit set."
+
+  - line: 98
+    type: margin
+    text: "Restoring leading zeros—the inverse of the encoding step. Count leading <code>1</code> characters (which represent zero bytes), then prepend that many zero bytes to the output. Combined with the character-by-character conversion, this ensures round-trip correctness: <code>DecodeBase58(EncodeBase58(data)) == data</code>."
+
+  - line: 117
+    type: margin
+    text: "<code class=\"function\">EncodeBase58Check()</code>—adds checksum for error detection. The checksum is the first 4 bytes of SHA256(SHA256(data)). Double-SHA256 was Satoshi's standard construction throughout Bitcoin—it provides extra security margin against length-extension attacks. The 4-byte checksum catches 99.99999998% of random errors (1 - 1/2^32)."
+
+  - line: 121
+    type: margin
+    text: "Double-SHA256 checksum: <code>Hash(vch.begin(), vch.end())</code> computes <code>SHA256(SHA256(vch))</code>. Only the first 4 bytes are used as checksum—enough for error detection while keeping addresses reasonably short. The checksum is appended to the data, then the combined result is Base58-encoded."
+
+  - line: 126
+    type: margin
+    text: "<code class=\"function\">DecodeBase58Check()</code>—verifies checksum and strips it. After Base58 decoding, the last 4 bytes are the checksum. The function recomputes the checksum over the data portion and compares. If they match, the checksum is removed and the original data returned. If not, the function returns false—the input was corrupted."
+
+  - line: 136
+    type: margin
+    text: "Checksum verification: <code>memcmp(&hash, &vchRet.end()[-4], 4)</code>. This constant-time comparison checks if the computed and stored checksums match. A mismatch means the address was corrupted (typo, OCR error, transmission corruption). By returning false rather than the corrupted data, users are protected from sending funds to wrong addresses."
+
+  - line: 155
+    type: margin
+    text: "<code class=\"constant\">ADDRESSVERSION = 0</code>—the version byte for mainnet pay-to-pubkey-hash addresses. This byte is prepended to the hash160 before encoding, causing mainnet addresses to start with '1'. Testnet uses version 111, causing addresses to start with 'm' or 'n'. Version bytes enable the network to evolve—new address types (like P2SH, starting with '3') use different versions."
+
+  - line: 157
+    type: margin
+    text: "<code class=\"function\">Hash160ToAddress()</code>—converts a 160-bit hash to a Bitcoin address. This is the final step of address generation: (1) SHA256 the public key, (2) RIPEMD160 the result (giving 'hash160'), (3) prepend version byte, (4) Base58Check encode. The 160-bit hash provides 2^80 security against collision attacks while keeping addresses manageable length."
+
+  - line: 165
+    type: margin
+    text: "<code class=\"function\">AddressToHash160()</code>—extracts the hash160 from a Bitcoin address. Used when creating transactions: the recipient's address is decoded to get the hash160, which goes into the scriptPubKey. Version byte validation (line 176: <code>nVersion <= ADDRESSVERSION</code>) rejects addresses from incompatible networks—you can't accidentally send mainnet coins to a testnet address."
+
+  - line: 184
+    type: margin
+    text: "<code class=\"function\">IsValidBitcoinAddress()</code>—validates address format. Checks that the string Base58Check decodes successfully and has correct version byte. Note: this only validates format, not that anyone controls the address. An address could be valid format but have no known private key (e.g., 'burn addresses' like 1BitcoinEaterAddressDontSendf59kuE)."
+
+  - line: 198
+    type: margin
+    text: "<code class=\"function\">PubKeyToAddress()</code>—the complete public key to address pipeline in one line. <code>Hash160(vchPubKey)</code> computes <code>RIPEMD160(SHA256(pubkey))</code>, then <code class=\"function\">Hash160ToAddress()</code> adds version byte and Base58Check encodes. This is how wallet software generates receiving addresses from keys."
+
+conclusion: |
+  <p>
+    Base58Check encoding is a masterclass in practical cryptographic design.
+    The checksum catches typos before funds are lost. The careful character
+    selection prevents visual confusion. The version byte enables network
+    evolution. And the encoding is compact enough for human use while being
+    unambiguous enough for computer parsing.
+  </p>
+  <p>
+    The 4-byte checksum provides strong error detection: the probability of
+    a random typo producing a valid address is 1 in 4.3 billion. For comparison,
+    a credit card number's Luhn checksum only catches 90% of single-digit errors.
+    Bitcoin's double-SHA256 checksum is overkill for error detection alone—but
+    Satoshi consistently chose conservative security margins.
+  </p>
+  <p>
+    The hash160 construction (RIPEMD160(SHA256(pubkey))) deserves note: using
+    two different hash functions provides defense in depth. If SHA256 were
+    broken, RIPEMD160 still protects addresses. If RIPEMD160 were broken,
+    SHA256 still protects. This belt-and-suspenders approach reflects
+    Satoshi's security-conscious engineering throughout Bitcoin.
+  </p>

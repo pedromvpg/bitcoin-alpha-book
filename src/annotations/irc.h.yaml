@@ -1,0 +1,66 @@
+# Annotation for irc.h - IRC Header
+file: "irc.h"
+
+title: "The Bootstrap Protocol"
+
+introduction: |
+  <p>
+    Declares the IRC bootstrapping functionality—one of Bitcoin's most clever
+    early design choices. When Bitcoin launches, it faces a chicken-and-egg
+    problem: how do you find other Bitcoin nodes when you don't know any yet?
+    Satoshi's solution: piggyback on existing infrastructure.
+  </p>
+  <p>
+    Bitcoin nodes join an IRC channel (#bitcoin on irc.lfnet.org) where their
+    nicknames encode their IP addresses. By parsing the channel's user list,
+    a new node discovers other participants. It's bootstrap via a communication
+    medium that already had robust peer discovery: Internet Relay Chat.
+  </p>
+  <p>
+    The elegance is in the simplicity. IRC servers handle the hard problem
+    of maintaining user lists and handling churn. Bitcoin nodes just need to
+    join a channel, advertise their presence via nickname, and harvest other
+    nicknames. No central Bitcoin server needed—IRC provides the coordination
+    layer for free.
+  </p>
+  <p>
+    This mechanism was deprecated and removed in later Bitcoin versions (replaced
+    by DNS seeds and hardcoded peer lists), but it served brilliantly in the
+    early network when there were few nodes and no established infrastructure.
+    The IRC bootstrap helped Bitcoin survive its fragile infancy.
+  </p>
+
+annotations:
+  - line: 5
+    type: margin
+    text: "<code class=\"function\">RecvLine()</code>—reads one line from a socket. IRC is a line-based text protocol; each command ends with CRLF (\\r\\n). This function accumulates characters until it sees a newline, then returns the complete line. Used to parse IRC server responses: JOIN confirmations, NICK acknowledgments, WHO replies listing channel members."
+
+  - line: 6
+    type: margin
+    text: "<code class=\"function\">ThreadIRCSeed()</code>—the IRC bootstrap thread, runs continuously in background. Connects to irc.lfnet.org port 6667, joins #bitcoin channel, sets nickname encoding our IP address. Periodically sends WHO requests to get user lists, decodes other users' nicknames to extract their IP addresses, and feeds those addresses into the peer discovery system. If the connection drops, retries automatically."
+
+  - line: 7
+    type: margin
+    text: "<code class=\"variable\">fRestartIRCSeed</code>—restart flag for the IRC thread. Set to true when configuration changes (like new external IP detected) or after connection failures. The thread checks this flag and reinitializes when needed. The bootstrap must be resilient—without peer discovery, a node is isolated and useless."
+
+conclusion: |
+  <p>
+    The IRC bootstrap was a creative solution for the chicken-and-egg
+    problem of peer discovery in a decentralized network. Rather than
+    building custom infrastructure, Satoshi leveraged 20 years of
+    IRC's evolution in handling dynamic user groups.
+  </p>
+  <p>
+    The nickname encoding scheme is particularly clever: each user's
+    nick contains their IP address in an obfuscated format. Simply
+    joining the channel and listing users reveals dozens of potential
+    peers. No special protocol needed—just standard IRC commands that
+    any IRC library supports.
+  </p>
+  <p>
+    This approach had downsides: IRC servers could censor Bitcoin by
+    banning the channel, and the centralization risk of depending on
+    specific IRC networks. These concerns led to its eventual removal.
+    But in 2009, it was the pragmatic choice that got Bitcoin running
+    quickly without requiring custom bootstrapping infrastructure.
+  </p>

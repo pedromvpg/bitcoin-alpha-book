@@ -1,0 +1,126 @@
+# Annotation for util.cpp - Utility Functions
+file: "util.cpp"
+
+title: "The Toolbox"
+
+introduction: |
+  <p>
+    Behind every elegant cryptographic system lies a collection of mundane but
+    essential utilities: random number generation, time handling, file operations,
+    string formatting, and debugging. This file is Bitcoin's toolbox—the
+    unsexy infrastructure that makes everything else work.
+  </p>
+  <p>
+    The most critical function here is random number generation. Your private
+    key's security depends entirely on unpredictable randomness. If an attacker
+    can predict or bias the random number generator, they can steal your coins.
+    Satoshi used OpenSSL's <code class="function">RAND_bytes()</code>, which draws entropy from operating
+    system sources (keyboard timing, disk activity, network packets). This code
+    adds additional entropy sources to strengthen the randomness pool.
+  </p>
+  <p>
+    Also here: <code class="function">FormatMoney()</code> and <code class="function">ParseMoney()</code>—the functions that convert between
+    human-readable "1.50" BTC and machine-friendly 150000000 satoshis. These
+    handle edge cases like leading zeros and decimal precision that would otherwise
+    cause subtle bugs. Getting money formatting wrong could mean losing funds to
+    rounding errors.
+  </p>
+  <p>
+    The time synchronization code deserves special attention. Bitcoin blocks
+    include timestamps, and nodes must agree roughly on what time it is. But
+    trusting a single clock source would be a centralization risk. Satoshi's
+    solution: take the median of peer clocks, with bounds to prevent manipulation.
+    This elegant approach—"never go to sea with two chronometers; take one or
+    three"—appears in the time adjustment code below.
+  </p>
+
+annotations:
+  - line: 26
+    type: margin
+    text: "<code class=\"class\">CInit</code>—the static initialization class. C++ guarantees that global objects are constructed before main() runs. Satoshi uses this pattern to initialize OpenSSL's thread safety and seed the random number generator at startup. The <code>instance_of_cinit</code> object at line 52 triggers this constructor automatically when Bitcoin launches. This is a common C++ idiom for initialization that must happen exactly once, before any other code runs."
+
+  - line: 38
+    type: margin
+    text: "<code class=\"function\">RAND_screen()</code>—Windows-specific entropy harvesting. This OpenSSL function captures screen pixels, mouse position, and other visual data as randomness sources. The idea: screen content is unpredictable and attacker-unobservable. On non-Windows systems, OpenSSL uses /dev/urandom instead. Satoshi's paranoia about entropy was justified—weak RNG caused the 2013 Android Bitcoin wallet vulnerability that drained users' funds."
+
+  - line: 57
+    type: margin
+    text: "<code class=\"function\">RandAddSeed()</code>—Satoshi's defense-in-depth for randomness. Even though OpenSSL seeds from system entropy, this function adds more: CPU performance counters (nanosecond-precision timing) and Windows performance monitor data (250KB of system metrics). The <code class=\"variable\">fPerfmon</code> parameter controls whether to harvest the expensive perfmon data—only done every 5 minutes or at startup. Why so paranoid? Private key generation calls this. If an attacker could predict the RNG output, they could reconstruct private keys and steal all coins. The 2010 PlayStation 3 ECDSA key leak happened because Sony reused a 'random' value—Satoshi clearly understood this risk."
+
+  - line: 62
+    type: margin
+    text: "<code class=\"function\">RAND_add()</code>—feeds entropy with a quality estimate. The third parameter (1.5) tells OpenSSL 'this data contributes about 1.5 bytes of entropy.' Conservative estimates are safer—overestimating entropy quality weakens the RNG. The performance counter has high precision but limited unpredictability, hence the modest estimate."
+
+  - line: 74
+    type: margin
+    text: "Windows Performance Data—an unusual but clever entropy source. <code class=\"constant\">HKEY_PERFORMANCE_DATA</code> is a special registry key that returns live system metrics: CPU usage, memory stats, disk activity, network counters. This data is then SHA256-hashed to extract randomness. The 250KB buffer accommodates the substantial data returned. Satoshi adds entropy proportional to data size: <code>min(nSize/500.0, sizeof(hash))</code> conservatively estimates 1 byte of entropy per 500 bytes of performance data."
+
+  - line: 97
+    type: margin
+    text: "Satoshi's original comment explains this function: 'Safer snprintf'. The standard C <code class=\"function\">snprintf()</code> has platform-dependent behavior regarding null termination and return values. This wrapper guarantees: (1) output is always null-terminated even when truncated, (2) return value is actual characters written. Buffer overflows have caused countless security vulnerabilities; this defensive coding style appears throughout Bitcoin."
+
+  - line: 118
+    type: margin
+    text: "<code class=\"function\">strprintf()</code>—dynamic string formatting. Unlike fixed-buffer <code class=\"function\">snprintf()</code>, this allocates exactly the memory needed. The <code class=\"macro\">loop</code> macro (a Satoshi-ism for <code>for(;;)</code>) doubles buffer size until the output fits. The 50KB initial buffer handles typical cases without allocation. This function is called throughout Bitcoin for debug logging and error messages."
+
+  - line: 151
+    type: margin
+    text: "<code class=\"function\">error()</code>—centralized error reporting. Always returns false, allowing patterns like <code>return error(\"something failed\")</code>. The error is logged to console. In production code, you'd see these messages in Bitcoin's debug.log file—invaluable for diagnosing issues in the field."
+
+  - line: 204
+    type: margin
+    text: "<code class=\"function\">FormatMoney()</code>—converts internal satoshi representation to human-readable format. Bitcoin stores all amounts as integers (satoshis) to avoid floating-point rounding errors. This function divides by <code class=\"constant\">CENT</code> (1,000,000 satoshis), formats with two decimal places, and inserts thousand separators. The <code class=\"variable\">fPlus</code> parameter adds '+' prefix for positive values, useful in transaction displays showing debits vs credits. Getting this wrong could cause users to send wrong amounts—the code carefully handles negative values and edge cases."
+
+  - line: 206
+    type: margin
+    text: "Division by <code class=\"constant\">CENT</code>, not <code class=\"constant\">COIN</code>. Bitcoin has two constants: <code class=\"constant\">COIN</code> (100,000,000 satoshis = 1 BTC) and <code class=\"constant\">CENT</code> (1,000,000 satoshis = 0.01 BTC). The division here means <code class=\"function\">FormatMoney()</code> displays with 2 decimal places (cents), not 8 (satoshis). This was a v0.1 design choice—early Bitcoin showed values like '50.00 BTC' rather than '50.00000000 BTC'. Modern Bitcoin software often shows more precision."
+
+  - line: 218
+    type: margin
+    text: "<code class=\"function\">ParseMoney()</code>—the inverse of <code class=\"function\">FormatMoney()</code>. Converts user-entered strings like '1,234.56' to satoshis. Handles thousand separators, leading/trailing whitespace, and validates format. The check <code>strWhole.size() > 17</code> prevents overflow—17 digits exceeds the 21 million BTC cap. Returns false for malformed input rather than throwing exceptions, following C convention."
+
+  - line: 253
+    type: margin
+    text: "Overflow check: <code>nValue / CENT != nWhole</code>. After multiplying, division should recover the original. If not, multiplication overflowed. This defensive check prevents accepting astronomically large invalid amounts that wrapped around due to integer overflow."
+
+  - line: 295
+    type: margin
+    text: "<code class=\"function\">GetRand()</code>—generates cryptographically secure random numbers. This is the function called when generating private keys, selecting peers, and other security-critical operations. The <code>do-while</code> loop implements rejection sampling: since <code class=\"function\">RAND_bytes()</code> produces uniform random bits, but we want uniform distribution over <code>[0, nMax)</code>, we must reject values that would bias the result. The calculation <code>nRange = (_UI64_MAX / nMax) * nMax</code> finds the largest multiple of <code class=\"variable\">nMax</code> that fits in 64 bits. Values >= <code class=\"variable\">nRange</code> would favor lower results if taken mod <code class=\"variable\">nMax</code>, so they're rejected and we try again."
+
+  - line: 319
+    type: margin
+    text: "The chronometers quote—Satoshi's comment reveals his thinking on distributed time. The saying 'never go to sea with two chronometers; take one or three' means: with one clock, you trust it; with two disagreeing clocks, you don't know which is right; with three, you take the majority. Bitcoin implements this philosophy: rather than trusting any single time source, it takes the median of connected peers' clocks (adjusted for network latency). This prevents a single malicious peer from manipulating timestamps, which could affect block validity checking."
+
+  - line: 337
+    type: margin
+    text: "<code class=\"function\">GetAdjustedTime()</code>—returns current time adjusted by network consensus. <code class=\"variable\">nTimeOffset</code> is the difference between local clock and peer median. If your clock is 5 minutes fast, <code class=\"variable\">nTimeOffset</code> is -300 seconds. Blocks are rejected if their timestamp is too far in the future—this adjustment prevents your node from rejecting valid blocks due to local clock drift."
+
+  - line: 342
+    type: margin
+    text: "<code class=\"function\">AddTimeData()</code>—collects time samples from peers. When connecting to a peer, nodes exchange timestamps. This function tracks offsets (peer_time - local_time), deduplicates by IP, and computes the median. The logic waits for 5+ samples and only updates on odd counts (ensuring a true median exists). If median offset exceeds 5 minutes, the code notes 'go to NTP servers'—though NTP wasn't actually implemented in v0.1. The 5-minute threshold prevents attackers from gradually skewing network time."
+
+  - line: 362
+    type: margin
+    text: "Safety limit: offsets beyond ±5 minutes trigger a TODO comment about NTP. Satoshi recognized the vulnerability: if an attacker controlled many peer connections, they could manipulate your time offset. The 5-minute cap limits damage. Later Bitcoin versions added stricter checks and warnings when clock offset is large."
+
+conclusion: |
+  <p>
+    These mundane-seeming functions are critical infrastructure. The random
+    number generator secures every private key ever generated. The money
+    formatting functions prevent users from accidentally sending wrong amounts.
+    The time synchronization enables consensus without a central time authority.
+  </p>
+  <p>
+    Satoshi's paranoid approach to randomness proved prescient. In 2013, a weak
+    RNG in Android's Java SecureRandom class allowed attackers to derive private
+    keys from signed transactions, draining wallets. In 2010, Sony's PlayStation 3
+    signing key was compromised because they used a static 'random' value in
+    ECDSA signatures. Bitcoin's defense-in-depth—multiple entropy sources,
+    conservative estimates, rejection sampling—has prevented similar disasters.
+  </p>
+  <p>
+    The time synchronization elegantly solves a distributed systems problem:
+    agreeing on time without trusting any party. By taking medians with bounds,
+    Bitcoin achieves rough consensus sufficient for block timestamps without
+    introducing centralization through NTP servers or trusted time sources.
+  </p>

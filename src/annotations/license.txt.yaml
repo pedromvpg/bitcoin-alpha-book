@@ -1,0 +1,31 @@
+# Annotation for license.txt - MIT License
+file: "license.txt"
+
+title: "Freedom in Code"
+
+introduction: |
+  <p>
+    Bitcoin is released under the MIT License—one of the most permissive
+    open source licenses. This means anyone can use, modify, and
+    distribute the code for any purpose, including commercial use.
+  </p>
+
+annotations:
+  - line: 1
+    type: margin
+    text: "Copyright 2009 - Satoshi Nakamoto's name on the license"
+
+  - line: 3
+    type: margin
+    text: "Permission granted - the core of MIT license permissiveness"
+
+  - line: 13
+    type: margin
+    text: "No warranty - software provided as-is"
+
+conclusion: |
+  <p>
+    This licensing choice was crucial to Bitcoin's adoption. It allowed
+    exchanges, wallets, and other businesses to build on Bitcoin without
+    legal concerns.
+  </p>

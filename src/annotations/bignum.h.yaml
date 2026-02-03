@@ -1,0 +1,124 @@
+# Annotation for bignum.h - Arbitrary Precision Arithmetic
+file: "bignum.h"
+
+title: "When 64 Bits Aren't Enough"
+
+introduction: |
+  <p>
+    Bitcoin deals with astronomically large numbers—256-bit integers that dwarf
+    anything standard CPUs can handle natively. A 64-bit processor maxes out at
+    18 quintillion; Bitcoin routinely works with numbers that have 77+ digits.
+    This file wraps OpenSSL's BIGNUM library to perform arithmetic on these
+    titans.
+  </p>
+  <p>
+    Every cryptographic operation in Bitcoin relies on big number math: generating
+    private keys (random 256-bit numbers), deriving public keys (elliptic curve
+    point multiplication), creating signatures (modular arithmetic), verifying
+    signatures (more modular arithmetic), and comparing hashes to difficulty
+    targets. Without this file, none of that would be possible.
+  </p>
+  <p>
+    OpenSSL's BIGNUM library has been battle-tested for decades in SSL/TLS—the
+    encryption protecting billions of web connections. Satoshi wisely reused this
+    proven code rather than implementing big number arithmetic from scratch.
+    Rolling your own crypto is how security vulnerabilities are born.
+  </p>
+  <p>
+    The CBigNum class wraps OpenSSL's C interface with C++ conveniences: operator
+    overloading lets you write <code>a + b * c</code> instead of calling verbose
+    functions. It also handles memory management automatically—BIGNUM requires
+    manual allocation/deallocation, which the destructor handles safely.
+  </p>
+
+annotations:
+  - line: 13
+    type: margin
+    text: "<code class=\"class\">bignum_error</code>—exception class for arithmetic failures. OpenSSL's BIGNUM functions return error codes rather than throwing exceptions. This wrapper converts errors to C++ exceptions, making error handling cleaner. Thrown when operations fail due to memory allocation errors or invalid operations."
+
+  - line: 21
+    type: margin
+    text: "<code class=\"class\">CAutoBN_CTX</code>—RAII wrapper for OpenSSL's BN_CTX. A BN_CTX is a 'context' that provides temporary storage for intermediate values during multi-step calculations (like modular exponentiation). Without this, you'd need to allocate/free temporary BIGNUMs manually. The constructor allocates, destructor frees—C++ guarantees cleanup even if exceptions are thrown. This pattern appears throughout security-critical code."
+
+  - line: 49
+    type: margin
+    text: "<code class=\"class\">CBigNum</code>—the heart of Bitcoin's big number support. Inherits from OpenSSL's <code class=\"class\">BIGNUM</code> struct (unusual but valid C++) to add C++ semantics. The inheritance means <code class=\"class\">CBigNum</code> can be passed directly to OpenSSL functions expecting <code>BIGNUM*</code>. All the cryptographic heavy lifting—ECDSA signatures, difficulty comparisons, script arithmetic—flows through this class."
+
+  - line: 54
+    type: margin
+    text: "<code class=\"function\">BN_init()</code>—initializes BIGNUM to zero. OpenSSL BIGNUMs must be initialized before use; uninitialized memory could cause crashes or security vulnerabilities. This is called in every constructor to ensure valid state."
+
+  - line: 80
+    type: margin
+    text: "<code class=\"function\">BN_clear_free()</code>—secure memory wiping. Unlike regular <code class=\"function\">free()</code>, this overwrites memory with zeros before releasing it. Critical for security: freed memory might be reallocated to an attacker-controlled buffer. If private keys weren't cleared, they could leak through memory inspection. This paranoid cleanup appears throughout Bitcoin's key handling code."
+
+  - line: 85
+    type: margin
+    text: "Type conversion constructors—convert native integers to big numbers. The pattern <code>if (n >= 0) setulong(n); else setint64(n)</code> handles signed vs unsigned carefully. OpenSSL's <code class=\"function\">BN_set_word()</code> only handles unsigned values; negative numbers need the more complex MPI encoding path. These conversions let you write natural code like <code>CBigNum total = 50 * COIN</code>."
+
+  - line: 128
+    type: margin
+    text: "<code class=\"function\">setint64()</code>—converts 64-bit signed integer to BIGNUM via MPI format. MPI (Multi-Precision Integer) is a big-endian byte format with a 4-byte length prefix. The sign bit is encoded in the high bit of the first data byte. This complexity exists because OpenSSL's native functions don't handle 64-bit signed values directly. The careful handling of leading zeros and sign bits is essential for correct encoding."
+
+  - line: 190
+    type: margin
+    text: "<code class=\"function\">setuint256()</code>—converts Bitcoin's <code class=\"class\">uint256</code> type to <code class=\"class\">BIGNUM</code>. This bridges Bitcoin's hash/key representation with OpenSSL's arithmetic. The loop walks backwards through the <code class=\"class\">uint256</code>'s bytes (little-endian to big-endian conversion), skipping leading zeros for compactness. Used when checking if a block hash meets the difficulty target: convert hash to <code class=\"class\">CBigNum</code>, compare to target <code class=\"class\">CBigNum</code>."
+
+  - line: 257
+    type: margin
+    text: "<code class=\"function\">SetCompact()</code>—decodes Bitcoin's compact difficulty format. Block headers store difficulty as a 4-byte 'compact' value (<code class=\"variable\">nBits</code> field) rather than a full 256-bit target. Format: first byte is exponent (number of bytes), remaining 3 bytes are mantissa. Example: <code>0x1d00ffff</code> means a <code>0x1d</code> (29) byte number with high bytes <code>00ffff</code>. This encoding saves space in headers while representing any 256-bit target."
+
+  - line: 269
+    type: margin
+    text: "<code class=\"function\">GetCompact()</code>—encodes BIGNUM to compact format. The inverse of SetCompact(). Mining code uses this to store the current difficulty target in block headers. The format sacrifices precision (only 3 significant bytes) but this is acceptable—difficulty only needs to be approximately correct. The slight loss of precision is bounded and predictable."
+
+  - line: 282
+    type: margin
+    text: "<code class=\"function\">SetHex()</code>—parses hexadecimal string to <code class=\"class\">BIGNUM</code>. Block hashes, transaction IDs, and keys are commonly displayed as hex strings. This function handles optional <code>0x</code> prefix, leading whitespace, and negative signs. The lookup table <code>phexdigit[256]</code> provides O(1) hex-to-value conversion. Used extensively in debugging and when loading hardcoded values like the genesis block hash."
+
+  - line: 312
+    type: margin
+    text: "Serialization support—enables storing/transmitting <code class=\"class\">CBigNum</code> values. Bitcoin's custom serialization framework (see serialize.h) uses these methods. <code class=\"function\">getvch()</code> converts to byte vector for transmission; <code class=\"function\">setvch()</code> reconstructs from bytes. The MPI format ensures consistent encoding across different machines regardless of native integer representation."
+
+  - line: 337
+    type: margin
+    text: "Arithmetic operators—make big numbers feel like native types. <code>operator+=</code> calls OpenSSL's <code class=\"function\">BN_add()</code>; <code>operator*=</code> calls <code class=\"function\">BN_mul()</code>; etc. The <code class=\"class\">CAutoBN_CTX</code> provides temporary storage needed by multiplication and division. These operators enable readable code like <code>reward >>= (height / 210000)</code> for the halving calculation, rather than verbose function calls."
+
+  - line: 370
+    type: margin
+    text: "Bit shift operators—essential for Bitcoin's difficulty arithmetic. The halving formula <code>subsidy >>= (height/210000)</code> uses right-shift to divide by powers of two. Difficulty adjustments use shifts to multiply/divide targets. OpenSSL's <code class=\"function\">BN_lshift()</code> and <code class=\"function\">BN_rshift()</code> handle arbitrarily large shifts correctly—you can shift a 256-bit number by 200 bits without overflow issues."
+
+  - line: 427
+    type: margin
+    text: "Free-standing arithmetic operators. C++ convention: compound operators (<code>+=</code>) are members, simple operators (<code>+</code>) are free functions built on compound operators. This minimizes code duplication while providing the full expected arithmetic interface. The pattern <code>CBigNum r; BN_add(&r, &a, &b); return r;</code> creates a new <code class=\"class\">BIGNUM</code> for the result, leaving operands unchanged."
+
+  - line: 459
+    type: margin
+    text: "<code class=\"function\">operator/()</code> and <code class=\"function\">operator%()</code>—division and modulus. Modular arithmetic is the foundation of public-key cryptography. ECDSA signatures involve operations like <code>(z + r*privateKey) * k_inverse mod n</code> where <code>n</code> is the curve order. OpenSSL's <code class=\"function\">BN_div()</code> and <code class=\"function\">BN_mod()</code> handle arbitrary-precision division with full precision—no rounding errors that would break cryptographic operations."
+
+  - line: 493
+    type: margin
+    text: "Comparison operators—enable intuitive comparisons like <code>hash <= target</code>. This comparison is the core of proof-of-work: a block is valid if its hash, interpreted as a 256-bit number, is less than or equal to the difficulty target. <code class=\"function\">BN_cmp()</code> returns -1, 0, or 1 like <code class=\"function\">strcmp()</code>. These operators wrap that into natural boolean expressions."
+
+conclusion: |
+  <p>
+    Big number arithmetic is the mathematical foundation of Bitcoin's security.
+    Private keys are 256-bit random numbers; public keys are points on an
+    elliptic curve computed via point multiplication (repeated addition of
+    256-bit coordinates); signatures involve modular inverse and multiplication.
+    All of this requires numbers far larger than CPUs handle natively.
+  </p>
+  <p>
+    Satoshi's choice to wrap OpenSSL rather than implement custom big number
+    code was wise. Cryptographic arithmetic is notoriously difficult to get
+    right—subtle bugs can leak private keys through timing variations or
+    incorrect carries. OpenSSL's BIGNUM library has been audited extensively
+    and is used by software protecting critical infrastructure worldwide.
+  </p>
+  <p>
+    The compact difficulty format (SetCompact/GetCompact) deserves special
+    note. By encoding 256-bit targets as 4 bytes, block headers stay small
+    (80 bytes total), making lightweight clients practical. A phone can verify
+    proof-of-work by checking just the header, without downloading full blocks.
+    This compression was essential for Bitcoin's scalability vision.
+  </p>

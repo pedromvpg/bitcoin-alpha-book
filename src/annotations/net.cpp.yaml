@@ -1,0 +1,79 @@
+# Annotation for net.cpp - Peer-to-Peer Networking
+file: "net.cpp"
+
+title: "The Gossip Network"
+
+introduction: |
+  <p>
+    Bitcoin operates as a peer-to-peer network with no central server. This file
+    implements all networking: node discovery, connection management, message
+    routing, and the gossip protocol that propagates transactions and blocks
+    across the globe in seconds. At any moment, thousands of nodes are running
+    this exact code, forming the backbone of the Bitcoin network.
+  </p>
+  <p>
+    Satoshi's design goal from the whitepaper's opening line: "A purely peer-to-peer
+    version of electronic cash would allow online payments to be sent directly from
+    one party to another without going through a financial institution." This file
+    makes that vision technically possible. There's no Bitcoin Inc. server—just
+    a mesh of equal peers, each running the same rules.
+  </p>
+  <p>
+    The network is resilient by design. Nodes can join and leave freely. Messages
+    propagate via gossip—each node tells its neighbors, who tell theirs. If half
+    the network disappears tomorrow, the other half continues operating. This
+    architecture has survived government crackdowns, DDoS attacks, and internet
+    outages for over 15 years without a single hour of downtime.
+  </p>
+  <p>
+    The protocol uses a simple message format: 4-byte magic number (to identify
+    Bitcoin network), 12-byte command name, 4-byte payload size, 4-byte checksum,
+    then the payload. Messages include: "version" (handshake), "addr" (peer addresses),
+    "inv" (announce data), "getdata" (request data), "tx" (transaction), "block"
+    (block data). This simplicity enabled implementations in dozens of languages.
+  </p>
+
+annotations:
+  - line: 27
+    type: margin
+    text: "vNodes - list of all connected peers. Bitcoin maintains 8-125 connections. Each CNode represents a live TCP connection to another node."
+
+  - line: 100
+    type: margin
+    text: "GetMyExternalIP - discovers our public IP via external service. Early Bitcoin used whatismyip.com. Needed because NAT hides local IPs."
+
+  - line: 299
+    type: margin
+    text: "ConnectNode - establishes TCP connection to peer. Performs version handshake, exchanges capabilities. The start of every peer relationship."
+
+  - line: 500
+    type: margin
+    text: "Socket select loop - the network heartbeat. Uses select() to efficiently wait on multiple sockets. Classic Unix network programming."
+
+  - line: 673
+    type: margin
+    text: "ThreadOpenConnections - actively seeks new peers. Balances between maintaining connections and not overloading the network."
+
+  - line: 798
+    type: margin
+    text: "ThreadMessageHandler - processes incoming messages. Blocks, transactions, addresses, pings flow through here. The protocol interpreter."
+
+  - line: 832
+    type: margin
+    text: "ProcessMessages - deserializes and dispatches messages. Each message type (version, addr, inv, getdata, tx, block) has a handler."
+
+  - line: 981
+    type: margin
+    text: "Thread startup - Bitcoin spawns multiple networking threads. OpenConnections finds peers, MessageHandler processes data, SocketHandler does I/O."
+
+conclusion: |
+  <p>
+    The networking layer embodies Satoshi's trustless philosophy. Nodes don't trust
+    peers—they validate everything independently. A malicious peer can waste your
+    bandwidth but can't steal your coins or corrupt your view of the blockchain.
+  </p>
+  <p>
+    Message propagation uses "inv" (inventory) announcements: nodes advertise what
+    they have, peers request what they need. This pull-based model prevents spam
+    and lets nodes prioritize important data (blocks over transactions).
+  </p>

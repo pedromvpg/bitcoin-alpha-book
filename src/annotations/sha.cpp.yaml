@@ -1,0 +1,44 @@
+# Annotation for sha.cpp - Cryptographic Hash Functions
+file: "sha.cpp"
+
+title: "The Hash That Secures Trillions"
+
+introduction: |
+  <p>
+    Cryptographic hashing is the foundation of Bitcoin's security. This file
+    implements the SHA-256 hash function that is used throughout Bitcoin
+    for everything from transaction IDs to proof-of-work mining.
+  </p>
+  <p>
+    A hash function takes any input and produces a fixed-size output (256 bits
+    for SHA-256). The key properties are:
+  </p>
+  <ul>
+    <li><strong>Deterministic:</strong> Same input always gives same output</li>
+    <li><strong>One-way:</strong> Cannot reverse the hash to find the input</li>
+    <li><strong>Collision-resistant:</strong> Nearly impossible to find two inputs with the same hash</li>
+  </ul>
+
+annotations:
+  - line: 93
+    type: margin
+    text: "SHA256 initialization - sets the initial hash values"
+
+  - line: 99
+    type: margin
+    text: "SHA256_K constants - derived from cube roots of first 64 primes"
+
+  - line: 141
+    type: margin
+    text: "SHA256 Transform - the core compression function"
+
+  - line: 168
+    type: margin
+    text: "SHA256_Transform - external entry point for hashing"
+
+conclusion: |
+  <p>
+    Every block header is hashed with SHA-256 (actually double SHA-256) to
+    produce the block's identifier. Miners must find a hash below a target
+    value, which is computationally expensive but easy to verify.
+  </p>

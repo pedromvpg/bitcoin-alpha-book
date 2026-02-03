@@ -1,0 +1,97 @@
+# Annotation for sha.h - SHA-256 Header
+file: "sha.h"
+
+title: "The One-Way Function"
+
+introduction: |
+  <p>
+    This file contains the SHA-256 implementation—the cryptographic hash function
+    that secures Bitcoin. SHA-256 (Secure Hash Algorithm, 256-bit) takes any input
+    and produces a 256-bit fingerprint with remarkable properties: nearly impossible
+    to reverse (one-way), tiny changes produce completely different outputs (avalanche
+    effect), and finding two inputs with the same output is computationally infeasible
+    (collision resistance).
+  </p>
+  <p>
+    Satoshi extracted this code from Crypto++, a well-respected open-source
+    cryptography library by Wei Dai (who also invented b-money, a Bitcoin precursor).
+    The file is public domain, allowing unrestricted use. Rather than depending on
+    the full Crypto++ library, Satoshi extracted just the SHA routines—keeping
+    Bitcoin's dependencies minimal and auditable.
+  </p>
+  <p>
+    SHA-256 permeates Bitcoin: block hashes (double SHA-256), transaction IDs
+    (double SHA-256), merkle trees (double SHA-256), address derivation (SHA-256
+    followed by RIPEMD-160), and proof-of-work (finding hashes below target).
+    Mining is essentially a SHA-256 lottery—billions of attempts until one wins.
+  </p>
+  <p>
+    The performance of SHA-256 directly impacts mining profitability. The
+    <code>Transform()</code> function here is called trillions of times per
+    second across the Bitcoin network. Modern miners use custom ASICs that
+    implement these exact operations in silicon, achieving efficiencies
+    impossible in software.
+  </p>
+
+annotations:
+  - line: 1
+    type: margin
+    text: "Public domain dedication—no license restrictions. Satoshi borrowed from Wei Dai's Crypto++ library. Wei Dai is also the creator of b-money (1998), which Satoshi cited in the Bitcoin whitepaper. The cryptographic community is small; influences interconnect."
+
+  - line: 17
+    type: margin
+    text: "Type definitions for portability. In 2009, C++ lacked standardized fixed-width types (<code>uint32_t</code> came with C++11). These typedefs ensure <code>word32</code> is exactly 32 bits across compilers. SHA-256 operates on 32-bit words; incorrect sizes would produce wrong hashes—catastrophic for consensus."
+
+  - line: 26
+    type: margin
+    text: "<code class=\"function\">rotlFixed()</code> and <code class=\"function\">rotrFixed()</code>—bitwise rotation primitives. SHA-256's compression function heavily uses rotations: <code>rotr(x,2) XOR rotr(x,13) XOR rotr(x,22)</code> appears in the Σ₀ function. Many CPUs have dedicated rotation instructions; these templates let the compiler use them when available."
+
+  - line: 40
+    type: margin
+    text: "<code class=\"macro\">CRYPTOPP_FAST_ROTATE</code>—compiler-specific optimizations. Detects whether the target CPU has fast rotation instructions. Intel x86/x64, PowerPC, and modern ARM do; older architectures emulate rotations with shifts and ORs (slower). This macro guides code generation for optimal performance per platform."
+
+  - line: 73
+    type: margin
+    text: "<code class=\"function\">ByteReverse()</code>—endianness conversion. SHA-256 is defined using big-endian (network byte order), but most modern CPUs are little-endian. This function swaps byte order. The GCC inline assembly <code>bswap %0</code> uses the single-instruction byte swap on x86—crucial when called billions of times during mining."
+
+  - line: 120
+    type: margin
+    text: "<code class=\"class\">SHA1</code>—160-bit hash, predecessor to SHA-256. Bitcoin uses SHA1 indirectly via RIPEMD160—addresses are RIPEMD160(SHA256(pubkey)). SHA1 is considered cryptographically weak (Google demonstrated a collision in 2017), but Bitcoin doesn't rely on SHA1's collision resistance—only SHA256's."
+
+  - line: 132
+    type: margin
+    text: "<code class=\"class\">SHA256</code>—the cryptographic heart of Bitcoin. The <code>Transform()</code> method processes 512-bit blocks through 64 rounds of mixing, producing 256-bit output. <code>InitState()</code> sets the initial hash values (derived from the fractional parts of square roots of the first 8 primes). This is NIST FIPS 180-4's SHA-256, unchanged since standardization in 2001."
+
+  - line: 137
+    type: margin
+    text: "<code class=\"function\">Transform()</code>—the compression function, called once per 64-byte block of input. Bitcoin mining is essentially: set up a block header (80 bytes), call Transform twice (for double-SHA256), check if result is below target, increment nonce, repeat. ASICs implement Transform directly in hardware—billions of transforms per second per chip."
+
+  - line: 142
+    type: margin
+    text: "<code class=\"class\">SHA224</code>—224-bit variant, same Transform as SHA256 but different initial values and truncated output. Not used in Bitcoin. Its presence here is incidental (came with the Crypto++ extraction). Demonstrates how SHA-2 family shares implementations."
+
+  - line: 154
+    type: margin
+    text: "<code class=\"class\">SHA512</code>—512-bit hash using 64-bit words. Potentially useful for future cryptographic needs (key derivation, HMAC). Not used in Bitcoin's consensus rules, but available in this implementation. SHA-512 is actually faster than SHA-256 on 64-bit CPUs due to better parallelism."
+
+conclusion: |
+  <p>
+    SHA-256's security properties are what make Bitcoin work. The one-way nature
+    means you can't reverse-engineer a private key from a public key hash. The
+    avalanche effect means changing one bit in a block header completely changes
+    the hash—no gradual approach to a valid proof-of-work. Collision resistance
+    means attackers can't create two transactions with the same txid.
+  </p>
+  <p>
+    The Transform function is the most-executed code in human history.
+    Every second, the Bitcoin network performs approximately 500 exahashes
+    (5×10²⁰ double-SHA256 operations). That's Transform() being called
+    roughly 10²¹ times per second globally. No other function comes close.
+    This relentless hashing secures approximately $1 trillion in value.
+  </p>
+  <p>
+    Satoshi's choice of double-SHA256 (hashing twice) adds a safety margin.
+    SHA-256's theoretical weakness to length-extension attacks doesn't apply
+    when the result is hashed again. Whether Satoshi knew this or just chose
+    defense-in-depth, the double-hash has proven robust for 15+ years.
+  </p>

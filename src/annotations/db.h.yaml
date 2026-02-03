@@ -1,0 +1,175 @@
+# Annotation for db.h - Database Definitions
+file: "db.h"
+
+title: "The Persistence Layer"
+
+introduction: |
+  <p>
+    This header defines the database classes and interfaces used throughout
+    Bitcoin. It declares how wallets, addresses, and blockchain data are
+    structured and stored using Berkeley DB—a mature, embedded key-value
+    database that provides ACID transactions, crash recovery, and concurrent
+    access.
+  </p>
+  <p>
+    Satoshi chose Berkeley DB for its reliability and simplicity. Unlike
+    client-server databases (MySQL, PostgreSQL), Berkeley DB runs in-process
+    with no network overhead. It's battle-tested in mission-critical systems
+    and provides the transaction guarantees Bitcoin needs: if you crash
+    mid-write, the database recovers to a consistent state on restart.
+  </p>
+  <p>
+    The database files created here are your Bitcoin node's permanent memory:
+    <code>wallet.dat</code> holds your private keys and transaction history,
+    <code>blkindex.dat</code> indexes the blockchain for fast lookup, and
+    <code>addr.dat</code> remembers peer addresses for reconnection. Losing
+    <code>wallet.dat</code> means losing your coins—this file IS your money.
+  </p>
+  <p>
+    The class hierarchy (CDB as base, specialized subclasses for each file)
+    provides type-safe access patterns. You can't accidentally write a
+    transaction to the address database—the type system prevents it. This
+    defensive design has helped prevent data corruption bugs.
+  </p>
+
+annotations:
+  - line: 16
+    type: margin
+    text: "<code class=\"variable\">mapAddressBook</code>—your address labels, mapping Bitcoin addresses to human-readable names. When you label an address as 'Coinbase', 'Salary', etc., this map stores it. Defined extern here, implemented elsewhere, and persisted via CWalletDB."
+
+  - line: 20
+    type: margin
+    text: "<code class=\"variable\">dbenv</code>—the Berkeley DB environment, shared by all database files. The environment provides: transaction coordination across multiple databases, shared memory pool for caching, logging for crash recovery. All Bitcoin databases open within this single environment, enabling atomic operations that span multiple files."
+
+  - line: 26
+    type: margin
+    text: "<code class=\"class\">CDB</code>—the base class for all database operations. Wraps a Berkeley DB handle (<code>Db* pdb</code>) with C++ conveniences: RAII-style open/close, template methods for type-safe read/write, transaction support. All the specialized database classes (<code class=\"class\">CTxDB</code>, <code class=\"class\">CWalletDB</code>, etc.) inherit from this, getting consistent error handling and resource management."
+
+  - line: 33
+    type: margin
+    text: "Constructor takes filename and mode (<code>'r'</code>, <code>'r+'</code>, <code>'w'</code>). The <code class=\"variable\">fTxn</code> parameter enables transactional writes—slower but crash-safe. For reading, transactions aren't needed. For critical writes (new keys, spent coins), transactions ensure atomicity: either the entire write succeeds, or nothing changes."
+
+  - line: 42
+    type: margin
+    text: "<code class=\"function\">Read()</code>—generic key-value read. Takes any serializable key type <code>K</code> and value type <code>T</code>. The key is serialized to bytes, looked up in Berkeley DB, and the value is deserialized back into type <code>T</code>. The template magic means you can write <code>Read(txid, transaction)</code> with full type safety—if types don't match the stored data, you get a compile error."
+
+  - line: 58
+    type: margin
+    text: "Memory security: <code>memset(datKey.get_data(), 0, datKey.get_size())</code>. After reading, the key and value buffers are zeroed. This prevents sensitive data (like private keys) from lingering in freed memory. An attacker with memory access couldn't find keys in deallocated buffers. This paranoid cleanup appears throughout Bitcoin's key-handling code."
+
+  - line: 72
+    type: margin
+    text: "<code class=\"function\">Write()</code>—generic key-value write. Serializes key and value, writes to database. The <code class=\"variable\">fOverwrite</code> parameter controls behavior if key exists: <code>true</code> = replace, <code>false</code> = fail with <code class=\"constant\">DB_NOOVERWRITE</code>. The comment 'Clear memory in case it was a private key' explains the final <code class=\"function\">memset()</code>—defense in depth against memory snooping."
+
+  - line: 91
+    type: margin
+    text: "Berkeley DB flags: <code class=\"constant\">DB_NOOVERWRITE</code> causes writes to fail if the key exists. Used when adding new keys—you don't want to accidentally overwrite an existing key with a different value. The return code distinguishes 'success' from 'key existed', letting callers handle each case appropriately."
+
+  - line: 99
+    type: margin
+    text: "<code class=\"function\">Erase()</code>—removes a key-value pair. Used when spending coins (removing UTXOs) or cleaning up orphan data. Returns <code>true</code> even if key didn't exist (<code class=\"constant\">DB_NOTFOUND</code> is not an error for deletion). The key is zeroed after use for security."
+
+  - line: 139
+    type: margin
+    text: "<code class=\"function\">GetCursor()</code>—creates a database cursor for iteration. Cursors allow walking through all key-value pairs, essential for operations like 'load all transactions' or 'find all UTXOs for an address'. The cursor maintains position across multiple reads, enabling efficient sequential access."
+
+  - line: 150
+    type: margin
+    text: "<code class=\"function\">ReadAtCursor()</code>—reads the next record via cursor. The flags parameter controls behavior: <code class=\"constant\">DB_NEXT</code> for sequential scan, <code class=\"constant\">DB_SET</code> for exact key lookup, <code class=\"constant\">DB_SET_RANGE</code> for 'find first key >= this'. Returns key and value as <code class=\"class\">CDataStream</code>s for flexible deserialization. Used during wallet loading to iterate through all stored transactions."
+
+  - line: 189
+    type: margin
+    text: "<code class=\"function\">GetTxn()</code>—returns current transaction, if any. Berkeley DB transactions provide atomicity: all writes within a transaction succeed or fail together. The <code class=\"variable\">vTxn</code> vector supports nested transactions—you can start a sub-transaction within a transaction. Not heavily used in v0.1, but the infrastructure exists."
+
+  - line: 198
+    type: margin
+    text: "Transaction methods: <code class=\"function\">TxnBegin()</code>, <code class=\"function\">TxnCommit()</code>, <code class=\"function\">TxnAbort()</code>. These wrap Berkeley DB's transaction API. Begin starts a transaction, recording a 'checkpoint'. Commit makes changes permanent. Abort rolls back to the checkpoint. If Bitcoin crashes between Begin and Commit, recovery automatically aborts the incomplete transaction—no corrupted state."
+
+  - line: 232
+    type: margin
+    text: "<code class=\"function\">ReadVersion()</code>/<code class=\"function\">WriteVersion()</code>—database schema versioning. As Bitcoin evolves, database formats may change. The version number lets code detect old formats and migrate them. If you open a v0.1 wallet with later software, it knows to upgrade the structure. Forward compatibility planning from day one."
+
+  - line: 251
+    type: margin
+    text: "<code class=\"class\">CTxDB</code>—the blockchain index database (<code>blkindex.dat</code>). Maps transaction hashes to their location on disk, block hashes to block metadata, and tracks the best chain. This index is what makes blockchain queries fast: rather than scanning every block file, look up the index. If <code class=\"variable\">fClient</code> is <code>true</code> (lightweight mode), this database isn't used."
+
+  - line: 259
+    type: margin
+    text: "<code class=\"class\">CTxDB</code> methods: <code class=\"function\">ReadTxIndex()</code>, <code class=\"function\">UpdateTxIndex()</code>, <code class=\"function\">AddTxIndex()</code>, <code class=\"function\">EraseTxIndex()</code>. These maintain the UTXO set—the record of all unspent transaction outputs. When a transaction spends coins, <code class=\"function\">EraseTxIndex()</code> removes the spent outputs. When a new transaction is confirmed, <code class=\"function\">AddTxIndex()</code> records its outputs as spendable. This is Bitcoin's notion of 'who owns what.'"
+
+  - line: 269
+    type: margin
+    text: "<code class=\"function\">WriteBlockIndex()</code>/<code class=\"function\">EraseBlockIndex()</code>—maintain the block chain structure. Each <code class=\"class\">CDiskBlockIndex</code> records: block hash, previous block hash, height, timestamp, difficulty. This lets the node quickly determine if a block is in the best chain, find a block's ancestors, and identify chain reorganizations."
+
+  - line: 271
+    type: margin
+    text: "<code class=\"function\">ReadHashBestChain()</code>—retrieves the current chain tip. On startup, the node reads this to know which chain to continue building on. It's the single most important value in the database: 'what does this node consider the canonical blockchain history?'"
+
+  - line: 280
+    type: margin
+    text: "<code class=\"class\">CReviewDB</code>—Satoshi's marketplace feature. Stores user reviews and ratings in <code>reviews.dat</code>. This hints at a more ambitious vision where Bitcoin supported reputation systems for commerce. The feature was never fully developed and was removed in later versions, but the infrastructure shows Satoshi thinking about trust in pseudonymous commerce."
+
+  - line: 306
+    type: margin
+    text: "<code class=\"class\">CMarketDB</code>—another marketplace remnant. Would have stored product listings in <code>market.dat</code>. Combined with CReviewDB, this would have enabled decentralized e-commerce: list products, accumulate reviews, transact in bitcoin. The vision never materialized, but these database stubs remain as archaeological evidence."
+
+  - line: 319
+    type: margin
+    text: "<code class=\"class\">CAddrDB</code>—peer address storage (<code>addr.dat</code>). Remembers IP addresses of other Bitcoin nodes. On startup, the node loads these addresses and attempts reconnection. This provides persistence across restarts: you don't need to rediscover the network from scratch each time. Combined with IRC bootstrap and address gossip, ensures network resilience."
+
+  - line: 337
+    type: margin
+    text: "<code class=\"class\">CWalletDB</code>—your money (<code>wallet.dat</code>). This is the most security-critical database. Stores: private keys (your ability to spend), transaction history (your record of what you own), address labels (your organizational metadata), and settings. Losing this file with no backup = permanent loss of all your bitcoin. There is no recovery mechanism."
+
+  - line: 345
+    type: margin
+    text: "<code class=\"function\">ReadName()</code>/<code class=\"function\">WriteName()</code>—address book operations. The key is the address string; the value is your label. <code>WriteName</code> also updates the in-memory <code>mapAddressBook</code> for fast access. These let you associate human meaning with cryptographic addresses: '1ABC...' becomes 'Mom's birthday gift.'"
+
+  - line: 363
+    type: margin
+    text: "<code class=\"function\">ReadTx()</code>/<code class=\"function\">WriteTx()</code>/<code class=\"function\">EraseTx()</code>—transaction storage. Every transaction involving your addresses is stored here: payments received, payments sent, change outputs. The key is the transaction hash (txid); the value is the full CWalletTx (transaction plus wallet-specific metadata like 'from address book entry')."
+
+  - line: 378
+    type: margin
+    text: "<code class=\"function\">ReadKey()</code>/<code class=\"function\">WriteKey()</code>—private key storage. This is where the actual secrets live. The key is the public key bytes; the value is the encrypted private key (<code class=\"class\">CPrivKey</code>). Note <code class=\"function\">WriteKey()</code> uses <code>fOverwrite=false</code>—you never want to accidentally overwrite an existing key with a different value, as that would destroy the original key."
+
+  - line: 389
+    type: margin
+    text: "<code class=\"function\">ReadDefaultKey()</code>/<code class=\"function\">WriteDefaultKey()</code>—the 'receiving address' shown in the UI. When someone wants to pay you, you give them this address. It's just one of your keys, designated as the default. You can change it anytime by calling WriteDefaultKey with a different key."
+
+  - line: 400
+    type: margin
+    text: "<code class=\"function\">ReadSetting()</code>/<code class=\"function\">WriteSetting()</code>—generic settings storage. User preferences (like 'start minimized', 'proxy server address') are stored as key-value pairs with the 'setting' prefix. The template methods accept any serializable type, providing type-safe settings without proliferating ReadXxxSetting methods."
+
+  - line: 412
+    type: margin
+    text: "<code class=\"function\">LoadWallet()</code>—the critical startup function. Reads <code>wallet.dat</code>, populating in-memory structures with all keys and transactions. Returns the default receiving address. If this function fails (corrupted database, wrong password for encrypted wallets), the node cannot access its funds. The <code>vector&lt;unsigned char&gt;</code> return is the default public key."
+
+  - line: 417
+    type: margin
+    text: "<code class=\"function\">SetAddressBookName()</code>—convenience wrapper for labeling addresses. Creates a temporary <code class=\"class\">CWalletDB</code> just to write one name, then closes it. This pattern appears throughout Bitcoin: open database, do one operation, close. It's simpler than managing long-lived database handles but has some performance overhead."
+
+conclusion: |
+  <p>
+    The database layer is Bitcoin's long-term memory. Without it, every restart
+    would mean losing your transaction history, forgetting peer addresses, and
+    most critically, losing access to your private keys. The careful separation
+    into multiple files (wallet.dat, blkindex.dat, addr.dat) isolates concerns:
+    you can back up just wallet.dat to protect your funds, without including
+    the multi-gigabyte blockchain index.
+  </p>
+  <p>
+    Berkeley DB's transactional guarantees are essential for financial software.
+    If your computer crashes while Bitcoin is updating the UTXO set, you don't
+    want to end up with inconsistent state where coins appear both spent and
+    unspent. The transaction mechanism ensures atomicity: either the entire
+    update succeeds, or the database rolls back to the previous consistent state.
+  </p>
+  <p>
+    The wallet.dat file deserves special attention. Unlike most application data,
+    it's irreplaceable—there's no 'forgot password' recovery, no customer service
+    to restore your account. The private keys stored here ARE your bitcoin. Satoshi's
+    code treats this file with appropriate paranoia: memory wiping, careful writes,
+    transaction protection. Modern wallets add encryption and hardware security
+    modules, but the fundamental truth remains: guard your keys.
+  </p>

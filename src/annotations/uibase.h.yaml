@@ -1,0 +1,30 @@
+# Annotation for uibase.h - UI Base Definitions
+file: "uibase.h"
+
+title: "GUI Blueprint"
+
+introduction: |
+  <p>
+    Header file for the auto-generated UI base classes. Declares the
+    window classes and their components that are implemented in
+    uibase.cpp.
+  </p>
+
+annotations:
+  - line: 15
+    type: margin
+    text: "wxWidgets includes for GUI components"
+
+  - line: 30
+    type: margin
+    text: "CMainFrameBase class declaration"
+
+  - line: 100
+    type: margin
+    text: "Dialog class declarations"
+
+conclusion: |
+  <p>
+    These declarations allow other code to interact with the GUI
+    without knowing the implementation details.
+  </p>

@@ -1,0 +1,168 @@
+# Annotation for net.h - Network Definitions
+file: "net.h"
+
+title: "Peers Without Trust"
+
+introduction: |
+  <p>
+    This header defines the network message types and node connection structures
+    that form Bitcoin's peer-to-peer protocol. Every message that Bitcoin nodes
+    exchange—blocks, transactions, peer addresses, version handshakes—is defined
+    here. These definitions are the "language" that Bitcoin nodes speak.
+  </p>
+  <p>
+    The key abstraction is the <code>CNode</code> class: a single connection to
+    another Bitcoin node. Each CNode maintains send/receive buffers, tracks what
+    data the peer has (to avoid redundant transfers), and handles the message
+    serialization. A typical node maintains 8-125 simultaneous CNode connections.
+  </p>
+  <p>
+    Satoshi designed the protocol with minimal trust: nodes don't believe what
+    peers tell them—they verify independently. A peer claiming to have a valid
+    block must prove it. This skepticism is why Bitcoin survives in adversarial
+    environments where some participants actively try to cheat.
+  </p>
+  <p>
+    The message types defined here form a request-response pattern: nodes announce
+    what they have ("inv"), peers request what they want ("getdata"), and data
+    flows in response ("tx", "block"). This pull-based model prevents spam—you
+    only download data you explicitly request.
+  </p>
+
+annotations:
+  - line: 13
+    type: margin
+    text: "<code class=\"constant\">DEFAULT_PORT = 8333</code>—Bitcoin's well-known port number. Satoshi chose 8333 with no documented rationale—it wasn't assigned by IANA for any other purpose. The <code>htons()</code> call converts to network byte order (big-endian). Every Bitcoin node listens on this port; firewalls must allow it for full participation. Some speculate 8333 was chosen because 8+3+3+3 = 17, but this is probably coincidental."
+
+  - line: 17
+    type: margin
+    text: "<code class=\"constant\">NODE_NETWORK</code>—service flag indicating a full node. In v0.1, this was the only flag. Later versions added NODE_BLOOM (supports bloom filters), NODE_WITNESS (supports SegWit), etc. When connecting, nodes exchange service flags to understand each other's capabilities. A node advertising NODE_NETWORK commits to serving historical blocks on request."
+
+  - line: 54
+    type: margin
+    text: "<code class=\"constant\">pchMessageStart</code>—the 4-byte 'magic number' that begins every Bitcoin message: <code>0xf9beb4d9</code>. Satoshi's comment explains: 'designed to be unlikely to occur in normal data.' These bytes are invalid UTF-8, rare in binary files, and form a large 32-bit integer at any alignment. When scanning a data stream, finding this sequence likely indicates a Bitcoin message boundary. Testnet uses different magic bytes to prevent cross-network contamination."
+
+  - line: 56
+    type: margin
+    text: "<code class=\"class\">CMessageHeader</code>—the 20-byte header prepended to every network message. Structure: 4-byte magic, 12-byte command (null-padded), 4-byte payload size. Later versions added a 4-byte checksum after the size. The fixed-size command field allows efficient parsing—you can read exactly 20 bytes, validate the header, then read exactly nMessageSize more bytes."
+
+  - line: 59
+    type: margin
+    text: "<code class=\"constant\">COMMAND_SIZE=12</code>—maximum command name length. Commands like 'version', 'verack', 'inv', 'getdata', 'block', 'tx' easily fit. The padding with zeros allows fixed-size parsing. Longer command names would require protocol changes—but 12 characters has proven sufficient for all Bitcoin message types."
+
+  - line: 94
+    type: margin
+    text: "<code class=\"function\">IsValid()</code>—validates message header before processing payload. Checks: (1) magic bytes match (rejects non-Bitcoin data), (2) command contains only printable ASCII then zeros (rejects malformed commands), (3) message size is reasonable (rejects memory exhaustion attacks). The <code>0x10000000</code> (256MB) limit was generous for 2009—modern Bitcoin has stricter limits."
+
+  - line: 130
+    type: margin
+    text: "<code class=\"constant\">pchIPv4</code>—IPv4-mapped IPv6 prefix. Bitcoin's address format reserves 16 bytes for IP addresses to support IPv6. IPv4 addresses are stored with this 12-byte prefix followed by the 4-byte IPv4 address. This forward-thinking design meant Bitcoin didn't need protocol changes when IPv6 adoption grew."
+
+  - line: 132
+    type: margin
+    text: "<code class=\"class\">CAddress</code>—represents a network peer's address. Contains: services (capabilities bitmap), IP address (16 bytes for IPv6 compatibility), port, timestamp (when last seen), and nLastFailed (connection attempt tracking). This structure is shared between nodes during 'addr' messages to propagate peer discovery information. The timestamp helps nodes prefer recently-active peers."
+
+  - line: 141
+    type: margin
+    text: "<code class=\"variable\">nTime</code>—timestamp when this address was last known to be active. Only serialized to disk (SER_DISK flag), not sent over the network in v0.1. Later versions include timestamps in 'addr' messages to help nodes prioritize fresh addresses. Addresses with old timestamps are less likely to be reachable."
+
+  - line: 201
+    type: margin
+    text: "<code class=\"macro\">IMPLEMENT_SERIALIZE</code>—the serialization specification. This macro generates code for reading/writing CAddress to disk or network. The <code>SER_DISK</code> check means timestamps are saved locally but not transmitted—a privacy consideration (timestamps could reveal when you learned about addresses)."
+
+  - line: 263
+    type: margin
+    text: "<code class=\"function\">IsRoutable()</code>—checks if an IP address is publicly routable. Returns false for private networks (<code>10.x.x.x</code>, <code>192.168.x.x</code>). Bitcoin nodes shouldn't relay private addresses since they're unreachable from the public internet. This prevents polluting the address database with useless entries."
+
+  - line: 301
+    type: margin
+    text: "Message type constants: <code class=\"constant\">MSG_TX</code>, <code class=\"constant\">MSG_BLOCK</code>, etc. These identify what kind of inventory item is being advertised or requested. The <code>inv</code> message contains a list of (type, hash) pairs; <code>getdata</code> requests specific items by (type, hash). <code class=\"constant\">MSG_REVIEW</code> and <code class=\"constant\">MSG_PRODUCT</code> hint at Satoshi's marketplace vision that was later removed."
+
+  - line: 320
+    type: margin
+    text: "<code class=\"class\">CInv</code>—an 'inventory item' identifying data by type and hash. When a node receives a new transaction, it announces via 'inv' messages containing CInv entries. Peers check if they already have each item; if not, they request it via 'getdata'. This pattern minimizes redundant data transfer—you only download what you don't have."
+
+  - line: 392
+    type: margin
+    text: "<code class=\"class\">CRequestTracker</code>—callback mechanism for async requests. Some operations (like requesting market data) need to process the response when it arrives. <code class=\"class\">CRequestTracker</code> stores a function pointer and parameter, invoked when the response comes. This predates C++11 lambdas—today you'd use <code>std::function</code>."
+
+  - line: 414
+    type: margin
+    text: "Global network state variables. <code class=\"variable\">vNodes</code> is the list of all connected peers. <code class=\"variable\">mapAddresses</code> stores known peer addresses for reconnection. <code class=\"variable\">mapRelay</code> caches recently-relayed data to serve to multiple peers without re-fetching. <code>cs_*</code> variables are mutexes (<code class=\"class\">CCriticalSection</code>) protecting these shared structures from race conditions."
+
+  - line: 434
+    type: margin
+    text: "<code class=\"class\">CNode</code>—the heart of Bitcoin's networking: a single peer connection. Each CNode wraps a socket and maintains: send/receive buffers, version information, connection state, inventory tracking (what the peer has/wants), and address gossip state. A running Bitcoin node typically has 8-125 CNode instances, each representing one peer relationship."
+
+  - line: 440
+    type: margin
+    text: "Network buffers: <code class=\"variable\">vSend</code> and <code class=\"variable\">vRecv</code> are <code class=\"class\">CDataStream</code> objects holding outgoing and incoming data. The <code class=\"class\">CDataStream</code> class (defined in serialize.h) handles Bitcoin's custom serialization format. Critical sections <code class=\"variable\">cs_vSend</code> and <code class=\"variable\">cs_vRecv</code> protect these buffers—multiple threads may try to send messages or process received data simultaneously."
+
+  - line: 459
+    type: margin
+    text: "<code class=\"variable\">vAddrToSend</code>—addresses to gossip to this peer. When your node learns a new peer address, it queues it here for eventual transmission. <code class=\"variable\">setAddrKnown</code> tracks addresses this peer already knows, avoiding redundant announcements. This gossip protocol is how the network discovers new peers without centralized coordination."
+
+  - line: 463
+    type: margin
+    text: "Inventory tracking: <code class=\"variable\">setInventoryKnown</code> tracks what this peer has (or has been told about). When relaying a transaction, we check this set to avoid re-announcing. <code class=\"variable\">vInventoryToSend</code> queues items to announce. This tracking prevents bandwidth waste—a transaction propagating through 10,000 nodes shouldn't be sent twice to any peer."
+
+  - line: 467
+    type: margin
+    text: "<code class=\"variable\">mapAskFor</code>—items we want to request from this peer, keyed by when to ask. When we receive an 'inv' for something we don't have, we don't request immediately (in case multiple peers announce it—we'd get duplicates). Instead, we schedule the request slightly in the future. If another peer delivers it first, we cancel the request."
+
+  - line: 493
+    type: margin
+    text: "Version message on connect: <code>PushMessage(\"version\", VERSION, nLocalServices, nTime, addr)</code>. The first message any node sends is <code>version</code>, announcing its protocol version, capabilities, and current time. The recipient responds with <code>verack</code> (version acknowledge). This handshake establishes the connection and negotiates compatible features."
+
+  - line: 533
+    type: margin
+    text: "<code class=\"function\">AddInventoryKnown()</code> and <code class=\"function\">PushInventory()</code>—the relay optimization. When we have something to announce, we first check if the peer already knows it. If not, we queue it for announcement. This simple check prevents the quadratic blowup that would occur if every node blindly relayed everything to every peer."
+
+  - line: 546
+    type: margin
+    text: "<code class=\"function\">AskFor()</code>—schedules a data request with rate limiting. The comment explains: 'We're using mapAskFor as a priority queue.' Requests are spaced 2 minutes apart for the same item (retry interval). This prevents hammering peers for data they may not have. The microsecond timestamps ensure FIFO ordering even for requests scheduled at the same second."
+
+  - line: 565
+    type: margin
+    text: "<code class=\"function\">BeginMessage()</code>—starts constructing an outbound message. Takes the mutex, records current buffer position, writes the header. <code class=\"function\">EndMessage()</code> patches in the actual size and releases the mutex. If anything goes wrong between Begin and End, <code class=\"function\">AbortMessage()</code> rolls back the buffer. This transactional pattern prevents malformed messages from being sent."
+
+  - line: 632
+    type: margin
+    text: "<code class=\"function\">PushMessage()</code>—variadic templates for sending messages with any number of arguments. The syntax <code>vSend << a1 << a2</code> uses operator overloading to serialize each argument. This elegant design lets you write <code>PushMessage(\"block\", block)</code> and have the block automatically serialized according to its type's <code class=\"macro\">IMPLEMENT_SERIALIZE</code> definition."
+
+  - line: 766
+    type: margin
+    text: "<code class=\"function\">RelayInventory()</code>—broadcasts an announcement to all peers. Iterates through <code class=\"variable\">vNodes</code> calling <code class=\"function\">PushInventory()</code> on each. The per-peer filtering (via <code class=\"variable\">setInventoryKnown</code>) ensures no redundant announcements. This is how new transactions propagate: miner broadcasts to their peers, those peers relay to their peers, exponentially spreading across the network."
+
+  - line: 783
+    type: margin
+    text: "<code class=\"function\">RelayMessage()</code>—caches and relays data. When relaying transactions or blocks, we might need to serve the same data to multiple peers. Rather than re-serializing each time, <code class=\"variable\">mapRelay</code> caches the serialized form for 15 minutes. The template specialization handles <code class=\"class\">CDataStream</code> efficiently while the generic version accepts any serializable type."
+
+  - line: 818
+    type: margin
+    text: "Publish/subscribe system—Satoshi's marketplace feature. <code class=\"function\">AdvertStartPublish()</code> and related functions implement a pub/sub mechanism for <code class=\"class\">CTable</code> and <code class=\"class\">CProduct</code> objects. Nodes could subscribe to channels and receive product listings. This code was largely unused and removed in later versions, but hints at Satoshi's vision of Bitcoin as a platform for decentralized commerce."
+
+conclusion: |
+  <p>
+    The CNode class is Bitcoin's window to the world. Each instance represents
+    a relationship with another participant in the network—a relationship built
+    on mutual verification rather than trust. The careful tracking of what each
+    peer knows, the rate-limited requests, the gossip protocols for addresses
+    and inventory—all work together to create a resilient network where no
+    single point of failure can bring down the system.
+  </p>
+  <p>
+    Satoshi's protocol design shows deep understanding of distributed systems.
+    The pull-based model (inv/getdata) prevents spam. The peer address gossip
+    enables organic network growth. The version handshake allows protocol
+    evolution. These patterns have proven robust: Bitcoin's peer-to-peer
+    layer has operated continuously since January 2009, surviving attacks,
+    bugs, and massive growth.
+  </p>
+  <p>
+    The unused marketplace code (MSG_PRODUCT, MSG_REVIEW, pub/sub) reveals
+    a broader vision that Satoshi ultimately didn't pursue. Bitcoin became
+    focused as a currency and settlement layer, with commerce applications
+    built on top rather than integrated into the base protocol. But these
+    remnants show Satoshi thinking beyond simple value transfer.
+  </p>

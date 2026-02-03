@@ -1,0 +1,30 @@
+# Annotation for uibase.cpp - UI Base Classes
+file: "uibase.cpp"
+
+title: "The Skeleton of the Interface"
+
+introduction: |
+  <p>
+    Auto-generated code from wxFormBuilder that defines the base GUI
+    classes. This code creates the actual windows, buttons, and text
+    fields that make up the Bitcoin interface.
+  </p>
+
+annotations:
+  - line: 10
+    type: margin
+    text: "CMainFrameBase - the main window layout"
+
+  - line: 100
+    type: margin
+    text: "Transaction list and status bar setup"
+
+  - line: 200
+    type: margin
+    text: "Dialog base classes for send/receive"
+
+conclusion: |
+  <p>
+    Satoshi used wxFormBuilder to visually design the interface, which
+    then generated this code automatically.
+  </p>

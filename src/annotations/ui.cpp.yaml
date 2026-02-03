@@ -1,0 +1,31 @@
+# Annotation for ui.cpp - User Interface Logic
+file: "ui.cpp"
+
+title: "The Face of Bitcoin"
+
+introduction: |
+  <p>
+    The original Bitcoin client had a graphical user interface built
+    with wxWidgets. This file contains the logic behind the GUI—handling
+    button clicks, updating displays, and managing user interactions.
+  </p>
+
+annotations:
+  - line: 268
+    type: margin
+    text: "CMainFrame constructor - initializes the main window"
+
+  - line: 432
+    type: margin
+    text: "InsertTransaction - displays a transaction in the list"
+
+  - line: 621
+    type: margin
+    text: "RefreshStatus - updates balance and connection status"
+
+conclusion: |
+  <p>
+    Every dialog box, every status update, every user action flows
+    through this code. It's where the abstract blockchain meets the
+    human user.
+  </p>

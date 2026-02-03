@@ -1,0 +1,106 @@
+# Annotation for serialize.h - Data Serialization
+file: "serialize.h"
+
+title: "Speaking in Bytes"
+
+introduction: |
+  <p>
+    For Bitcoin nodes to communicate, they need a common language for encoding
+    data. This file defines Bitcoin's serialization system—the binary format
+    for transactions, blocks, and network messages. At 39KB, it's one of the
+    largest files in v0.1, reflecting the complexity of making C++ objects
+    into portable byte streams.
+  </p>
+  <p>
+    Satoshi designed a custom format optimized for compactness. Variable-length
+    integers ("CompactSize") save bytes for common small values. The format is
+    deterministic: same data always produces same bytes, critical for hashing.
+    Without determinism, two nodes serializing the same transaction could compute
+    different hashes—catastrophic for consensus.
+  </p>
+  <p>
+    The ingenious <code>IMPLEMENT_SERIALIZE</code> macro is a masterclass in C++
+    metaprogramming. You write the serialization logic once, and the macro
+    generates three functions: one to calculate size, one to write bytes, one
+    to read bytes. The same code handles both directions, eliminating the bugs
+    that plague separate encode/decode implementations.
+  </p>
+  <p>
+    This serialization format is now a de facto standard. Every Bitcoin
+    implementation—in C++, Rust, Go, Python, JavaScript—must match it exactly.
+    A single byte difference causes consensus failure. The format hasn't changed
+    since v0.1—testament to Satoshi's foresight in designing for permanence.
+  </p>
+
+annotations:
+  - line: 22
+    type: margin
+    text: "<code class=\"constant\">VERSION = 101</code>—the protocol version embedded in serialized data. This allows format evolution: when reading old data, code can handle legacy formats. Version 101 is v0.1.0 (first digit is major, last two are minor). This version is included in network messages and stored data for compatibility checking."
+
+  - line: 34
+    type: margin
+    text: "Serialization context flags. <code class=\"constant\">SER_NETWORK</code> means data going over the wire—includes all fields. <code class=\"constant\">SER_DISK</code> means local storage—may include extra metadata. <code class=\"constant\">SER_GETHASH</code> means computing a hash—excludes signatures (for txid calculation). The modifier <code class=\"constant\">SER_SKIPSIG</code> omits signatures; <code class=\"constant\">SER_BLOCKHEADERONLY</code> serializes just the 80-byte header without transactions."
+
+  - line: 46
+    type: margin
+    text: "<code class=\"macro\">IMPLEMENT_SERIALIZE</code>—the heart of Bitcoin's serialization. This macro generates three methods from one block of statements: (1) <code class=\"function\">GetSerializeSize()</code> counts bytes without writing, (2) <code class=\"function\">Serialize()</code> writes to a stream, (3) <code class=\"function\">Unserialize()</code> reads from a stream. The magic is in the boolean flags (<code class=\"variable\">fGetSize</code>, <code class=\"variable\">fWrite</code>, <code class=\"variable\">fRead</code>) and the <code class=\"macro\">READWRITE</code> macro that checks them."
+
+  - line: 54
+    type: margin
+    text: "<code class=\"class\">ser_streamplaceholder</code>—a dummy stream for size calculation. When counting bytes, we don't need an actual output buffer. This placeholder satisfies the template but does nothing. The <code class=\"variable\">nType</code> and <code class=\"variable\">nVersion</code> are passed through for context-aware sizing (e.g., different versions might serialize differently)."
+
+  - line: 81
+    type: margin
+    text: "<code class=\"macro\">READWRITE(obj)</code>—the polymorphic serialization operator. Despite its name, it does three things depending on context: calculates size, writes, or reads. The <code class=\"function\">::SerReadWrite()</code> function dispatches based on <code class=\"variable\">ser_action</code>'s type. This single macro handles integers, strings, vectors, maps, and any custom type with <code class=\"macro\">IMPLEMENT_SERIALIZE</code>. The elegance: you write <code>READWRITE(nVersion); READWRITE(vTxIn); READWRITE(vTxOut);</code> and it just works for all three operations."
+
+  - line: 91
+    type: margin
+    text: "Raw data macros: <code class=\"macro\">WRITEDATA</code> and <code class=\"macro\">READDATA</code>. These directly read/write bytes without interpretation. Used for primitive types where the in-memory representation matches the serialized format. The <code>(char*)&(obj)</code> cast gets a byte pointer; <code>sizeof(obj)</code> determines how many bytes. No endianness conversion—Bitcoin uses native byte order (usually little-endian on modern hardware)."
+
+  - line: 94
+    type: margin
+    text: "Primitive type serialization—overloaded for every basic type. Each <code class=\"function\">GetSerializeSize()</code> returns <code>sizeof(type)</code>; each <code class=\"function\">Serialize()</code> calls <code class=\"macro\">WRITEDATA</code>; each <code class=\"function\">Unserialize()</code> calls <code class=\"macro\">READDATA</code>. The repetitive overloads ensure type safety: the compiler selects the right version based on argument type. This is verbose but explicit—no surprises about how data is encoded."
+
+  - line: 136
+    type: margin
+    text: "Boolean serialization—stored as a single byte. Note: <code>true</code> becomes <code>1</code>, <code>false</code> becomes <code>0</code>. When reading, any non-zero byte becomes <code>true</code>. This matches C's truthiness convention but means serialized bools are always <code>0x00</code> or <code>0x01</code>—never garbage values. Important for deterministic serialization."
+
+  - line: 145
+    type: margin
+    text: "CompactSize format—Satoshi's comment explains the encoding. Most values in Bitcoin are small: transaction input counts, output counts, script lengths. Using 4 bytes for a count that's usually 1-10 wastes space. CompactSize uses 1 byte for values 0-252, growing only when needed. This saves millions of bytes across the blockchain."
+
+  - line: 152
+    type: margin
+    text: "<code class=\"function\">GetSizeOfCompactSize()</code>—returns how many bytes a CompactSize will occupy. Essential for pre-calculating buffer sizes. The thresholds: <253 uses 1 byte, <65536 uses 3 bytes (marker + 2-byte value), <4 billion uses 5 bytes, larger uses 9 bytes. Most transaction data stays in the 1-byte range."
+
+  - line: 161
+    type: margin
+    text: "<code class=\"function\">WriteCompactSize()</code>—encodes an integer in minimum bytes. The marker bytes <code>253</code>, <code>254</code>, <code>255</code> signal 'next 2/4/8 bytes contain the actual value.' This self-describing format means you can parse without external length information. Example: the number 500 serializes as <code>0xFD 0xF4 0x01</code> (<code>253</code> marker, then 500 in little-endian)."
+
+  - line: 191
+    type: margin
+    text: "<code class=\"function\">ReadCompactSize()</code>—decodes a CompactSize integer. Reads one byte; if <code>&lt;253</code>, that's the value. If <code>253</code>/<code>254</code>/<code>255</code>, reads 2/4/8 more bytes for the actual value. The return type is <code>uint64</code>—large enough for any CompactSize. Callers typically cast to appropriate smaller types after validation."
+
+conclusion: |
+  <p>
+    The serialization format is consensus-critical. If two nodes serialize
+    differently, they'll compute different transaction/block hashes and fork.
+    Satoshi's IMPLEMENT_SERIALIZE macro ensures consistency: one definition,
+    no chance for read/write mismatch. This design pattern has prevented
+    countless potential bugs.
+  </p>
+  <p>
+    The format's success lies in its simplicity and stability. No schema
+    versioning complexity (version number is inline), no compression (bytes
+    are bytes), no encryption at this layer. Just raw, deterministic encoding.
+    Every alternative cryptocurrency that uses Bitcoin's code inherits this
+    format—it's become the Rosetta Stone of blockchain data.
+  </p>
+  <p>
+    The CompactSize encoding deserves recognition as elegant engineering.
+    Most blockchain data involves small counts (typically 1-3 inputs/outputs),
+    so optimizing for small values saves significant space. Across millions
+    of transactions, these byte savings compound into gigabytes of reduced
+    blockchain size. Satoshi optimized for the common case while gracefully
+    handling the rare large values.
+  </p>

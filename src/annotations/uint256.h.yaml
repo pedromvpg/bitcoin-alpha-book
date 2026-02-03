@@ -1,0 +1,152 @@
+# Annotation for uint256.h - 256-bit Integers
+file: "uint256.h"
+
+title: "Numbers Beyond Imagination"
+
+introduction: |
+  <p>
+    Standard computers work with 32-bit or 64-bit integers, but Bitcoin needs
+    256-bit numbers. This file implements <code>uint256</code>—a custom 256-bit
+    unsigned integer type that can represent numbers up to 2^256 - 1. That's
+    approximately 10^77, a number so vast it exceeds the estimated atoms in the
+    observable universe by many orders of magnitude.
+  </p>
+  <p>
+    Every SHA-256 hash is a uint256. Every transaction ID is a uint256. Every
+    block hash is a uint256. Every private key is conceptually a uint256 (though
+    stored differently). This type is the atomic unit of Bitcoin's cryptographic
+    identity—the "DNA" that makes every transaction unique and every block
+    identifiable.
+  </p>
+  <p>
+    The implementation stores 256 bits as an array of eight 32-bit words (or four
+    64-bit words on 64-bit systems). Arithmetic operations—addition, subtraction,
+    comparison, bit shifting—are implemented by operating across these words with
+    proper carry/borrow handling. It's essentially reimplementing grade-school
+    arithmetic for numbers too big for the processor to handle natively.
+  </p>
+  <p>
+    Also defined here is <code>uint160</code>, a 160-bit integer used for Bitcoin
+    addresses. The address derivation process (RIPEMD160(SHA256(pubkey))) produces
+    160 bits. The shorter length was a deliberate trade-off: addresses are 27-34
+    characters instead of ~64, making them more human-manageable while still
+    providing 2^80 security against collision attacks (via the birthday paradox).
+  </p>
+
+annotations:
+  - line: 8
+    type: margin
+    text: "Portable 64-bit integer definitions. In 2009, C++ didn't have standardized 64-bit types (<code>int64_t</code> came with C++11). This code detects the compiler (MSVC vs GCC) and uses the appropriate type. Modern Bitcoin uses <code>&lt;cstdint&gt;</code>, but this worked across Windows and Linux compilers of the era."
+
+  - line: 15
+    type: margin
+    text: "MSVC 6.0 compatibility hack: <code>#define for if(false);else for</code>. Ancient Visual C++ had a bug where variables declared in <code>for</code>-loop initializers leaked into the enclosing scope. This macro forces standard behavior. Satoshi supported very old compilers—Bitcoin needed to run on whatever machines people had."
+
+  - line: 23
+    type: margin
+    text: "Satoshi's comment explains a C++ subtlety: 'We have to keep a separate base class without constructors so the compiler will let us use it in a union.' C++ unions can't contain members with non-trivial constructors (pre-C++11). By keeping base_uint constructor-free, it can be used in unions elsewhere in the codebase. The derived uint160/uint256 classes add constructors."
+
+  - line: 26
+    type: margin
+    text: "<code class=\"class\">base_uint</code>—template foundation for large integers. The template parameter <code>BITS</code> specifies the size (160 or 256). <code class=\"constant\">WIDTH</code> calculates how many 32-bit words are needed: 256/32 = 8 words. The <code class=\"variable\">pn[]</code> array stores these words in little-endian order (least significant word first). This simplifies carry propagation in arithmetic."
+
+  - line: 33
+    type: margin
+    text: "<code class=\"function\">operator!()</code>—tests if the value is zero. Iterates through all words; if any is non-zero, returns <code>false</code>. Used in boolean contexts: <code>if (!hash)</code> checks for the all-zeros hash, which indicates 'no parent' in the genesis block's <code class=\"variable\">prevhash</code> field."
+
+  - line: 41
+    type: margin
+    text: "<code class=\"function\">operator~()</code>—bitwise NOT (complement). Flips every bit. Used in difficulty calculations: the compact difficulty format encodes targets, and some calculations need inverted values. Each word is independently complemented."
+
+  - line: 49
+    type: margin
+    text: "<code class=\"function\">operator-()</code>—unary negation (two's complement). Computes the additive inverse: <code>-x</code> such that <code>x + (-x) = 0</code>. Implemented as bitwise NOT plus one (<code>~x + 1</code>), the standard two's complement formula. The increment handles the carry across all 8 words correctly."
+
+  - line: 59
+    type: margin
+    text: "<code class=\"function\">operator=(uint64)</code>—assigns a 64-bit value. The low two words get the value (split into low and high 32 bits); remaining words are zeroed. This is the most common initialization: <code>uint256 hash = 0</code> creates an all-zeros hash."
+
+  - line: 110
+    type: margin
+    text: "<code class=\"function\">operator&lt;&lt;=()</code>—left bit shift. Shifts the entire 256-bit value left by <code class=\"variable\">shift</code> positions. The implementation handles cross-word shifts: if shifting by 40 bits, some bits move from word 0 to word 1, others from word 1 to word 2. The calculation <code>k = shift / 32</code> gives whole-word shift; <code>shift % 32</code> gives within-word shift. Critical for difficulty adjustments and halving calculations."
+
+  - line: 127
+    type: margin
+    text: "<code class=\"function\">operator&gt;&gt;=()</code>—right bit shift. The mirror of left shift, used in the halving formula: <code>nSubsidy >>= (nBestHeight / 210000)</code> divides the block reward by 2 for each halving era. Each right shift by 1 is equivalent to integer division by 2."
+
+  - line: 144
+    type: margin
+    text: "<code class=\"function\">operator+=()</code>—addition with carry propagation. This is grade-school addition scaled to 256 bits. For each word pair, add plus incoming carry, store low 32 bits as result, carry the high bits to the next word. The <code>uint64</code> temporary naturally captures the 33-bit intermediate result. Used in address derivation and difficulty calculations."
+
+  - line: 179
+    type: margin
+    text: "<code class=\"function\">operator++()</code>—prefix increment. The elegant implementation: increment word 0; if it wrapped to 0 (overflow), increment word 1; repeat. The <code>while (++pn[i] == 0)</code> chain handles the carry propagation. Used when iterating through nonces during mining: <code>++block.nNonce</code>."
+
+  - line: 214
+    type: margin
+    text: "<code class=\"function\">operator&lt;()</code>—less-than comparison. Compares from most significant word down. This is the core of proof-of-work validation: <code>hash <= target</code> checks if a block hash is 'small enough' to meet difficulty. The first non-equal word determines the result. If all words are equal, returns <code>false</code> (not strictly less than)."
+
+  - line: 262
+    type: margin
+    text: "<code class=\"function\">operator==()</code>—equality comparison. Compares all words; if any differ, returns <code>false</code>. Used to check for specific hashes: <code>if (hash == hashGenesisBlock)</code> identifies the genesis block. Note this is a bitwise comparison—there's no concept of 'approximately equal' for cryptographic hashes."
+
+  - line: 294
+    type: margin
+    text: "<code class=\"function\">GetHex()</code>—converts to hexadecimal string. Transaction IDs, block hashes, and addresses are typically displayed as hex. The loop iterates backward through bytes (big-endian display convention) and formats each as two hex digits. The 64-character result is how you see txids in block explorers."
+
+  - line: 302
+    type: margin
+    text: "<code class=\"function\">SetHex()</code>—parses hexadecimal string. The inverse of <code class=\"function\">GetHex()</code>: takes a string like <code>'000000000019d6...'</code> and populates the <code class=\"class\">uint256</code>. Handles optional <code>0x</code> prefix and leading whitespace. The <code>phexdigit[]</code> lookup table provides fast hex-to-value conversion. Used when loading hardcoded hashes (like genesis block) from source code."
+
+  - line: 356
+    type: margin
+    text: "Serialization methods: <code class=\"function\">GetSerializeSize()</code>, <code class=\"function\">Serialize()</code>, <code class=\"function\">Unserialize()</code>. These integrate with Bitcoin's serialization framework (serialize.h). A <code class=\"class\">uint256</code> serializes as exactly 32 bytes (256 bits), raw binary, little-endian. This is how hashes are stored on disk and transmitted over the network—no formatting overhead."
+
+  - line: 379
+    type: margin
+    text: "Typedefs: <code class=\"class\">base_uint160</code> and <code class=\"class\">base_uint256</code>. These instantiate the template at 160 and 256 bits. The actual <code class=\"class\">uint160</code>/<code class=\"class\">uint256</code> classes inherit from these, adding constructors. This two-level hierarchy satisfies C++ union requirements (base class has no constructors) while providing convenient construction syntax."
+
+  - line: 384
+    type: margin
+    text: "Satoshi's comment on the duplicate code: 'uint160 and uint256 could be implemented as templates, but to keep compile errors and debugging cleaner, they're copy and pasted.' Pragmatic engineering over theoretical purity. Debugging template instantiation errors was even harder in 2009 compilers."
+
+  - line: 397
+    type: margin
+    text: "<code class=\"class\">uint160</code>—160-bit integer for address hashes. Bitcoin addresses are RIPEMD160(SHA256(pubkey)), producing 160 bits. Why not 256? Shorter addresses are more usable (27-34 characters vs ~64). The security is still 2^80 against birthday attacks—far beyond brute-forceable. Every 'hash160' in Bitcoin's script system is this type."
+
+  - line: 509
+    type: margin
+    text: "<code class=\"class\">uint256</code>—256-bit integer for hashes. The workhorse of Bitcoin: block hashes, transaction hashes, merkle roots, difficulty targets, private keys (conceptually). Every SHA-256 result is a uint256. The choice of 256 bits matches modern cryptographic standards and provides a massive security margin."
+
+  - line: 562
+    type: margin
+    text: "Free-standing operators for <code class=\"class\">uint256</code>. C++ requires these for mixed expressions like <code>hash + 1</code> where the <code class=\"class\">uint256</code> is on the left and a native integer on the right. Each is implemented in terms of the compound assignment operators, keeping code DRY while providing intuitive arithmetic syntax."
+
+  - line: 622
+    type: margin
+    text: "<code class=\"function\">Testuint256AdHoc()</code>—Satoshi's test/debugging code. This function exercises the <code class=\"class\">uint256</code> implementation with various operations: increment, decrement, shifts, hex parsing. It prints results for manual verification. The code was left in the release—evidence that Satoshi tested thoroughly before shipping. Modern Bitcoin has proper unit tests, but this served its purpose in 2009."
+
+conclusion: |
+  <p>
+    The uint256 type is Bitcoin's cryptographic primitive. It represents numbers
+    in a space so vast that randomly generated values will never collide—the
+    probability of two random uint256s being equal is about 1 in 10^77, far less
+    than the chance of any conceivable event. This is why Bitcoin can use hashes
+    as unique identifiers without a central registry: cryptographic randomness
+    guarantees uniqueness.
+  </p>
+  <p>
+    The implementation is straightforward but careful. Grade-school arithmetic
+    scaled to 256 bits, with proper carry handling and efficient word-at-a-time
+    comparisons. The code prioritizes correctness over micro-optimization—these
+    operations aren't in the critical path (mining uses specialized SHA256 code).
+    What matters is that the arithmetic is provably correct, because wrong results
+    could cause consensus failures or security vulnerabilities.
+  </p>
+  <p>
+    The uint160 for addresses represents an interesting design decision. Satoshi
+    could have used full 256-bit hashes for addresses (as some later cryptocurrencies
+    did), but 160 bits provides a better user experience with shorter addresses
+    while maintaining enormous security margins. The birthday attack bound of 2^80
+    is still astronomically secure—no one can find colliding addresses.
+  </p>

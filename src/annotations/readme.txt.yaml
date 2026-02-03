@@ -1,0 +1,30 @@
+# Annotation for readme.txt - Original Readme
+file: "readme.txt"
+
+title: "Satoshi's Instructions"
+
+introduction: |
+  <p>
+    The original readme file included with Bitcoin v0.01. This document
+    provides Satoshi's own description of what Bitcoin is and how to
+    use it—a fascinating primary source from the birth of cryptocurrency.
+  </p>
+
+annotations:
+  - line: 1
+    type: margin
+    text: "v0.01 ALPHA - the very first public release"
+
+  - line: 17
+    type: margin
+    text: "Dependencies - wxWidgets, OpenSSL, Berkeley DB, Boost"
+
+  - line: 36
+    type: margin
+    text: "Bitcoin does not use encryption - only digital signatures"
+
+conclusion: |
+  <p>
+    This readme is a historical artifact documenting how to build
+    Bitcoin in its earliest days, when it ran only on Windows.
+  </p>

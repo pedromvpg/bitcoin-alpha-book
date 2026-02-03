@@ -1,0 +1,26 @@
+{
+  "name": "bitcoin-alpha-book",
+  "version": "1.0.0",
+  "description": "Bitcoin v0.01 Alpha source code book with annotations",
+  "type": "module",
+  "scripts": {
+    "fetch": "node scripts/fetch-source.js",
+    "build": "node scripts/build.js",
+    "preview": "node scripts/preview.js",
+    "pdf": "node scripts/generate-pdf.js",
+    "test": "node scripts/test-index.js",
+    "test:index": "node scripts/test-index.js",
+    "debug:index": "node scripts/debug-index-pages.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.10",
+    "express": "^4.18.2",
+    "js-yaml": "^4.1.0",
+    "pagedjs": "^0.4.3",
+    "prismjs": "^1.29.0",
+    "puppeteer": "^21.11.0"
+  },
+  "devDependencies": {
+    "open": "^10.0.0"
+  }
+}

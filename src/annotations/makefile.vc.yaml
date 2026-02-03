@@ -1,0 +1,30 @@
+# Annotation for makefile.vc - Build Configuration (Windows)
+file: "makefile.vc"
+
+title: "Assembly Required (Windows)"
+
+introduction: |
+  <p>
+    This makefile builds Bitcoin using Microsoft Visual C++. It's
+    functionally equivalent to the Unix makefile but uses Windows-specific
+    paths and compiler options.
+  </p>
+
+annotations:
+  - line: 9
+    type: margin
+    text: "Debug configuration with symbols and WXDEBUG"
+
+  - line: 16
+    type: margin
+    text: "Windows include paths for dependencies"
+
+  - line: 29
+    type: margin
+    text: "Build target - produces bitcoin.exe"
+
+conclusion: |
+  <p>
+    Satoshi initially developed Bitcoin on Windows, so Windows support
+    was a priority from the very first release.
+  </p>

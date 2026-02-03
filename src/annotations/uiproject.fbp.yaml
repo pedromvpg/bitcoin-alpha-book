@@ -1,0 +1,147 @@
+# Annotation for uiproject.fbp - wxFormBuilder Project
+file: "uiproject.fbp"
+
+title: "The Interface Satoshi Built"
+
+introduction: |
+  <p>
+    This is the blueprint for Bitcoin's original graphical interface—not code,
+    but a visual design file created with <strong>wxFormBuilder</strong>, a
+    drag-and-drop GUI designer for wxWidgets applications. Satoshi didn't just
+    write a protocol; he designed an application that regular people could use.
+  </p>
+  <p>
+    The XML you see here defines every button, menu, text field, and dialog
+    that made up the Bitcoin v0.1 experience on Windows. wxFormBuilder would
+    read this file and generate the corresponding C++ code (<code>uibase.cpp</code>
+    and <code>uibase.h</code>), which Satoshi then extended with Bitcoin-specific
+    logic in <code>ui.cpp</code>.
+  </p>
+  <p>
+    What's remarkable is how <em>complete</em> the interface was from day one:
+    a main window with balance display, transaction history, address book,
+    send/receive dialogs, and even a "Generate Coins" menu option for CPU mining.
+    This wasn't a command-line tool for cryptographers—it was software designed
+    for a future where ordinary people would send digital cash to each other.
+  </p>
+  <p>
+    The design decisions embedded here reveal Satoshi's thinking about usability:
+    the prominent display of "Your Bitcoin Address," the simple Send Coins flow,
+    the transaction fee as an optional setting. Some features hint at plans that
+    never fully materialized—like sending coins directly to IP addresses for
+    "online transfer with comments and confirmation."
+  </p>
+
+annotations:
+  - line: 38
+    text: |
+      <p>
+        <strong>The window title: simply "Bitcoin."</strong> No version number,
+        no company branding, no "Wallet" or "Client" suffix. Just the name of
+        something that didn't exist before January 2009. This title would appear
+        in the Windows taskbar as users ran the first cryptocurrency software.
+      </p>
+
+  - line: 35
+    text: |
+      <p>
+        <strong>705 x 484 pixels</strong>—the exact dimensions Satoshi chose for
+        the main window. This modest size reflects the era: most users had
+        1024x768 monitors, and applications weren't expected to fill the screen.
+        The Bitcoin window was meant to sit alongside other programs, quietly
+        processing transactions.
+      </p>
+
+  - line: 146
+    text: |
+      <p>
+        <strong>The mining toggle, hidden in plain sight.</strong> Under Options →
+        "Generate Coins" was a simple checkbox that turned your computer into a
+        Bitcoin miner. In 2009, a regular CPU could find blocks—there were no
+        GPUs, no ASICs, no mining pools. Check this box, and your PC would start
+        hashing, competing for the 50 BTC block reward. The menu ID
+        <code>wxID_OPTIONSGENERATEBITCOINS</code> is one of Bitcoin's most
+        historically significant UI elements.
+      </p>
+
+  - line: 241
+    text: |
+      <p>
+        <strong>The Send Coins toolbar button.</strong> The <code>send20</code>
+        bitmap (a 20x20 pixel icon from the <code>rc/</code> resources) made
+        sending money as simple as clicking an arrow. This toolbar—Send Coins,
+        Address Book—established the basic wallet interface pattern that every
+        Bitcoin wallet would follow for the next 15+ years.
+      </p>
+
+  - line: 350
+    text: |
+      <p>
+        <strong>"Your Bitcoin Address:"</strong>—displayed prominently at the top
+        of the main window. Satoshi understood that the address was the key
+        concept users needed to grasp: this is where people send you money.
+        The label's placement shows a focus on receiving payments, suggesting
+        Satoshi imagined Bitcoin primarily as a payment system.
+      </p>
+
+  - line: 632
+    text: |
+      <p>
+        <strong>The Balance display.</strong> Just a simple label showing your
+        total bitcoin holdings. No USD conversion, no portfolio tracking, no
+        price charts—those would come later as Bitcoin gained market value.
+        In 2009, the balance was just a number of coins with no established
+        exchange rate.
+      </p>
+
+  - line: 840
+    text: |
+      <p>
+        <strong>"All Transactions" tab.</strong> Every send, receive, and
+        generated block appeared here in a scrolling list. This was your complete
+        financial history on the Bitcoin network, stored locally in your
+        wallet.dat file. The transaction list paradigm—showing debits and
+        credits chronologically—borrowed from familiar banking interfaces.
+      </p>
+
+  - line: 1801
+    text: |
+      <p>
+        <strong>Transaction fee configuration.</strong> Even in v0.1, Satoshi
+        included optional transaction fees—described as money "you give to the
+        nodes that process your transactions." Fees were optional because blocks
+        weren't full yet. The setting reveals foresight: Satoshi knew that
+        eventually block space would become scarce and fees would matter.
+      </p>
+
+  - line: 2479
+    text: |
+      <p>
+        <strong>Two ways to send: IP address or Bitcoin address.</strong> This
+        instruction text reveals a forgotten feature: you could send coins
+        directly to someone's IP address for "online transfer with comments and
+        confirmation." This peer-to-peer mode allowed sender and receiver to
+        exchange messages and required both parties to be online. It was removed
+        in later versions due to security concerns, but shows Satoshi's original
+        vision of interactive payments.
+      </p>
+
+  - line: 3771
+    text: |
+      <p>
+        <strong>Privacy through multiple addresses.</strong> "You may want to
+        give a different one to each sender so you can keep track of who is
+        paying you." This seemingly simple advice encodes a key privacy practice:
+        address reuse makes transactions linkable. Satoshi built address generation
+        into the UI from day one, encouraging users to create fresh addresses—
+        a privacy feature that remains best practice today.
+      </p>
+
+conclusion: |
+  <p>
+    Opening <code>uiproject.fbp</code> in wxFormBuilder today is like
+    archaeological excavation—you can see exactly how Satoshi laid out every
+    pixel of the original Bitcoin experience. The choices made here influenced
+    every wallet that followed: the address display, the send dialog, the
+    transaction list. This XML file is where cryptocurrency user experience began.
+  </p>

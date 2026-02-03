@@ -1,0 +1,44 @@
+# Annotation for rc/ - Resource Files (Icons and Bitmaps)
+file: "rc"
+
+title: "The Original Bitcoin Logo"
+
+introduction: |
+  <p>
+    Before there was the orange "₿" symbol recognized worldwide, there was this—
+    Satoshi's original Bitcoin logo, buried in a Windows resource directory. These
+    icons and bitmaps shipped with v0.1, appearing in the Windows GUI that most
+    early users experienced. The design is notably different from the stylized "B"
+    that would later become synonymous with Bitcoin.
+  </p>
+  <p>
+    The main <code>bitcoin.ico</code> is a Windows multi-resolution icon containing
+    16x16, 32x32, and 48x48 pixel versions—standard practice for Windows applications
+    of the era. The icon shows a gold coin with "BC" lettering, reflecting the
+    "digital gold" concept Satoshi frequently invoked. This logo appears to be
+    Satoshi's own creation.
+  </p>
+  <p>
+    The toolbar bitmap files (<code>.bmp</code>) were used in the wxWidgets GUI:
+    address book icons for managing contacts, and send arrows for the payment
+    interface. These may have been sourced from standard icon sets common in
+    Windows development at the time. The "mask" files define transparency—a
+    technique from early Windows GUI development before PNG transparency became standard.
+  </p>
+  <p>
+    In February 2010, a forum user named "Sirius" created the now-iconic orange ₿
+    logo with the tilted "B" and two vertical strokes. Satoshi approved: "I'm not
+    good with graphics... that looks great." The community adopted it, but these
+    original icons remain as artifacts of Bitcoin's earliest visual identity—
+    assembled by its pseudonymous creator before the world knew what Bitcoin would become.
+  </p>
+
+conclusion: |
+  <p>
+    These resource files represent Satoshi's complete vision: not just the
+    cryptographic protocol, but a usable application with icons, buttons, and
+    visual identity. Whether custom-made or sourced from icon libraries, they
+    show Satoshi was building software for real people, not just publishing
+    academic theory. The gold "BC" coin—Bitcoin's first logo—remains an artifact
+    of the project's bootstrapped origins.
+  </p>

@@ -1,0 +1,292 @@
+/**
+ * Print Styles for Bitcoin Alpha Book
+ * Target: 7" x 10" (Executive) - Perfect Bound Paperback
+ * 
+ * Print specifications:
+ * - Trim size: 7" x 10" (178mm x 254mm)
+ * - Bleed: 0.125" (3.175mm) - if needed for full-bleed elements
+ * - Safe zone: 0.25" (6.35mm) from trim
+ * - Gutter (binding side): 0.5" minimum for perfect binding
+ */
+
+/* ============================================
+   PAGE SETUP
+   ============================================ */
+
+@page {
+  size: 7in 10in;
+  margin: 0.85in 0.625in 0.75in 0.875in; /* top right bottom left (gutter) */
+  
+  /* Page number - centered at bottom */
+  @bottom-center {
+    content: counter(page);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8pt;
+    color: #333;
+  }
+}
+
+/* Left pages (verso) - gutter on right */
+@page :left {
+  margin: 0.85in 0.875in 0.75in 0.625in;
+  
+  @top-left {
+    content: string(current-section, first);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7pt;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  @top-center {
+    content: none;
+  }
+  
+  @bottom-left {
+    content: counter(page);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8pt;
+    color: #333;
+  }
+  
+  @bottom-center {
+    content: none;
+  }
+}
+
+/* Right pages (recto) - gutter on left */
+@page :right {
+  margin: 0.85in 0.625in 0.75in 0.875in;
+  
+  @top-right {
+    content: 'BITCOIN v0.01 ALPHA';
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 7pt;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  @top-center {
+    content: none;
+  }
+  
+  @bottom-right {
+    content: counter(page);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8pt;
+    color: #333;
+  }
+  
+  @bottom-center {
+    content: none;
+  }
+}
+
+/* Note: Headers handled by default :left and :right page rules */
+
+/* Title page - no headers or footers */
+@page title-page {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+  @bottom-center { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+/* Dedication page - no headers or footers */
+@page dedication-page {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+  @bottom-center { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+/* Blank page - no headers or footers */
+@page blank-page {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+  @bottom-center { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+@page acknowledgments-page {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+  @bottom-center { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+/* Table of contents - no header on first page */
+@page toc-page {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+}
+
+/* Introduction section */
+@page intro-page {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+}
+
+/* Concepts section */
+@page concepts-page {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+}
+
+/* Cryptography primer section */
+@page crypto-page {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+}
+
+/* C++ primer section */
+@page cpp-page {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+}
+
+/* Index section */
+@page index-page:first {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+}
+
+/* ============================================
+   PAGE BREAKS
+   ============================================ */
+
+/* Each source file starts on a right-hand (odd) page */
+.chapter {
+  break-before: right;
+}
+
+.chapter:first-of-type {
+  break-before: right;
+}
+
+/* Title page */
+.title-page {
+  page: title-page;
+}
+
+/* TOC */
+.toc {
+  page: toc-page;
+  break-before: right;
+}
+
+/* Prevent widows and orphans */
+p, .code-line {
+  orphans: 3;
+  widows: 3;
+}
+
+/* Keep code blocks together when possible */
+.code-block {
+  break-inside: avoid;
+}
+
+/* But allow breaks for long code blocks */
+.code-block.allow-break {
+  break-inside: auto;
+}
+
+/* Keep annotations with their code */
+.annotation-block {
+  break-inside: avoid;
+  break-after: avoid;
+}
+
+/* Keep function headers with their first few lines */
+.function-start {
+  break-after: avoid;
+}
+
+/* ============================================
+   PRINT OPTIMIZATIONS
+   ============================================ */
+
+/* Ensure crisp rendering */
+* {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  color-adjust: exact !important;
+}
+
+/* Remove screen-only elements */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Ensure links don't show URLs */
+  a[href]:after {
+    content: none !important;
+  }
+}
+
+/* ============================================
+   NAMED STRINGS FOR HEADERS
+   ============================================ */
+
+.section-title {
+  string-set: section-title content();
+}
+
+.chapter-title {
+  string-set: chapter-title content();
+}
+
+/* Set running header from any chapter title h1 */
+h1.chapter-title {
+  string-set: current-section content();
+}
+
+/* ============================================
+   CONTENT AREA CALCULATIONS
+   ============================================ */
+
+/* 
+ * With 7" x 10" page and margins:
+ * - Top: 0.75"
+ * - Bottom: 0.75"  
+ * - Inside (gutter): 0.875"
+ * - Outside: 0.625"
+ * 
+ * Content width: 7" - 0.875" - 0.625" = 5.5"
+ * Content height: 10" - 0.75" - 0.75" = 8.5"
+ * 
+ * At 9pt code font (~12 chars/inch), we get ~66 chars per line
+ * At ~14pt line height, we get ~52 lines per page
+ */
+
+:root {
+  --page-width: 7in;
+  --page-height: 10in;
+  --content-width: 5.5in;
+  --content-height: 8.5in;
+  --gutter: 0.875in;
+  --outer-margin: 0.625in;
+  --top-margin: 0.75in;
+  --bottom-margin: 0.75in;
+  
+  /* Code layout */
+  --code-chars-per-line: 66;
+  --code-lines-per-page: 52;
+}

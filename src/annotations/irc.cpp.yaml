@@ -1,0 +1,76 @@
+# Annotation for irc.cpp - IRC Bootstrap
+file: "irc.cpp"
+
+title: "Finding Friends in the Dark"
+
+introduction: |
+  <p>
+    How does a new Bitcoin node find other nodes to connect to? This is the
+    "bootstrap problem"—a chicken-and-egg dilemma that every peer-to-peer network
+    faces. Satoshi's clever solution: use IRC (Internet Relay Chat), a protocol
+    from 1988 that was already running on well-known, stable servers worldwide.
+  </p>
+  <p>
+    The mechanism is elegant in its simplicity: Bitcoin nodes connect to
+    irc.lfnet.org, join channel <code>#bitcoin</code>, and encode their IP
+    address in their IRC nickname. By requesting the WHO list, any node can
+    discover peers. No central Bitcoin server needed—just parasitic use of
+    existing infrastructure.
+  </p>
+  <p>
+    Satoshi on this design (BitcoinTalk, 2010): "We only needed IRC because nobody
+    had a static IP. In the early days there were some steady supporters, but they
+    all had pool-allocated IPs that change every few days. IRC was only intended
+    as a temporary solution." He added: "Bitcoin's built-in addr system is the
+    main solution" and "We don't want to overstay our welcome. If we get too
+    big...we'll get off."
+  </p>
+  <p>
+    This code reveals Satoshi's pragmatism: rather than building custom infrastructure,
+    he leveraged what already existed. IRC servers were free, reliable, and firewall-
+    friendly (port 6667 was commonly allowed). The temporary solution worked perfectly
+    for Bitcoin's first four years until the network was large enough that addr
+    propagation alone sufficed for peer discovery.
+  </p>
+
+annotations:
+  - line: 99
+    type: margin
+    text: "RecvLineIRC - reads one line from IRC socket. Handles the text-based IRC protocol. Simple but effective for bootstrap purposes."
+
+  - line: 144
+    type: margin
+    text: "ThreadIRCSeed - the IRC discovery thread. Runs continuously in background, maintaining connection to IRC server for peer discovery."
+
+  - line: 154
+    type: margin
+    text: "'IRC connect failed' - fallback triggers. If IRC unreachable, node uses hardcoded seed nodes instead. Satoshi's redundancy design."
+
+  - line: 179
+    type: margin
+    text: "JOIN #bitcoin - the magic channel. Every v0.1 node joined here. Channel names #bitcoin00-#bitcoin99 spread load across multiple channels."
+
+  - line: 180
+    type: margin
+    text: "WHO #bitcoin - requests user list. Each 'user' is actually a Bitcoin node with IP encoded in nickname. Clever protocol reuse."
+
+  - line: 212
+    type: margin
+    text: "Parsing JOIN messages - extracts IP from encoded nicknames. Format: 'u' + base58(IP:port). Satoshi reused Base58 encoding here."
+
+  - line: 236
+    type: margin
+    text: "fRestartIRCSeed - reconnection flag. If IRC connection drops, thread restarts. Resilience against network instability."
+
+conclusion: |
+  <p>
+    The IRC bootstrap was deprecated in v0.6.x and removed entirely in v0.8.2.
+    When LFNet (the IRC server) shut down, it temporarily broke peer discovery
+    for old clients—validating Satoshi's foresight in building redundant systems.
+  </p>
+  <p>
+    Forensic insight: Satoshi's choice of IRC shows pragmatism over elegance.
+    IRC was well-understood, firewall-friendly (port 6667), and provided free
+    infrastructure. When asked about alternatives, he noted: "I really like
+    the complementary redundant attributes of the two different systems."
+  </p>

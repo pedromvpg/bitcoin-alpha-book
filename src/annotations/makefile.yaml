@@ -1,0 +1,30 @@
+# Annotation for makefile - Build Configuration (Unix)
+file: "makefile"
+
+title: "Assembly Required (Unix)"
+
+introduction: |
+  <p>
+    The makefile tells the compiler how to build Bitcoin on Unix-like
+    systems. It lists all source files, compiler flags, and library
+    dependencies needed to produce the bitcoin executable.
+  </p>
+
+annotations:
+  - line: 6
+    type: margin
+    text: "Build mode selection - debug or release"
+
+  - line: 20
+    type: margin
+    text: "Include paths - Boost, Berkeley DB, OpenSSL, wxWidgets"
+
+  - line: 22
+    type: margin
+    text: "Library dependencies - all external libraries linked"
+
+conclusion: |
+  <p>
+    Bitcoin v0.01 depended on wxWidgets (for the GUI), OpenSSL (for
+    cryptography), and Berkeley DB (for data storage).
+  </p>

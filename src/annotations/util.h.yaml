@@ -1,0 +1,34 @@
+# Annotation for util.h - Utility Definitions
+file: "util.h"
+
+title: "The Swiss Army Knife"
+
+introduction: |
+  <p>
+    Declares utility functions, macros, and global variables used
+    throughout Bitcoin. Debug logging, thread synchronization, and
+    configuration settings are defined here.
+  </p>
+
+annotations:
+  - line: 21
+    type: margin
+    text: "foreach macro - convenient iteration over collections"
+
+  - line: 22
+    type: margin
+    text: "loop macro - infinite loop shorthand"
+
+  - line: 99
+    type: margin
+    text: "CCriticalSection - thread-safe locking primitive"
+
+  - line: 129
+    type: margin
+    text: "CRITICAL_BLOCK - protects code from concurrent access"
+
+conclusion: |
+  <p>
+    The CRITICAL_BLOCK macro for thread locking and the printf-style
+    debug logging are patterns you'll see used in every other file.
+  </p>

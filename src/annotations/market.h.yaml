@@ -1,0 +1,30 @@
+# Annotation for market.h - Market Definitions
+file: "market.h"
+
+title: "Satoshi's Unfinished Dream"
+
+introduction: |
+  <p>
+    Header file for Satoshi's unfinished eBay-style marketplace. Defines
+    data structures for products and reviews that would have powered
+    peer-to-peer commerce directly within the Bitcoin client.
+  </p>
+
+annotations:
+  - line: 72
+    type: margin
+    text: "CReview class - user reviews for marketplace items"
+
+  - line: 120
+    type: margin
+    text: "CProduct class - items listed for sale"
+
+  - line: 6
+    type: margin
+    text: "Forward declarations for marketplace types"
+
+conclusion: |
+  <p>
+    This early marketplace concept predated services like OpenBazaar
+    by years, showing Satoshi's broad vision for Bitcoin.
+  </p>

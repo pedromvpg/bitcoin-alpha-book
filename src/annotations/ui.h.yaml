@@ -1,0 +1,29 @@
+# Annotation for ui.h - User Interface Definitions
+file: "ui.h"
+
+title: "Windows to the Blockchain"
+
+introduction: |
+  <p>
+    Declares the GUI classes and helper functions. The main window,
+    transaction dialogs, and address book are all defined here.
+  </p>
+
+annotations:
+  - line: 10
+    type: margin
+    text: "DECLARE_EVENT_TYPE - custom events for thread communication"
+
+  - line: 38
+    type: margin
+    text: "CMainFrame class - the main Bitcoin window"
+
+  - line: 167
+    type: margin
+    text: "Dialog classes - send coins, options, address book"
+
+conclusion: |
+  <p>
+    The GUI made Bitcoin accessible to non-technical users, critical
+    for early adoption of the network.
+  </p>

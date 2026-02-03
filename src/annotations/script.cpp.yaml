@@ -1,0 +1,75 @@
+# Annotation for script.cpp - Bitcoin's Scripting Language
+file: "script.cpp"
+
+title: "The Virtual Machine"
+
+introduction: |
+  <p>
+    This file implements Bitcoin's script interpreter—the virtual machine that
+    determines who can spend coins. Every bitcoin ever transferred—hundreds of
+    billions of dollars in value—passed through this exact code. The interpreter
+    is deceptively simple: a stack of byte arrays, a program counter, and roughly
+    100 opcodes. Yet this simplicity is its strength.
+  </p>
+  <p>
+    Satoshi designed Script using "reverse Polish notation" (RPN), a Forth-style
+    syntax where operators come after operands. Instead of "3 + 4", you write "3 4 +".
+    The interpreter maintains a stack; data pushes go onto the stack, operations pop
+    arguments and push results. This approach eliminates parsing complexity—no
+    operator precedence, no parentheses, no ambiguity. The stack state after execution
+    determines validity: if the top element is non-zero (truthy), the script passes.
+  </p>
+  <p>
+    What makes this remarkable is its generality. Satoshi didn't hardcode "check signature
+    against public key" as the only spending rule. Instead, he created a language that
+    expresses arbitrary conditions. Want multi-signature? OP_CHECKMULTISIG. Time locks?
+    OP_CHECKLOCKTIMEVERIFY (added later, but the architecture supported it). Escrow?
+    Hash locks? All possible without protocol changes—just different scripts.
+  </p>
+  <p>
+    The script system is also why Bitcoin survived its early bugs. When critical
+    vulnerabilities were found (like the OP_CAT memory explosion in August 2010),
+    Satoshi could disable individual opcodes without breaking the entire system.
+    Scripts using disabled opcodes simply fail; everything else continues working.
+  </p>
+
+annotations:
+  - line: 7
+    type: margin
+    text: "CheckSig - heart of Bitcoin security. Verifies ECDSA signature against transaction hash. If this function has bugs, Bitcoin breaks."
+
+  - line: 44
+    type: margin
+    text: "EvalScript - the interpreter main loop. Reads opcodes, manipulates stack, checks conditions. Script evaluates to TRUE (non-empty stack, top!=0) or FALSE."
+
+  - line: 70
+    type: margin
+    text: "Data push opcodes (0x01-0x4b) push that many bytes onto stack. OP_PUSHDATA1/2/4 handle larger pushes. Most scripts are mostly data pushes."
+
+  - line: 78
+    type: margin
+    text: "OP_1 through OP_16 - push small integers. OP_1NEGATE pushes -1. These enable compact scripts without encoding full numbers."
+
+  - line: 116
+    type: margin
+    text: "OP_IF/OP_NOTIF - conditional execution. Scripts can have branches! Combined with OP_ELSE/OP_ENDIF, enables complex spending conditions."
+
+  - line: 128
+    type: margin
+    text: "OP_VERIF/OP_VERNOTIF - immediately fail if reached. Satoshi reserved these for future soft-fork upgrades. Clever forward-compatibility."
+
+conclusion: |
+  <p>
+    The standard Pay-to-Public-Key-Hash (P2PKH) script executes as:
+    <code>OP_DUP OP_HASH160 &lt;pubKeyHash&gt; OP_EQUALVERIFY OP_CHECKSIG</code>
+  </p>
+  <ol>
+    <li>OP_DUP: Duplicate the provided public key</li>
+    <li>OP_HASH160: Hash it to get address</li>
+    <li>OP_EQUALVERIFY: Compare to expected address, fail if mismatch</li>
+    <li>OP_CHECKSIG: Verify signature proves ownership of that public key</li>
+  </ol>
+  <p>
+    This elegance—proving ownership in four operations—is why Satoshi's
+    scripting design has survived 15+ years of attacks.
+  </p>

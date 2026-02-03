@@ -1,0 +1,298 @@
+# Annotation for main.cpp - The Heart of Bitcoin
+file: "main.cpp"
+
+title: "Where Consensus Lives"
+
+introduction: |
+  <p>
+    This is the central nervous system of Bitcoin—2,300 lines of C++ that would
+    eventually secure trillions of dollars. The <code>main.cpp</code> file contains
+    the core logic that makes Bitcoin work: block creation, transaction processing,
+    the proof-of-work consensus algorithm, and the rules that every node must follow.
+  </p>
+  <p>
+    Satoshi Nakamoto spent nearly two years developing this code in isolation before
+    the January 2009 release. In an email to Hal Finney, he explained: "I had to write
+    all the code before I could convince myself that I could solve every problem, then
+    I wrote the paper." Every design choice in this file reflects deep thinking about
+    game theory, cryptography, and distributed systems.
+  </p>
+  <p>
+    The file solves what cryptographers called the "Byzantine Generals Problem"—how
+    can distributed nodes agree on truth without trusting each other? Satoshi's insight
+    was to make lying expensive: proof-of-work forces nodes to spend real energy, and
+    the longest chain (most cumulative work) wins. As he wrote on the cryptography
+    mailing list: "The proof-of-work chain is the solution to the synchronisation
+    problem, and to knowing what the globally shared view is without having to trust
+    anyone."
+  </p>
+  <p>
+    What you're reading is essentially unchanged from Satoshi's original vision. While
+    later developers optimized performance and fixed bugs, the fundamental architecture—
+    UTXO model, 10-minute blocks, difficulty adjustment, halving schedule—remains exactly
+    as designed in this first release. This is the DNA of all cryptocurrencies that followed.
+  </p>
+
+annotations:
+  # Global state
+  - line: 16
+    type: margin
+    text: "<code class=\"variable\">cs_main</code> - the global mutex. Bitcoin is heavily multi-threaded; this lock protects the blockchain state from race conditions during concurrent access."
+
+  - line: 18
+    type: margin
+    text: "<code class=\"variable\">mapTransactions</code> - the 'memory pool' (mempool). Unconfirmed transactions wait here."
+
+  - line: 24
+    type: margin
+    text: "The genesis block hash, hardcoded as a 256-bit constant. This cryptographic fingerprint anchors the entire blockchain—every subsequent block contains a chain of hashes leading back to this exact value. If even one bit of the genesis block were different, this hash would be completely different (avalanche effect), and no existing blockchain would validate. This is why the 'Times' headline matters: it proves this hash couldn't have been computed before January 3, 2009."
+
+  - line: 30
+    type: margin
+    text: "Orphan blocks - blocks received before their parent. In a distributed network, blocks can arrive out of order. These are held until their parent arrives."
+
+  - line: 36
+    type: margin
+    text: "<code class=\"variable\">mapWallet</code> - your coins. Maps transaction hashes to wallet data. Every transaction you've received is stored here."
+
+  - line: 40
+    type: margin
+    text: "<code class=\"variable\">mapKeys</code> - private key storage. Your entire Bitcoin wealth is controlled by these keys."
+
+  - line: 49
+    type: margin
+    text: "<code class=\"variable\">fGenerateBitcoins</code> - mining toggle. In v0.1, CPU mining was viable. Satoshi imagined 'one-CPU-one-vote' before ASICs changed the game."
+
+  - line: 50
+    type: margin
+    text: "<code class=\"variable\">nTransactionFee</code> - optional fee. Initially zero. Satoshi designed fees as spam prevention: 'Free transactions are nice...until we get slashdotted.'"
+
+  # Key generation
+  - line: 75
+    type: margin
+    text: "<code class=\"function\">GenerateNewKey()</code> - creates a fresh private key. Uses OpenSSL's <code class=\"function\">RAND_bytes()</code>. Satoshi on randomness: security depends entirely on unpredictable key generation."
+
+  # Orphan transaction handling
+  - line: 185
+    type: margin
+    text: "<code class=\"function\">AddOrphanTx()</code> - stores transactions whose parents haven't arrived yet. In a P2P network, messages arrive out of order. If transaction B spends transaction A's output, but B arrives first, B is an 'orphan'—valid in isolation but unverifiable without A. Satoshi's solution: store orphans indexed by their missing parent's hash. When A finally arrives, the node can immediately process waiting orphans. The dual maps (<code class=\"variable\">mapOrphanTransactions</code> and <code class=\"variable\">mapOrphanTransactionsByPrev</code>) enable both lookup by orphan hash and efficient retrieval when parents arrive. This pattern—holding incomplete data until dependencies resolve—appears throughout Bitcoin's networking code."
+
+  # Transaction validation
+  - line: 406
+    type: margin
+    text: "<code class=\"function\">AcceptTransaction()</code> - the gatekeeper. Validates syntax, checks inputs exist, verifies signatures. Rejects double-spends before they enter mempool."
+
+  - line: 412
+    type: margin
+    text: "<code class=\"function\">IsCoinBase()</code> check - coinbase transactions (mining rewards) can only exist in blocks, never broadcast alone. This prevents fake coin creation."
+
+  # Block reward economics
+  - line: 677
+    type: margin
+    text: "50 BTC—the original block reward, equivalent to 5 billion satoshis. Satoshi explained to Mike Hearn in a 2009 email: 'The number of coins and distribution schedule was an educated guess. It was a difficult choice, because once the network is going it's locked in and we're stuck with it.' He chose 50 as a round number that would produce approximately 21 million total coins via geometric series."
+
+  - line: 680
+    type: margin
+    text: "The halving formula: <code>nSubsidy >>= (nBestHeight / 210000)</code>. Every 210,000 blocks (approximately 4 years at 10 minutes per block), the reward halves. This creates a geometric series: 50 + 25 + 12.5 + ... converging to 21 million BTC. The 210,000 block interval was calculated as: 4 years × 365 days × 24 hours × 6 blocks/hour ≈ 210,240. Satoshi rounded to 210,000. This predetermined, transparent monetary policy—unlike central banks—cannot be changed by any authority."
+
+  # Difficulty adjustment - critical for stability
+  - line: 685
+    type: margin
+    text: "<code class=\"function\">GetNextWorkRequired()</code>—the difficulty adjustment algorithm, perhaps Satoshi's most elegant engineering. Without this, Bitcoin would be unstable: too many miners would create blocks too fast, too few would halt the network. This function automatically adjusts difficulty to maintain the 10-minute average regardless of how much hash power joins or leaves."
+
+  - line: 687
+    type: margin
+    text: "<code class=\"variable\">nTargetTimespan</code> = 14 days (1,209,600 seconds). Difficulty recalculates every 2016 blocks. Why 2 weeks? Satoshi explained on BitcoinTalk: long enough to smooth out variance (a lucky streak of fast blocks shouldn't dramatically lower difficulty), yet short enough to adapt to major hash power changes. The formula: <code>new_difficulty = old_difficulty × (actual_time / target_time)</code>. If blocks came 20% too fast, difficulty increases 20%."
+
+  - line: 688
+    type: margin
+    text: "<code class=\"variable\">nTargetSpacing</code> = 10 minutes (600 seconds). Why 10 minutes? Satoshi explained the trade-off: 'Shorter intervals would waste bandwidth and get too hard to keep up downloading all the blocks. Longer intervals would make initial sync faster but increase latency.' He also noted that faster blocks cause more 'orphan races' where miners waste work on blocks that get superseded. 10 minutes allows time for blocks to propagate globally before the next is found."
+
+  # Double-spend prevention
+  - line: 772
+    type: margin
+    text: "<code class=\"function\">ConnectInputs()</code> - the double-spend prevention engine. Verifies each input references an unspent output. This is Bitcoin's core innovation."
+
+  - line: 834
+    type: margin
+    text: "<code>'prev tx already used'</code> - double-spend detected! The transaction tries to spend coins already spent elsewhere. Rejected."
+
+  # Chain reorganization
+  - line: 974
+    type: margin
+    text: "<code class=\"function\">Reorganize()</code> - handles chain splits. When a longer valid chain appears, Bitcoin switches to it. 'The majority decision is represented by the longest chain.'"
+
+  - line: 991
+    type: margin
+    text: "<code class=\"variable\">vDisconnect</code> - blocks to undo. During reorg, transactions return to mempool. Users may see confirmations temporarily reverse."
+
+  - line: 996
+    type: margin
+    text: "<code class=\"variable\">vConnect</code> - blocks to apply. The new chain's transactions take precedence. This is why '6 confirmations' became the security standard."
+
+  # Block validation
+  - line: 1154
+    type: margin
+    text: "<code class=\"function\">CheckBlock()</code> - structural validation. Verifies size limits, timestamp sanity, merkle root, and proof-of-work. Rejects malformed blocks."
+
+  - line: 1180
+    type: margin
+    text: "<code class=\"variable\">bnProofOfWorkLimit</code> check - ensures difficulty isn't impossibly easy. The target hash must be below maximum difficulty (all 1s would be trivial)."
+
+  - line: 1192
+    type: margin
+    text: "<code class=\"function\">AcceptBlock()</code> - adds validated block to chain. Updates indexes, checks difficulty matches expected, writes to disk. Point of no return."
+
+  - line: 1236
+    type: margin
+    text: "<code class=\"function\">ProcessBlock()</code> - main entry point for new blocks. First checks if we've seen it, validates with <code class=\"function\">CheckBlock()</code>, then <code class=\"function\">AcceptBlock()</code> or orphan it."
+
+  # Genesis block - the beginning
+  - line: 1439
+    type: margin
+    text: "Genesis Block creation. Satoshi hardcoded this first block. The hash was computed offline; this code just reconstructs it for verification."
+
+  - line: 1449
+    type: block
+    title: "Satoshi's Debug Output"
+    text: "These comments are Satoshi's own debug output, preserved as documentation. The format <code>CBlock(hash=000000000019d6...)</code> matches the <code>print()</code> method output. This archaeological artifact reveals several things:
+
+      <p><strong>The block hash:</strong> <code>000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f</code>—note how it starts with many zeros. This is proof-of-work in action: Satoshi had to try ~2 billion nonces before finding one that produced a hash this small. The leading zeros aren't just formatting; they represent the computational work that secures the block.</p>
+
+      <p><strong>The merkle root:</strong> <code>4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b</code>—a hash of all transactions in the block (just the one coinbase transaction here). Every transaction ID in Bitcoin begins with this same merkle tree construction.</p>
+
+      <p><strong>The timestamp:</strong> <code>nTime=1231006505</code> is Unix epoch time for Saturday, January 3, 2009, 6:15:05 PM GMT. This was approximately 6 days after the whitepaper's timestamp and likely when Satoshi successfully mined this block after days of testing.</p>
+
+      <p><strong>The coinbase hex:</strong> In the CTxIn line, <code>04ffff001d0104455468652054696d6573...</code> is the scriptSig. Decoding: <code>04ffff001d</code> pushes the difficulty bits, <code>01</code> pushes length 4, <code>04</code> pushes the extra nonce, then <code>45</code> (69 in decimal) indicates 69 bytes follow—the ASCII encoding of 'The Times 03/Jan/2009...' headline. You can verify: <code>54686520</code> = 'The ' in ASCII.</p>
+
+      <p><strong>The unspendable output:</strong> The 50 BTC sent to scriptPubKey <code>0x5F1DF16B2B704C8A578D0B...</code> has never moved and never will. The genesis block's coinbase wasn't added to the UTXO database—possibly a bug, possibly intentional. Those 50 BTC are cryptographic ghosts, visible on the chain but impossible to spend.</p>"
+
+  - line: 1456
+    type: block
+    title: "The Genesis Block"
+    text: "'The Times 03/Jan/2009 Chancellor on brink of second bailout for banks'—Satoshi's timestamp proof embedded in the coinbase. This headline from the Times of London serves two purposes: (1) it proves the genesis block wasn't pre-mined before January 3, 2009, and (2) it's a political statement about why Bitcoin exists. The 2008 financial crisis, bank bailouts, and quantitative easing motivated Satoshi to create an alternative: 'The root problem with conventional currency is all the trust that's required to make it work.'
+
+      <p style=\"margin-top: 1em;\"><strong>Genesis Block Hex Dump (285 bytes):</strong></p>
+      <pre style=\"font-size: 0.75em; word-break: break-all; white-space: pre-wrap;\">0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac00000000</pre>
+
+      <p style=\"margin-top: 0.5em;\"><strong>Decoded structure:</strong></p>
+      <pre style=\"font-size: 0.7em;\">
+      Header (80 bytes):
+        01000000 ........................... Version 1
+        00000000000000000000000000000000
+        00000000000000000000000000000000 ... Previous block (null)
+        3ba3edfd7a7b12b27ac72c3e67768f61
+        7fc81bc3888a51323a9fb8aa4b1e5e4a ... Merkle root
+        29ab5f49 ........................... Time: 1231006505 (Jan 3, 2009 18:15:05 UTC)
+        ffff001d ........................... Bits (difficulty)
+        1dac2b7c ........................... Nonce: 2083236893
+
+      Transaction:
+        01 ................................. TX count (1)
+        01000000 ........................... TX version
+        01 ................................. Input count
+        00000000...00000000 ................ Null outpoint (coinbase)
+        ffffffff ........................... Sequence
+        4d ................................. Script length (77 bytes)
+        04ffff001d0104455468652054696d6573
+        2030332f4a616e2f323030392043686...  Coinbase script (contains headline)
+        ffffffff ........................... Sequence
+        01 ................................. Output count
+        00f2052a01000000 ................... 50 BTC (5,000,000,000 satoshis)
+        43 ................................. Script length (67 bytes)
+        41...ac ............................ Pay-to-pubkey script
+        00000000 ........................... Lock time
+      </pre>"
+
+  - line: 1461
+    type: margin
+    text: "<code>50 * COIN</code>—the first 50 bitcoins ever created, worth exactly $0 at the time (and now worth millions). Curiously, these specific coins are permanently unspendable due to a quirk: the genesis block's coinbase transaction isn't indexed in the UTXO database. Whether this was intentional or an oversight is unknown. Satoshi never commented on it, and no one has ever been able to ask."
+
+  - line: 1465
+    type: margin
+    text: "<code class=\"variable\">hashPrevBlock</code> = 0—the genesis block's defining characteristic. Every other block must reference a valid previous block; this is the only block that points to nothing. The all-zeros hash is Bitcoin's 'Big Bang moment'—the chain has to start somewhere. Validation code explicitly checks for this: if a block claims <code>hashPrevBlock = 0</code> but isn't the known genesis block, it's rejected. This single zero anchors the entire blockchain's integrity."
+
+  - line: 1469
+    type: margin
+    text: "<code class=\"variable\">nBits</code> = <code>0x1d00ffff</code>—the initial difficulty target in compact format. This expands to a 256-bit target where valid hashes must start with approximately 32 zero bits. At this difficulty, Satoshi's circa-2008 computer (likely a modest desktop or laptop) could find valid blocks in minutes to hours. For comparison: today's network runs at difficulty requiring ~80+ leading zero bits, approximately 10^13 times harder."
+
+  - line: 1470
+    type: margin
+    text: "<code class=\"variable\">nNonce</code> = <code>2083236893</code>—the magic number Satoshi discovered that makes the genesis block hash valid. He had to try approximately 2 billion nonces before finding this one (nonce means 'number used once'). The resulting hash <code>000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f</code> starts with the required zeros, proving work was done. This specific nonce is now immortalized in every Bitcoin client."
+
+  # Mining
+  - line: 2183
+    type: margin
+    text: "<code class=\"function\">BitcoinMiner()</code> - the mining function. Satoshi envisioned 'one-CPU-one-vote' democracy. In 2009, anyone's laptop could mine blocks."
+
+  - line: 2186
+    type: margin
+    text: "<code class=\"constant\">THREAD_PRIORITY_LOWEST</code> - mining runs in background. Satoshi wanted mining to not interfere with normal computer use."
+
+  - line: 2203
+    type: margin
+    text: "<code class=\"function\">GetNextWorkRequired()</code> - fetches current difficulty target. Miner must find hash below this. Higher difficulty = smaller target = harder."
+
+  - line: 2211
+    type: margin
+    text: "<code>prevout.SetNull()</code>—the signature of money creation. Normal transactions must reference a previous output to spend; coinbase transactions reference nothing because they create coins from thin air. <code class=\"function\">SetNull()</code> sets <code>hash=0</code> and <code>index=-1</code>, a combination that can never occur naturally (no real transaction has hash 0). This null reference is how nodes identify coinbase transactions. It's the only way new bitcoin enters circulation—every satoshi in existence traces back through a chain of transactions to some block's coinbase with this null <code class=\"variable\">prevout</code>."
+
+  - line: 2212
+    type: margin
+    text: "<code class=\"variable\">bnExtraNonce</code> - incremented each block attempt. Combined with <code class=\"variable\">nNonce</code>, gives 2^96 possible hashes per second timestamp."
+
+  - line: 2252
+    type: margin
+    text: "Satoshi's fee discount for early transactions. The boolean <code>pblock->vtx.size() < 100</code> grants a discount to the first 100 transactions in a block: if under 10KB, they're free. After 100 transactions, everyone pays 0.01 BTC/KB. This was flood control—allow normal usage for free, but charge when blocks fill up. Satoshi wrote: 'Free transactions are nice...until we get slashdotted.' The threshold of 100 transactions and 10KB were educated guesses; modern Bitcoin uses more sophisticated fee markets where users bid for block space."
+
+  - line: 2267
+    type: margin
+    text: "<code class=\"function\">GetBlockValue(nFees)</code> - calculates reward. Block subsidy plus all transaction fees. Fees incentivize miners after subsidy halves to zero."
+
+  - line: 2307
+    type: margin
+    text: "<code class=\"variable\">hashTarget</code> - the difficulty threshold. Hash must be numerically less than this 256-bit number. Lower target = harder puzzle."
+
+  - line: 2309
+    type: margin
+    text: "The mining loop. Increment <code class=\"variable\">nNonce</code>, double-SHA256 the header, compare to target. Repeat billions of times until valid hash found."
+
+  - line: 2311
+    type: margin
+    text: "<code class=\"function\">BlockSHA256()</code> - optimized SHA-256 for mining. Called millions of times per second. Performance here directly affects mining revenue."
+
+  - line: 2315
+    type: margin
+    text: "<code>hash <= hashTarget</code> - FOUND IT! This comparison is why mining works: finding a hash below target is rare and proves work was done."
+
+  - line: 2322
+    type: margin
+    text: "'proof-of-work found' - victory message. Satoshi: 'The proof-of-work also solves the problem of determining representation in majority decision making.'"
+
+conclusion: |
+  <p>
+    This file embodies Satoshi's breakthrough: using proof-of-work not just for
+    rate-limiting (like Adam Back's Hashcash) but as the foundation of distributed
+    consensus. Previous attempts at digital cash—DigiCash, b-money, bit gold—failed
+    because they required trusted parties or couldn't prevent double-spending without
+    a central authority. Satoshi solved both problems simultaneously.
+  </p>
+  <p>
+    The elegance lies in the alignment of incentives. Miners profit by following rules
+    and extending the longest chain. Attempting to rewrite history requires outspending
+    all honest miners—an attack that becomes exponentially harder with each confirmation.
+    Satoshi calculated that an attacker with 10% of network hashrate has only a 0.0006%
+    chance of catching up after 6 blocks (see the whitepaper's "Calculations" section).
+  </p>
+  <p>
+    This code has been stress-tested by the most adversarial conditions imaginable:
+    nation-state attackers, billions of dollars at stake, and constant scrutiny from
+    security researchers. That it continues to function—producing a block every 10
+    minutes without fail since January 3, 2009—is testament to Satoshi's engineering.
+  </p>
+  <p>
+    Satoshi's final words before disappearing (April 2011): "I've moved on to other
+    things. It's in good hands with Gavin and everyone." This 2,300-line file launched
+    a monetary revolution—a trustless system for transferring value that has operated
+    continuously since January 3, 2009, securing hundreds of billions in value.
+  </p>

@@ -1,0 +1,70 @@
+# Annotation for db.cpp - Database Implementation
+file: "db.cpp"
+
+title: "Memory That Survives"
+
+introduction: |
+  <p>
+    Bitcoin needs persistent storage that survives restarts: your wallet (private
+    keys and transaction history), the blockchain index (where blocks are stored
+    on disk), and peer addresses (nodes to reconnect to). Satoshi chose
+    <strong>Berkeley DB</strong> (BDB), a mature embedded key-value database
+    from Sleepycat Software (now Oracle) that had been battle-tested since 1991.
+  </p>
+  <p>
+    Why BDB? It offered ACID transactions (ensuring wallet operations either
+    complete fully or not at all), required no separate server process, and was
+    well-documented with C++ bindings. Satoshi explained on BitcoinTalk: "It uses
+    a transactional database called Berkeley DB." He later noted optimization
+    possibilities: "Someone should experiment with different Berkeley DB settings
+    and see if there's something that makes the download substantially faster."
+  </p>
+  <p>
+    BDB served Bitcoin well until v0.8 (2013), when an obscure configuration
+    limit became a consensus bug. BDB has a default limit on "database locks"
+    (concurrent operations). A large but valid block exceeded this limit on some
+    nodes but not others, causing a chain split. The incident—documented as BIP 50—
+    forced an emergency coordinated response where miners intentionally orphaned the
+    longer chain to maintain consensus.
+  </p>
+  <p>
+    This bug is forensically significant: it proved that consensus rules extend
+    beyond the Bitcoin code to include the database engine, its configuration,
+    the operating system, and even hardware. After the incident, the blockchain
+    index migrated to Google's LevelDB—but the wallet still uses BDB today for
+    backward compatibility with old wallet.dat files.
+  </p>
+
+annotations:
+  - line: 21
+    type: margin
+    text: "CDBInit - initializes BDB environment. Sets up logging, locking, caching. One environment shared by all database files."
+
+  - line: 114
+    type: margin
+    text: "CDB::Close - safely closes database. Flushes pending writes, releases locks. Critical for data integrity on shutdown."
+
+  - line: 173
+    type: margin
+    text: "CTxDB::ReadTxIndex - looks up transaction location. Given txid, returns file position. Essential for validating inputs reference real transactions."
+
+  - line: 282
+    type: margin
+    text: "WriteBlockIndex - stores block metadata. Height, hash, previous hash, merkle root. The index that makes blockchain traversal fast."
+
+  - line: 312
+    type: margin
+    text: "LoadBlockIndex - reconstructs chain state from disk. Called at startup to rebuild in-memory indexes from persisted data."
+
+conclusion: |
+  <p>
+    The BDB consensus bug (BIP 50) is forensically significant: Bitcoin v0.8's
+    LevelDB had no lock limits, while BDB nodes with default settings couldn't
+    validate a large (but valid) block. The network temporarily split. Resolution
+    required coordinating miners to intentionally orphan the longer chain.
+  </p>
+  <p>
+    This incident proved that consensus extends beyond code—it includes the
+    database layer, operating system, and even hardware. Satoshi's original
+    BDB choice was pragmatic but introduced hidden consensus constraints.
+  </p>

@@ -621,13 +621,10 @@ ${typographyCss}
 /* Additional fixes for Paged.js */
 .pagedjs_page {
   background: white;
-  box-shadow: 0 0 0 1px #ccc, 0 4px 12px rgba(0,0,0,0.15);
-  margin-bottom: 20px;
 }
 
 .pagedjs_pages {
-  background: #e0e0e0;
-  padding: 20px;
+  background: white;
 }
 
 .section-title,
@@ -636,105 +633,18 @@ ${typographyCss}
   visibility: hidden;
   height: 0;
 }
-
-/* Preview Toolbar - Hidden in print */
-.preview-toolbar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 50px;
-  background: #1a1a1a;
-  border-bottom: 1px solid #333;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
-  z-index: 99999;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-}
-
-.preview-toolbar .toolbar-title {
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.preview-toolbar .toolbar-controls {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.preview-toolbar .control-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.preview-toolbar .control-label {
-  color: #888;
-  font-size: 12px;
-}
-
-.preview-toolbar .btn-group {
-  display: flex;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.preview-toolbar .btn {
-  padding: 6px 12px;
-  border: none;
-  background: #333;
-  color: #ccc;
-  font-family: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.preview-toolbar .btn:hover {
-  background: #444;
-  color: #fff;
-}
-
-.preview-toolbar .btn.active {
-  background: #f59e0b;
-  color: #000;
-}
-
-.preview-toolbar .btn + .btn {
-  border-left: 1px solid #222;
-}
-
-/* Adjust page container when toolbar is visible */
-body.has-toolbar .pagedjs_pages {
-  padding-top: 70px;
-}
-
-/* Hide toolbar when printing */
-@media print {
-  .preview-toolbar {
-    display: none !important;
-  }
-  body.has-toolbar .pagedjs_pages {
-    padding-top: 20px;
-  }
-}
   </style>
   
   <!-- Paged.js for print pagination -->
   <script src="https://unpkg.com/pagedjs/dist/paged.polyfill.js"></script>
 </head>
-<body class="has-toolbar">
+<body>
   <script>
-  // Wait for Paged.js to finish, then inject toolbar
-  class ToolbarHandler extends Paged.Handler {
+  class PageHandler extends Paged.Handler {
     constructor(chunker, polisher, caller) {
       super(chunker, polisher, caller);
     }
-    
+
     afterRendered(pages) {
       // Fill in TOC page numbers
       var tocPages = document.querySelectorAll('.toc-page[data-target]');
@@ -775,55 +685,10 @@ body.has-toolbar .pagedjs_pages {
         }
       });
 
-      var toolbar = document.createElement('div');
-      toolbar.className = 'preview-toolbar';
-      toolbar.innerHTML = '<div class="toolbar-title">📖 Bitcoin Alpha Book Preview</div>' +
-        '<div class="toolbar-controls">' +
-          '<div class="control-group">' +
-            '<span class="control-label">Zoom:</span>' +
-            '<div class="btn-group">' +
-              '<button class="btn" id="btn-zoom-out">−</button>' +
-              '<button class="btn" id="btn-zoom-level">100%</button>' +
-              '<button class="btn" id="btn-zoom-in">+</button>' +
-            '</div>' +
-          '</div>' +
-          '<div class="control-group">' +
-            '<span class="control-label">Page ' + pages.length + ' total</span>' +
-          '</div>' +
-        '</div>';
-
-      document.body.insertBefore(toolbar, document.body.firstChild);
-      document.body.classList.add('has-toolbar');
-      
-      var currentZoom = 100;
-      
-      function updateZoom() {
-        var pagesEl = document.querySelector('.pagedjs_pages');
-        if (pagesEl) {
-          pagesEl.style.transform = 'scale(' + (currentZoom / 100) + ')';
-          pagesEl.style.transformOrigin = 'top center';
-        }
-        document.getElementById('btn-zoom-level').textContent = currentZoom + '%';
-      }
-      
-      document.getElementById('btn-zoom-in').addEventListener('click', function() {
-        currentZoom = Math.min(200, currentZoom + 25);
-        updateZoom();
-      });
-      
-      document.getElementById('btn-zoom-out').addEventListener('click', function() {
-        currentZoom = Math.max(25, currentZoom - 25);
-        updateZoom();
-      });
-      
-      document.getElementById('btn-zoom-level').addEventListener('click', function() {
-        currentZoom = 100;
-        updateZoom();
-      });
     }
   }
-  
-  Paged.registerHandlers(ToolbarHandler);
+
+  Paged.registerHandlers(PageHandler);
   </script>
   <!-- Page 1: TITLE PAGE (right) -->
   <section class="title-page">
@@ -913,8 +778,8 @@ body.has-toolbar .pagedjs_pages {
       </ul>
     </nav>
   </section>
-  
-  <!-- PART I DIVIDER -->
+
+  <!-- PART I DIVIDER (page-break-before: right handles blank page if needed) -->
   <section class="part-divider">
     <span class="part-number">Part I</span>
     <h1 class="part-title">Fundamentals</h1>

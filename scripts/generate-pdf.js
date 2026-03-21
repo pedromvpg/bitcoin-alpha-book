@@ -136,35 +136,34 @@ async function generatePDF() {
         }
       }
       
-      /* Title page - no headers/footers */
-      /* DEBUG: Show page numbers on all pages */
+      /* Front matter pages - no headers/footers */
       @page title-page {
-        @top-center { content: none; }
-        @bottom-center { content: counter(page); font-family: 'Red Hat Mono', monospace; font-size: 8pt; color: red; }
+        @top-left { content: none; } @top-right { content: none; } @top-center { content: none; }
+        @bottom-left { content: none; } @bottom-right { content: none; } @bottom-center { content: none; }
       }
 
       @page dedication-page {
-        @top-center { content: none; }
-        @bottom-center { content: counter(page); font-family: 'Red Hat Mono', monospace; font-size: 8pt; color: red; }
+        @top-left { content: none; } @top-right { content: none; } @top-center { content: none; }
+        @bottom-left { content: none; } @bottom-right { content: none; } @bottom-center { content: none; }
       }
 
       @page blank-page {
-        @top-center { content: none; }
-        @bottom-center { content: counter(page); font-family: 'Red Hat Mono', monospace; font-size: 8pt; color: red; }
+        @top-left { content: none; } @top-right { content: none; } @top-center { content: none; }
+        @bottom-left { content: none; } @bottom-right { content: none; } @bottom-center { content: none; }
       }
 
       @page acknowledgments-page {
-        @top-center { content: none; }
-        @bottom-center { content: counter(page); font-family: 'Red Hat Mono', monospace; font-size: 8pt; color: red; }
+        @top-left { content: none; } @top-right { content: none; } @top-center { content: none; }
+        @bottom-left { content: none; } @bottom-right { content: none; } @bottom-center { content: none; }
       }
 
       @page part-divider {
-        @top-center { content: none; }
-        @bottom-center { content: counter(page); font-family: 'Red Hat Mono', monospace; font-size: 8pt; color: red; }
+        @top-left { content: none; } @top-right { content: none; } @top-center { content: none; }
+        @bottom-left { content: none; } @bottom-right { content: none; } @bottom-center { content: none; }
       }
 
       @page toc-page {
-        @top-center { content: none; }
+        @top-left { content: none; } @top-right { content: none; } @top-center { content: none; }
       }
       
       .title-page {

@@ -690,6 +690,10 @@ ${typographyCss}
 
   Paged.registerHandlers(PageHandler);
   </script>
+  <!-- Blank spread: opening endpapers -->
+  <section class="blank-page"></section>
+  <section class="blank-page"></section>
+
   <!-- Page 1: TITLE PAGE (right) -->
   <section class="title-page">
     <div class="title-content">
@@ -778,6 +782,10 @@ ${typographyCss}
       </ul>
     </nav>
   </section>
+
+  <!-- Blank spread before Part I -->
+  <section class="blank-page"></section>
+  <section class="blank-page"></section>
 
   <!-- PART I DIVIDER (page-break-before: right handles blank page if needed) -->
   <section class="part-divider">
@@ -2338,6 +2346,10 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 <span class="token comment">// deleted automatically when function returns</span></pre>
   </section>
   
+  <!-- Blank spread before Part II -->
+  <section class="blank-page"></section>
+  <section class="blank-page"></section>
+
   <!-- PART II DIVIDER -->
   <section class="part-divider">
     <span class="part-number">Part II</span>
@@ -2774,8 +2786,16 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     </p>
   </section>
 
+  <!-- Blank spread before Index -->
+  <section class="blank-page"></section>
+  <section class="blank-page"></section>
+
   <!-- INDEX -->
   ${indexHtml}
+
+  <!-- Blank spread before Colophon -->
+  <section class="blank-page"></section>
+  <section class="blank-page"></section>
 
   <!-- COLOPHON -->
   <section class="chapter colophon">

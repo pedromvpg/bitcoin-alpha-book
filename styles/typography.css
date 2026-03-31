@@ -9,19 +9,35 @@
    FONT IMPORTS
    ============================================ */
 
-/* Red Hat Mono - Primary code font */
+/* Basis Grotesque Mono Pro - Primary code / heading font */
 @font-face {
-  font-family: 'Red Hat Mono';
-  src: url('https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPVmUsaaDhw.woff2') format('woff2');
+  font-family: 'Basis Grotesque Mono Pro';
+  src: url('fonts/BasisGrotesqueMonoPro-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Red Hat Mono';
-  src: url('https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjDFmUsaaDhw.woff2') format('woff2');
-  font-weight: 600;
+  font-family: 'Basis Grotesque Mono Pro';
+  src: url('fonts/BasisGrotesqueMonoPro-It.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Basis Grotesque Mono Pro';
+  src: url('fonts/BasisGrotesqueMonoPro-Medium.woff2') format('woff2');
+  font-weight: 500 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Basis Grotesque Mono Pro';
+  src: url('fonts/BasisGrotesqueMonoPro-Bold.woff2') format('woff2');
+  font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
@@ -82,9 +98,9 @@
   --line-height-code: 1.55;
   
   /* Font families */
-  --font-code: 'Red Hat Mono', 'Fira Code', 'Red Hat Mono', monospace;
+  --font-code: 'Basis Grotesque Mono Pro', monospace;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-heading: 'Red Hat Mono', 'Fira Code', 'Red Hat Mono', monospace;
+  --font-heading: 'Basis Grotesque Mono Pro', monospace;
   
   /* Colors */
   --color-text: #1a1a1f;
@@ -135,11 +151,11 @@ h1.book-title {
 h1.chapter-title {
   font-family: var(--font-code);
   font-size: var(--font-size-3xl);
-  font-weight: 600;
+  font-weight: 700;
+  -webkit-text-stroke: 0.5px currentColor;
   color: var(--color-text);
   margin-bottom: 0.5em;
   padding-bottom: 0.5em;
-  border-bottom: 1px solid #dedede;
 }
 
 /* Intro section titles - uppercase */
@@ -170,6 +186,7 @@ h3 {
   font-family: var(--font-code);
   font-size: var(--font-size-md);
   font-weight: 700;
+  -webkit-text-stroke: 0px currentColor;
   margin-top: 1.25em;
   margin-bottom: 0.5em;
   text-transform: uppercase;
@@ -204,7 +221,7 @@ p.lead {
 .annotation-block.chapter-conclusion {
   margin-top: 0;
   padding-top: 2em;
-  border-top: 20px solid #f3f3f3;
+  border-top: 1px solid #dddddd;
 }
 
 .annotation-block h4,
@@ -430,6 +447,7 @@ dd {
   text-align: center;
 }
 
+.title-page .book-edition-banner,
 .title-page .book-title,
 .title-page .book-subtitle,
 .title-page .annotations-credit,
@@ -445,11 +463,23 @@ dd {
   text-align: center;
 }
 
+.title-page .book-edition-banner {
+  font-family: var(--font-code);
+  font-size: 8.5pt;
+  font-weight: 500;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  margin: 0.85em 0 0 0;
+  padding: 0;
+  color: #7d7d7d;
+  background: none;
+}
+
 .title-page .book-title {
   font-family: var(--font-code);
   font-size: 42pt;
   font-weight: 700;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   margin: 0;
   color: #000000;
@@ -457,12 +487,12 @@ dd {
 
 .title-page .book-subtitle {
   font-family: var(--font-code);
-  font-size: 16pt;
-  font-weight: 400;
-  letter-spacing: 0.2em;
+  font-size: 17pt;
+  font-weight: 600;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: #444444;
-  margin: 0;
+  color: #4a4a4a;
+  margin: 0.38em 0 0 0;
 }
 
 .title-page .annotations-credit {
@@ -618,6 +648,7 @@ dd {
   font-family: var(--font-heading);
   font-size: 32pt;
   font-weight: 700;
+  line-height: 1.1;
   color: #000;
   margin: 0;
   letter-spacing: 0.05em;
@@ -671,9 +702,7 @@ dd {
 .introduction code {
   font-family: var(--font-code);
   font-size: 0.9em;
-  background-color: #f0f0f0;
   padding: 0.1em 0.3em;
-  border-radius: 2px;
 }
 
 /* Color key table for syntax highlighting */
@@ -692,7 +721,7 @@ dd {
 }
 
 .color-key th {
-  font-family: 'Red Hat Mono', monospace;
+  font-family: 'Basis Grotesque Mono Pro', monospace;
   font-weight: 600;
   color: #888888;
   text-transform: uppercase;
@@ -853,9 +882,7 @@ dd {
 .concepts code {
   font-family: var(--font-code);
   font-size: 0.9em;
-  background-color: #f0f0f0;
   padding: 0.1em 0.3em;
-  border-radius: 2px;
 }
 
 /* Code examples in primer sections */
@@ -866,8 +893,8 @@ pre.example {
   font-family: var(--font-code);
   font-size: 6pt;
   line-height: 1.45;
-  background-color: #f5f5f5;
-  border: none;
+  background-color: #ffffff;
+  border: 1px solid #dddddd;
   border-radius: 0;
   padding: 0.75em 1em;
   margin: 0.75em 0 1em 0;
@@ -875,6 +902,63 @@ pre.example {
   white-space: pre;
   color: #333333;
   break-inside: auto; /* Allow large examples to break across pages */
+}
+
+/* Keep caption + diagram together in print/PDF */
+.concepts .ecc-block,
+.cryptography-primer .ecc-block {
+  break-inside: avoid;
+  page-break-inside: avoid;
+  margin: 0.85em 0 1.15em 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+}
+
+.concepts .ecc-block .ecc-caption,
+.cryptography-primer .ecc-block .ecc-caption {
+  align-self: stretch;
+  max-width: 38rem;
+  margin: 0 auto 0.5em auto;
+  text-align: left;
+}
+
+.concepts .ecc-figure,
+.cryptography-primer .ecc-figure {
+  margin: 0;
+  text-align: center;
+  break-inside: avoid;
+  width: 100%;
+  max-width: 100%;
+}
+
+.concepts .ecc-figure.ecc-figure--wide,
+.cryptography-primer .ecc-figure.ecc-figure--wide {
+  max-width: min(100%, 42rem);
+}
+
+.concepts .ecc-figure svg,
+.cryptography-primer .ecc-figure svg {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  margin-left: auto;
+  margin-right: auto;
+  vertical-align: middle;
+}
+
+.concepts p.ecc-caption,
+.cryptography-primer p.ecc-caption {
+  font-size: 0.95em;
+  line-height: var(--line-height-relaxed);
+}
+
+.concepts .ecc-block > p.ecc-caption:first-child,
+.cryptography-primer .ecc-block > p.ecc-caption:first-child {
+  margin-top: 0;
 }
 
 /* Syntax highlighting for examples */
@@ -888,6 +972,17 @@ pre.example .token.class-name { color: #6f42c1; }
 pre.example .token.operator { color: #d73a49; }
 pre.example .token.punctuation { color: #24292e; }
 pre.example .token.constant { color: #005cc5; }
+
+/* ============================================
+   CHAPTER (source file sections)
+   ============================================ */
+
+/* Each source file chapter starts on a recto (right) page.
+   Paged.js auto-inserts a blank verso before it if needed,
+   giving every chapter the correct blank-left / intro-right opening spread. */
+.chapter {
+  break-before: right;
+}
 
 /* ============================================
    CHAPTER INTRO
@@ -1027,7 +1122,7 @@ hr {
 
 .resource-filename {
   display: block;
-  font-family: 'Red Hat Mono', monospace;
+  font-family: 'Basis Grotesque Mono Pro', monospace;
   font-size: 7pt;
   font-weight: 600;
   color: #333;
@@ -1048,13 +1143,31 @@ hr {
 
 .index-section {
   page: index-page;
-  break-before: right;
+  break-before: left;
 }
 
 .index-section h1.chapter-title {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   margin-bottom: 1.5em;
+}
+
+.colophon h1.chapter-title {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1.25em;
+}
+
+.colophon p {
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: 0.85em;
+  color: var(--color-text);
+}
+
+.colophon p strong:first-child {
+  font-weight: 700;
+  color: var(--color-text);
 }
 
 .index-columns {
@@ -1098,6 +1211,7 @@ hr {
 .index-code {
   font-family: var(--font-code);
   font-size: 7pt;
+  font-weight: 700;
   background: none;
   padding: 0;
 }

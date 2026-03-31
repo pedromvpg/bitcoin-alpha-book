@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bitcoin v0.01 Alpha — Annotated Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=JetBrains+Mono:wght@400;600&family=IBM+Plex+Mono:wght@400;600&family=Fira+Code:wght@400;600&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+  <style>
+    @font-face {
+      font-family: 'Basis Grotesque Mono Pro';
+      src: url('/styles/fonts/BasisGrotesqueMonoPro-Regular.woff2') format('woff2');
+      font-weight: 400; font-style: normal;
+    }
+    @font-face {
+      font-family: 'Basis Grotesque Mono Pro';
+      src: url('/styles/fonts/BasisGrotesqueMonoPro-It.woff2') format('woff2');
+      font-weight: 400; font-style: italic;
+    }
+    @font-face {
+      font-family: 'Basis Grotesque Mono Pro';
+      src: url('/styles/fonts/BasisGrotesqueMonoPro-Medium.woff2') format('woff2');
+      font-weight: 500 600; font-style: normal;
+    }
+    @font-face {
+      font-family: 'Basis Grotesque Mono Pro';
+      src: url('/styles/fonts/BasisGrotesqueMonoPro-Bold.woff2') format('woff2');
+      font-weight: 700; font-style: normal;
+    }
+  </style>
+  <style>
+    /* ── TOKENS ─────────────────────────────────────────────────── */
+    :root {
+      --bg:        #0a0a0a;
+      --bg-1:      #111111;
+      --bg-2:      #181818;
+      --bg-3:      #222222;
+      --border:    #1e1e1e;
+      --border-2:  #2a2a2a;
+      --border-3:  #3a3a3a;
+
+      --text-0:    #f0f0f0;
+      --text-1:    #999999;
+      --text-2:    #555555;
+      --text-3:    #2a2a2a;
+
+      /* color codes — chapters, syntax, status only */
+      --red:       #e0454a;
+      --red-bg:    rgba(224,69,74,0.07);
+      --blue:      #1da8c8;
+      --blue-bg:   rgba(29,168,200,0.07);
+      --green:     #3db86e;
+      --green-bg:  rgba(61,184,110,0.07);
+      --gold:      #c49a10;
+      --gold-bg:   rgba(196,154,16,0.08);
+      --gray:      #8a8a8a;
+
+      --mono: 'Basis Grotesque Mono Pro', monospace;
+      --radius: 0px;
+    }
+
+    /* ── RESET ──────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    code { font-family: var(--mono); }
+
+    /* ── NAV ─────────────────────────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      height: 48px;
+      background: rgba(10,10,10,0.92);
+      backdrop-filter: blur(16px) saturate(1.5);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 48px; gap: 0;
+    }
+
+    .nav-logo {
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-0); margin-right: auto;
+    }
+    .nav-logo em { color: var(--text-0); font-style: normal; }
+
+    .nav-links { display: flex; align-items: center; }
+
+    .nav-links a {
+      font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-2); padding: 0 18px; height: 48px;
+      display: flex; align-items: center;
+      border-left: 1px solid transparent;
+      transition: color 0.12s;
+    }
+    .nav-links a:hover { color: var(--text-0); }
+
+    .nav-cta {
+      background: var(--text-0) !important; color: var(--bg) !important;
+      font-weight: 600 !important; margin-left: 12px;
+      transition: background 0.12s !important;
+    }
+    .nav-cta:hover { background: #fff !important; }
+
+    /* ── HERO ─────────────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 48px 64px 72px;
+      position: relative; overflow: hidden;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* grid bg */
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: radial-gradient(ellipse 90% 90% at 50% 40%, black 20%, transparent 75%);
+      opacity: 0.5;
+    }
+
+    /* no colour blobs — pure black */
+
+    /* big ghost number */
+    .hero-ghost {
+      position: absolute; right: 48px; bottom: 48px;
+      font-size: clamp(180px, 28vw, 400px); font-weight: 700;
+      line-height: 1; letter-spacing: -0.05em;
+      color: transparent;
+      -webkit-text-stroke: 1px var(--border-3);
+      pointer-events: none; user-select: none;
+      z-index: 0;
+    }
+
+    .hero-body { position: relative; z-index: 1; }
+
+    .hero-eyebrow {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 10px; letter-spacing: 0.28em; text-transform: uppercase;
+      color: var(--text-2); margin-bottom: 20px;
+    }
+    .hero-eyebrow::before {
+      content: ''; width: 28px; height: 1px; background: var(--border-3);
+    }
+
+    h1.hero-title {
+      font-size: clamp(56px, 9.5vw, 124px);
+      font-weight: 700; line-height: 0.88;
+      letter-spacing: -0.025em; color: var(--text-0);
+      margin-bottom: 28px;
+    }
+
+    .hero-title .version {
+      display: block; font-size: 0.52em; color: var(--text-1);
+      letter-spacing: 0.01em;
+    }
+
+    .cursor {
+      display: inline-block; width: 0.06em; height: 0.75em;
+      background: var(--text-0); margin-left: 3px; vertical-align: middle;
+      animation: blink 1.1s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    .hero-desc {
+      font-size: 14px; font-weight: 300;
+      color: var(--text-2); max-width: 520px; line-height: 1.75;
+      margin-bottom: 40px;
+    }
+
+    .hero-actions { display: flex; gap: 10px; margin-bottom: 56px; }
+
+    .btn {
+      font-family: var(--mono); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      padding: 11px 22px; display: inline-flex; align-items: center; gap: 8px;
+      cursor: pointer; border: none; transition: all 0.12s;
+    }
+    .btn-primary { background: var(--text-0); color: var(--bg); }
+    .btn-primary:hover { background: #fff; }
+    .btn-ghost {
+      background: transparent; color: var(--text-2);
+      border: 1px solid var(--border-3);
+    }
+    .btn-ghost:hover { color: var(--text-0); border-color: var(--text-2); }
+
+    .hero-stats {
+      display: flex; border-top: 1px solid var(--border);
+      padding-top: 28px; gap: 0;
+    }
+
+    .stat {
+      display: flex; flex-direction: column; gap: 5px;
+      padding-right: 44px; border-right: 1px solid var(--border);
+      margin-right: 44px;
+    }
+    .stat:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+
+    .stat-num {
+      font-size: 30px; font-weight: 700;
+      color: var(--text-0); letter-spacing: -0.02em; line-height: 1;
+    }
+    .stat-label {
+      font-size: 9px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--text-3);
+    }
+
+    /* ── SECTION SHELL ────────────────────────────────────────────── */
+    section.content-section {
+      padding: 88px 64px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-header {
+      display: flex; align-items: flex-start;
+      gap: 20px; margin-bottom: 48px;
+    }
+    .section-num {
+      font-size: 13px; font-weight: 700; letter-spacing: 0.14em;
+      color: var(--text-2); white-space: nowrap;
+      line-height: 1.15;
+    }
+    .section-title {
+      font-size: clamp(26px, 3.5vw, 44px); font-weight: 700;
+      letter-spacing: -0.02em; color: var(--text-0); line-height: 1;
+    }
+    .section-hint {
+      margin-left: auto; font-size: 11px; color: var(--text-2);
+      text-align: right; max-width: 300px; line-height: 1.6;
+    }
+    .section-hint code {
+      color: var(--text-1); font-size: 10px;
+    }
+
+    /* ── RELEASES ─────────────────────────────────────────────────── */
+    #releases-list { display: flex; flex-direction: column; }
+
+    .release-row {
+      display: grid;
+      grid-template-columns: 220px 1fr 120px;
+      align-items: center; gap: 24px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .release-row:first-child { border-top: 1px solid var(--border); }
+
+    .release-ts { display: flex; flex-direction: column; gap: 3px; }
+    .release-date { font-size: 12px; font-weight: 500; color: var(--text-1); }
+    .release-time { font-size: 10px; color: var(--text-3); }
+
+    .release-latest-badge {
+      display: inline-block;
+      font-size: 8px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; padding: 2px 7px;
+      background: var(--green-bg); color: var(--green);
+      margin-left: 8px; vertical-align: middle;
+    }
+
+    .release-files { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .rf {
+      font-size: 10px; letter-spacing: 0.05em;
+      color: var(--text-2); padding: 5px 11px;
+      border: 1px solid var(--border-2);
+      display: inline-flex; align-items: center; gap: 5px;
+      transition: all 0.12s;
+    }
+    .rf:hover { border-color: var(--text-2); color: var(--text-0); }
+    .rf.is-pdf { border-color: rgba(224,69,74,0.3); color: var(--red); }
+    .rf.is-pdf:hover { border-color: var(--red); }
+
+    /* Sheet viewers: HTML only in the list; smaller chip */
+    .rf.rf-sheet {
+      font-size: 8px;
+      letter-spacing: 0.06em;
+      padding: 3px 7px;
+      gap: 3px;
+      color: var(--text-3);
+      border-color: var(--border);
+    }
+    .rf.rf-sheet:hover { color: var(--text-1); border-color: var(--text-3); }
+
+    .release-meta { font-size: 11px; color: var(--text-2); text-align: right; }
+
+    .releases-empty {
+      font-size: 12px; color: var(--text-3);
+      padding: 32px 0;
+    }
+
+    /* thumbnail strip */
+    .thumb-strip-wrap {
+      margin-top: 40px;
+      border: 1px solid var(--border);
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
+      max-height: 70vh;
+      cursor: pointer;
+    }
+    .thumb-strip-wrap img {
+      display: block; width: 100%;
+    }
+    .thumb-strip-cap {
+      position: absolute; bottom: 10px; right: 12px;
+      font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: rgba(255,255,255,0.45); background: rgba(0,0,0,0.55);
+      padding: 3px 9px;
+    }
+    .thumb-strip-wrap a.thumb-link {
+      position: absolute; inset: 0; display: block;
+    }
+
+    /* ── CHAPTERS ─────────────────────────────────────────────────── */
+    .filter-bar {
+      display: flex; gap: 0; margin-bottom: 28px;
+      border-bottom: 1px solid var(--border);
+    }
+    .flt {
+      font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-2);
+      background: none; border: none;
+      padding: 9px 18px; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -1px;
+      transition: color 0.12s;
+    }
+    .flt:hover { color: var(--text-0); }
+    .flt.on { color: var(--text-0); border-bottom-color: var(--text-0); }
+
+    .ch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+      gap: 1px; background: var(--border);
+    }
+
+    .ch-card {
+      background: var(--bg-1); padding: 18px 20px;
+      display: flex; flex-direction: column; gap: 7px;
+      cursor: pointer;
+      position: relative; overflow: hidden;
+      transition: background 0.12s;
+    }
+    .ch-card::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    }
+    .ch-card:hover { background: var(--bg-2); }
+
+    .ch-card[data-t="intro"]::before  { background: var(--red); }
+    .ch-card[data-t="header"]::before { background: var(--blue); }
+    .ch-card[data-t="source"]::before { background: var(--green); }
+    .ch-card[data-t="build"]::before  { background: var(--gold); }
+    .ch-card[data-t="back"]::before   { background: var(--text-3); }
+
+    .ch-badge { font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+    [data-t="intro"]  .ch-badge { color: var(--red); }
+    [data-t="header"] .ch-badge { color: var(--blue); }
+    [data-t="source"] .ch-badge { color: var(--green); }
+    [data-t="build"]  .ch-badge { color: var(--gold); }
+    [data-t="back"]   .ch-badge { color: var(--text-3); }
+
+    .ch-name { font-size: 13px; font-weight: 600; color: var(--text-0); line-height: 1.3; }
+    .ch-desc { font-size: 10px; color: var(--text-2); line-height: 1.55; }
+    .ch-card.hidden { display: none; }
+
+    /* ── DESIGN SYSTEM ────────────────────────────────────────────── */
+    /* ── DESIGN SYSTEM ──────────────────────────────────────────── */
+    .ds-controls {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 28px; gap: 20px; flex-wrap: wrap;
+    }
+    .ds-page-tabs { display: flex; gap: 0; }
+    .ds-page-tab {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-2);
+      background: none; border: 1px solid var(--border);
+      border-right: none; padding: 7px 16px; cursor: pointer;
+      transition: color 0.12s, background 0.12s;
+    }
+    .ds-page-tab:last-child { border-right: 1px solid var(--border); }
+    .ds-page-tab:hover { color: var(--text-0); background: var(--bg-1); }
+    .ds-page-tab.on { color: var(--text-0); background: var(--bg-2); border-color: var(--border-2); }
+
+    .ds-typeface-wrap { display: flex; align-items: center; gap: 10px; }
+    .ds-typeface-label {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-3); white-space: nowrap;
+    }
+    .ds-typeface-select {
+      font-family: var(--mono); font-size: 10px; color: var(--text-0);
+      background: var(--bg-1); border: 1px solid var(--border-2);
+      padding: 6px 10px; cursor: pointer; outline: none;
+      appearance: none; -webkit-appearance: none;
+      padding-right: 28px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23555'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+    }
+    .ds-typeface-select option { background: #181818; }
+
+    /* Pasteboard + mock carousel */
+    .ds-pasteboard {
+      background: #2a2a2a; padding: 40px;
+      margin-bottom: 36px; overflow-x: auto; overflow-y: hidden;
+      display: flex; justify-content: center; gap: 32px;
+      min-height: 520px; align-items: flex-start;
+    }
+    .ds-pasteboard.all-mode {
+      justify-content: flex-start; gap: 48px;
+    }
+    .ds-pasteboard.all-mode .mock-stack { display: flex !important; gap: 18px; }
+    .ds-pasteboard.all-mode .mock-outer { width: 220px; height: 314px; }
+    .ds-pasteboard.all-mode .mock-inner { transform: scale(0.327); } /* 220/672 */
+    .ds-pasteboard.all-mode .mock-caption { font-size: 7px; }
+
+    /* Page mock shells */
+    .mock-stack { display: none; flex-shrink: 0; }
+    .mock-stack.on { display: flex; gap: 32px; }
+    .mock-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    .mock-caption {
+      font-family: var(--mono); font-size: 8px; letter-spacing: 0.15em;
+      text-transform: uppercase; color: #777;
+    }
+    .mock-outer {
+      width: 310px; height: 442px;
+      overflow: hidden; background: #fff; position: relative; flex-shrink: 0;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.5), 0 16px 48px rgba(0,0,0,0.4);
+    }
+    .mock-inner {
+      position: absolute; top: 0; left: 0;
+      width: 672px; height: 960px;
+      transform: scale(0.4613); transform-origin: top left; /* 310/672 */
+      background: #fff; color: #222;
+    }
+
+    /* Mock internals — use CSS vars so typeface dropdown changes them */
+    .mock-inner { font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace); }
+    .mock-hdr {
+      display: flex; justify-content: space-between;
+      padding: 22px 60px 0;
+      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
+      font-size: 7pt; color: #999;
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .mock-body { padding: 14px 60px 0; }
+    .mcl { display: flex; font-size: 6pt; line-height: 1.5; }
+    .mln {
+      width: 3em; color: #ccc; text-align: right;
+      padding-right: 1.5em; flex-shrink: 0; font-size: 6pt;
+      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
+    }
+    .mlc {
+      color: #222; white-space: pre; font-size: 6pt;
+      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
+    }
+    .mann {
+      margin: 6px 0; padding: 8px 0 12px;
+      border-top: 1px solid #e0e0e0; border-bottom: 1px solid #ccc;
+    }
+    .mann-inner {
+      padding: 2px 0;
+      font-family: var(--mf-body, 'Inter', sans-serif);
+      font-size: 7.5pt; line-height: 1.5; color: #333;
+    }
+    .mock-ftr {
+      position: absolute; bottom: 32px; left: 60px; right: 60px;
+      display: flex; justify-content: space-between;
+      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
+      font-size: 7pt; color: #888;
+    }
+    /* Annotation bar highlight */
+    .mann-red   { border-left: 3px solid #e63946; padding-left: 10px; }
+    .mann-blue  { border-left: 3px solid #0077b6; padding-left: 10px; }
+    .mann-green { border-left: 3px solid #2d6a4f; padding-left: 10px; }
+
+    /* Chapter opener mock */
+    .mock-chapter-body {
+      padding: 60px 60px 0;
+      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
+    }
+    .mc-num {
+      font-size: 120pt; font-weight: 700; color: #f0f0f0;
+      line-height: 1; letter-spacing: -0.02em;
+      margin-left: -4px;
+    }
+    .mc-file {
+      font-size: 28pt; font-weight: 600; color: #1a1a1a;
+      margin-top: -8px; letter-spacing: -0.01em;
+    }
+    .mc-subtitle {
+      font-size: 11pt; color: #888; margin-top: 4px;
+      letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .mc-rule { border: none; border-top: 2px solid #1a1a1a; margin: 24px 0; }
+    .mc-desc {
+      font-family: var(--mf-body, 'Inter', sans-serif);
+      font-size: 9pt; line-height: 1.65; color: #444; max-width: 480px;
+    }
+    .mc-toc { margin-top: 24px; }
+    .mc-toc-title {
+      font-size: 7pt; letter-spacing: 0.2em; text-transform: uppercase;
+      color: #bbb; margin-bottom: 10px;
+    }
+    .mc-toc-item {
+      display: flex; justify-content: space-between;
+      font-family: var(--mf-body, 'Inter', sans-serif);
+      font-size: 8pt; color: #555; padding: 3px 0;
+      border-bottom: 1px dotted #e8e8e8;
+    }
+
+    /* Section intro mock */
+    .mock-section-body { padding: 80px 60px 0; }
+    .ms-eyebrow {
+      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
+      font-size: 7pt; letter-spacing: 0.25em; text-transform: uppercase;
+      color: #bbb; margin-bottom: 16px;
+    }
+    .ms-title {
+      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
+      font-size: 36pt; font-weight: 700; color: #1a1a1a;
+      line-height: 1.05; letter-spacing: -0.02em;
+    }
+    .ms-rule { border: none; border-top: 1px solid #ddd; margin: 28px 0; }
+    .ms-body {
+      font-family: var(--mf-body, 'Inter', sans-serif);
+      font-size: 9pt; line-height: 1.7; color: #444; max-width: 500px;
+    }
+    .ms-body p + p { margin-top: 10px; }
+    .ms-meta {
+      position: absolute; bottom: 60px; left: 60px; right: 60px;
+    }
+    .ms-meta-item {
+      display: flex; gap: 12px;
+      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
+      font-size: 6.5pt; color: #aaa; padding: 4px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .ms-meta-key { color: #ccc; min-width: 80px; }
+
+    /* Text/annotation-heavy mock */
+    .mock-text-body { padding: 22px 60px 0; }
+    .mt-ann-block {
+      padding: 10px 14px; margin-bottom: 8px;
+      background: #f8f7f4;
+      border-left: 3px solid #ddd;
+    }
+    .mt-ann-block.red  { border-left-color: #e63946; }
+    .mt-ann-block.blue { border-left-color: #0077b6; }
+    .mt-ann-head {
+      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
+      font-size: 6pt; letter-spacing: 0.15em; text-transform: uppercase;
+      color: #bbb; margin-bottom: 4px;
+    }
+    .mt-ann-text {
+      font-family: var(--mf-body, 'Inter', sans-serif);
+      font-size: 7.5pt; line-height: 1.55; color: #333;
+    }
+    .mt-code-snippet {
+      margin: 6px 0; padding: 6px 10px;
+      background: #f0f0f0;
+      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
+      font-size: 6pt; color: #333; white-space: pre;
+    }
+    .mt-pull {
+      margin: 14px 0; padding: 10px 16px;
+      border-top: 2px solid #1a1a1a; border-bottom: 1px solid #ddd;
+      font-family: var(--mf-body, 'Inter', sans-serif);
+      font-size: 9pt; font-style: italic;
+      color: #444; line-height: 1.55;
+    }
+
+    /* Info panels below mocks */
+    .ds-info-layout {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 0; border: 1px solid var(--border);
+    }
+    .ds-info-panel {
+      padding: 24px 28px; border-right: 1px solid var(--border);
+    }
+    .ds-info-panel:last-child { border-right: none; }
+    .ds-info-title {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--text-3); margin-bottom: 18px;
+    }
+
+    /* Palette */
+    .palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
+    .sw { display: flex; flex-direction: column; gap: 6px; }
+    .sw-color { height: 36px; border: 1px solid rgba(255,255,255,0.04); }
+    .sw-name { font-size: 8px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-2); }
+    .sw-hex  { font-size: 9px; color: var(--text-3); }
+    .highlight-legend { }
+    .legend-title {
+      font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 10px;
+    }
+    .legend-items { display: flex; flex-direction: column; gap: 5px; }
+    .li { display: flex; align-items: center; gap: 8px; font-size: 10px; }
+    .li-bar { width: 3px; height: 16px; flex-shrink: 0; }
+    .li-code {
+      background: rgba(255,255,255,0.04); padding: 2px 7px;
+      flex: 1; font-size: 9px; color: var(--text-1);
+    }
+    .li-desc { font-size: 9px; color: var(--text-3); white-space: nowrap; }
+
+    /* Type scale */
+    .type-scale { display: flex; flex-direction: column; }
+    .ts-row {
+      display: flex; align-items: baseline; gap: 14px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .ts-row:last-child { border-bottom: none; }
+    .ts-meta { min-width: 95px; font-size: 9px; color: var(--text-3); line-height: 1.5; flex-shrink: 0; }
+    .ts-pre { color: var(--text-0); font-family: var(--mono); overflow: hidden; }
+    .ts-note { font-size: 9px; color: var(--text-3); margin-top: 14px; line-height: 1.65; }
+
+    /* Token list */
+    .tokens { display: flex; flex-direction: column; gap: 5px; }
+    .tk {
+      display: flex; align-items: center; gap: 12px;
+      padding: 7px 10px; background: var(--bg-1);
+    }
+    .tk-dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; }
+    .tk-name { font-size: 9px; color: var(--text-2); min-width: 100px; }
+    .tk-ex { font-size: 10px; }
+    .tk-hex { font-size: 9px; color: var(--text-3); margin-left: auto; }
+    .tokens-note { margin-top: 16px; font-size: 9px; color: var(--text-3); line-height: 1.7; }
+
+    /* ── ABOUT ────────────────────────────────────────────────────── */
+    .about-layout {
+      display: grid; grid-template-columns: 1fr 360px;
+      gap: 80px; align-items: start;
+    }
+
+    .about-main h3 {
+      font-size: 20px; font-weight: 700; color: var(--text-0);
+      letter-spacing: -0.01em; margin-bottom: 18px;
+    }
+    .about-main p {
+      font-size: 13px; color: var(--text-2); line-height: 1.85;
+      margin-bottom: 18px; font-weight: 300;
+    }
+    .about-main p strong { color: var(--text-1); font-weight: 500; }
+
+    .blockquote {
+      margin: 28px 0; padding: 20px 28px;
+      border-left: 3px solid var(--border-3); background: var(--bg-1);
+    }
+    .blockquote p {
+      font-style: italic; font-size: 13px;
+      color: var(--text-1); line-height: 1.75; margin: 0 0 10px;
+    }
+    .blockquote cite {
+      font-size: 9px; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-2);
+      font-style: normal;
+    }
+
+    .about-aside { position: sticky; top: 72px; }
+
+    .aside-card {
+      border: 1px solid var(--border-2);
+      padding: 24px; margin-bottom: 14px;
+    }
+    .aside-card h4 {
+      font-size: 9px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--text-3);
+      margin-bottom: 16px;
+    }
+    .spec-row {
+      display: flex; justify-content: space-between;
+      align-items: baseline; font-size: 11px;
+      padding: 9px 0; border-bottom: 1px solid var(--border);
+    }
+    .spec-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .spec-k { color: var(--text-2); }
+    .spec-v { color: var(--text-0); font-weight: 500; text-align: right; }
+
+    /* ── FOOTER ───────────────────────────────────────────────────── */
+    footer {
+      padding: 40px 64px;
+      display: flex; justify-content: space-between; align-items: center;
+      border-top: 1px solid var(--border);
+    }
+    .footer-left { font-size: 10px; color: var(--text-3); letter-spacing: 0.06em; }
+    .footer-links { display: flex; gap: 24px; }
+    .footer-links a {
+      font-size: 10px; color: var(--text-3);
+      letter-spacing: 0.12em; text-transform: uppercase;
+      transition: color 0.12s;
+    }
+    .footer-links a:hover { color: var(--text-1); }
+
+    /* ── COMMANDS ────────────────────────────────────────────────── */
+    .pipeline { margin-bottom: 48px; }
+    .pipeline-label {
+      font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 10px;
+    }
+    .pipeline-box {
+      border: 1px solid var(--border-2); padding: 20px 24px;
+      position: relative;
+    }
+    .pipeline-box-title {
+      position: absolute; top: 0; left: 16px;
+      transform: translateY(-50%);
+      font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+      background: var(--bg); padding: 0 8px; color: var(--text-0);
+    }
+    .pipeline-steps {
+      display: flex; align-items: center; flex-wrap: wrap;
+      gap: 0; row-gap: 10px;
+    }
+    .pipeline-step {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+      color: var(--text-1); padding: 5px 11px;
+      border: 1px solid var(--border-2); background: var(--bg-1);
+      white-space: nowrap;
+    }
+    .pipeline-arrow { color: var(--text-3); font-size: 10px; padding: 0 5px; }
+    .pipeline-then {
+      font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--text-3); text-align: center; padding: 8px 0;
+    }
+    .pipeline-box--server { border-color: var(--border-3); }
+    .pipeline-box--server .pipeline-box-title { color: var(--text-1); }
+    .pipeline-box--server .pipeline-step { color: var(--text-2); border-color: var(--border); }
+
+    .cmd-row--primary .cmd-shell { color: var(--text-0); }
+    .cmd-row--primary .cmd-shell::before {
+      content: '★ '; color: var(--text-3); font-size: 9px;
+    }
+
+    .cmd-groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 36px 48px;
+    }
+    .cmd-group-title {
+      font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 0;
+    }
+    .cmd-row {
+      display: flex; align-items: center;
+      gap: 16px; padding: 9px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .cmd-row:first-of-type { border-top: 1px solid var(--border); margin-top: 12px; }
+    .cmd-shell {
+      font-size: 11px; font-weight: 500;
+      color: var(--text-0); white-space: nowrap; flex-shrink: 0;
+    }
+    .cmd-prefix { color: var(--text-3); font-weight: 400; }
+    .cmd-desc { font-size: 11px; color: var(--text-2); flex: 1; }
+    .cmd-copy {
+      flex-shrink: 0; font-family: var(--mono); font-size: 9px;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-3); background: none; border: 1px solid transparent;
+      cursor: pointer; padding: 2px 7px;
+      opacity: 0; transition: opacity 0.1s, color 0.1s, border-color 0.1s;
+    }
+    .cmd-row:hover .cmd-copy { opacity: 1; }
+    .cmd-copy:hover { color: var(--text-0); border-color: var(--border-2); }
+    .cmd-copy.copied { color: var(--green); opacity: 1; border-color: transparent; }
+
+    /* ── COVER ────────────────────────────────────────────────────── */
+    .cover-layout {
+      display: grid; grid-template-columns: 1fr 280px;
+      gap: 48px; align-items: start;
+    }
+
+    .cover-preview-wrap {
+      background: #0e0f12;
+      border: 1px solid var(--border);
+      overflow: hidden; position: relative;
+      /* height is set dynamically by JS once cover dimensions are known */
+      min-height: 120px;
+    }
+    .cover-preview-wrap iframe {
+      border: none; display: block;
+      position: absolute; top: 0; left: 0;
+      transform-origin: top left;
+      pointer-events: none;
+    }
+    .cover-not-built {
+      padding: 56px 32px; text-align: center;
+      color: var(--text-3); font-size: 12px; line-height: 2.2;
+    }
+    .cover-not-built code { color: var(--gold); }
+
+    .cover-aside-title {
+      font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 16px;
+    }
+    .cover-specs { display: flex; flex-direction: column; }
+    .csr {
+      display: flex; justify-content: space-between;
+      align-items: baseline; font-size: 11px;
+      padding: 10px 0; border-bottom: 1px solid var(--border);
+    }
+    .csr:last-child { border-bottom: none; }
+    .csk { color: var(--text-2); }
+    .csv { color: var(--text-0); font-weight: 500; text-align: right; }
+    .csv small { color: var(--text-2); font-weight: 400; font-size: 9px; display: block; margin-top: 2px; }
+
+    .cover-spine-vis {
+      margin-top: 20px; padding: 14px 16px;
+      background: var(--bg-1); border: 1px solid var(--border);
+    }
+    .spine-label {
+      font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-3); margin-bottom: 10px;
+    }
+    .spine-diagram {
+      display: flex; align-items: stretch; height: 44px;
+      border: 1px solid var(--border-2); overflow: hidden;
+    }
+    .spine-back, .spine-front {
+      flex: 7; display: flex; align-items: center; justify-content: center;
+      font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+    }
+    .spine-back  { background: var(--bg-2); color: var(--text-3); }
+    .spine-front { background: var(--bg-3); color: var(--text-2); }
+    .spine-spine {
+      background: var(--text-0); display: flex;
+      align-items: center; justify-content: center; overflow: hidden;
+    }
+    .spine-spine span {
+      font-size: 8px; font-weight: 700; color: var(--bg);
+      white-space: nowrap; writing-mode: vertical-rl;
+      transform: rotate(180deg); letter-spacing: 0.05em;
+    }
+    .cover-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+    .cover-actions .btn { justify-content: center; width: 100%; }
+
+    /* ── SCROLL REVEAL ────────────────────────────────────────────── */
+    .reveal {
+      opacity: 0; transform: translateY(18px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .reveal.in { opacity: 1; transform: none; }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ──────────────────────────────────────────────────────── -->
+<nav>
+  <span class="nav-logo">Bitcoin&nbsp;<em>Alpha</em>&nbsp;Book</span>
+  <div class="nav-links">
+    <a href="#releases">Releases</a>
+    <a href="#chapters">Chapters</a>
+    <a href="#design">Design</a>
+    <a href="#commands">Commands</a>
+    <a href="#cover">Cover</a>
+    <a href="#about">About</a>
+    <a href="/book" class="nav-cta">Open Book →</a>
+  </div>
+</nav>
+
+<!-- ── HERO ─────────────────────────────────────────────────────── -->
+<div class="hero">
+  <div class="hero-ghost" aria-hidden="true">01</div>
+  <div class="hero-body">
+    <div class="hero-eyebrow">Annotated Edition</div>
+    <h1 class="hero-title">
+      BITCOIN
+      <span class="version">v0.01 ALPHA<span class="cursor"></span></span>
+    </h1>
+    <p class="hero-desc">The original Bitcoin source code — 32 C++ files, 31,000 lines — released by Satoshi Nakamoto on January 9, 2009. Annotated line by line for developers, historians, and the Bitcoin-curious.</p>
+    <div class="hero-actions">
+      <a href="/book" class="btn btn-primary">Open Book Preview →</a>
+      <a href="#releases" class="btn btn-ghost">View Releases</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-num" id="stat-pages">527</span>
+        <span class="stat-label">Pages</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">32</span>
+        <span class="stat-label">Source Files</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">40</span>
+        <span class="stat-label">Sections</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">7 × 10</span>
+        <span class="stat-label">Print Format (in)</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── RELEASES ──────────────────────────────────────────────────── -->
+<section class="content-section reveal" id="releases">
+  <div class="section-header">
+    <span class="section-num">01 /</span>
+    <h2 class="section-title">Releases</h2>
+    <p class="section-hint">Each build is timestamped and archived. Run <code>npm run ship</code> to generate a release and start the preview server.</p>
+  </div>
+  <div id="releases-list"><div class="releases-empty">Loading…</div></div>
+  <div id="thumb-strip"></div>
+</section>
+
+<!-- ── CHAPTERS ──────────────────────────────────────────────────── -->
+<section class="content-section reveal" id="chapters">
+  <div class="section-header">
+    <span class="section-num">02 /</span>
+    <h2 class="section-title">Sections</h2>
+    <p class="section-hint">All 40 sections in book order. Click any card to open the book preview.</p>
+  </div>
+  <div class="filter-bar">
+    <button class="flt on"  data-f="all">All (40)</button>
+    <button class="flt"     data-f="intro">Primers (6)</button>
+    <button class="flt"     data-f="header">Header files (16)</button>
+    <button class="flt"     data-f="source">Source files (10)</button>
+    <button class="flt"     data-f="build">Build &amp; Config (6)</button>
+    <button class="flt"     data-f="back">Reference (2)</button>
+  </div>
+  <div class="ch-grid" id="ch-grid"></div>
+</section>
+
+<!-- ── DESIGN SYSTEM ────────────────────────────────────────────── -->
+<section class="content-section reveal" id="design">
+  <div class="section-header">
+    <span class="section-num">03 /</span>
+    <h2 class="section-title">Design System</h2>
+    <p class="section-hint">Typography, colour, and layout — 7″ × 10″ print at 300 DPI on 60# uncoated.</p>
+  </div>
+
+  <!-- Controls: page type + typeface -->
+  <div class="ds-controls">
+    <div class="ds-page-tabs">
+      <button class="ds-page-tab on" data-mock="code">Code page</button>
+      <button class="ds-page-tab" data-mock="chapter">Chapter opener</button>
+      <button class="ds-page-tab" data-mock="section">Section intro</button>
+      <button class="ds-page-tab" data-mock="text">Text / annotation</button>
+      <button class="ds-page-tab" data-mock="all">All</button>
+    </div>
+    <div class="ds-typeface-wrap">
+      <span class="ds-typeface-label">Typeface</span>
+      <select class="ds-typeface-select" id="ds-typeface">
+        <option value="redhat|inter">Red Hat Mono + Inter (old)</option>
+        <option value="jetbrains|lora">JetBrains Mono + Lora</option>
+        <option value="plex|sourceserif">IBM Plex Mono + Source Serif 4</option>
+        <option value="firacode|crimson">Fira Code + Crimson Pro</option>
+        <option value="jetbrains|merriweather">JetBrains Mono + Merriweather</option>
+        <option value="basis|inter" selected>Basis Grotesque Mono Pro + Inter</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Pasteboard -->
+  <div class="ds-pasteboard" id="ds-pasteboard">
+
+    <!-- CODE PAGE -->
+    <div class="mock-stack on" id="mock-code">
+      <div class="mock-wrap">
+        <div class="mock-caption">Recto — code + annotations</div>
+        <div class="mock-outer">
+          <div class="mock-inner">
+            <div class="mock-hdr"><span>SCRIPT.CPP</span><span>BITCOIN v0.01 ALPHA</span></div>
+            <div class="mock-body">
+              <div class="mcl"><span class="mln">215</span><span class="mlc"><span style="color:#986801">#include</span> <span style="color:#50a14f">"script.h"</span></span></div>
+              <div class="mcl"><span class="mln">216</span><span class="mlc"></span></div>
+              <div class="mcl"><span class="mln">217</span><span class="mlc"><span style="color:#0086b3">bool</span> <span style="color:#0086b3">EvalScript</span>(<span style="color:#0086b3">const</span> <span style="color:#0086b3">CScript</span>&amp; script,</span></div>
+              <div class="mcl"><span class="mln">218</span><span class="mlc">             <span style="color:#0086b3">const</span> <span style="color:#0086b3">CTransaction</span>&amp; txTo,</span></div>
+              <div class="mcl"><span class="mln">219</span><span class="mlc">             <span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">int</span> nIn, <span style="color:#0086b3">int</span> nHashType)</span></div>
+              <div class="mcl"><span class="mln">220</span><span class="mlc">{</span></div>
+              <div class="mann">
+                <div class="mann-inner"><strong>Script evaluation engine.</strong> Bitcoin Script is a deliberately limited stack-based language — not Turing-complete by design. Each opcode pushes data onto the stack or transforms it. A transaction is valid only when execution leaves a non-zero value on top.</div>
+              </div>
+              <div class="mcl"><span class="mln">221</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt;&gt; stack;</span></div>
+              <div class="mcl"><span class="mln">222</span><span class="mlc">    <span style="color:#0086b3">CScript</span>::<span style="color:#0086b3">const_iterator</span> pc = script.begin();</span></div>
+              <div class="mcl"><span class="mln">223</span><span class="mlc">    <span style="color:#0086b3">CScript</span>::<span style="color:#0086b3">const_iterator</span> pend = script.end();</span></div>
+              <div class="mcl"><span class="mln">224</span><span class="mlc">    <span style="color:#d73a49">opcodetype</span> opcode;</span></div>
+              <div class="mcl"><span class="mln">225</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt; vchPushValue;</span></div>
+              <div class="mcl"><span class="mln">226</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">bool</span>&gt; vfExec;</span></div>
+              <div class="mcl"><span class="mln">227</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt;&gt; altstack;</span></div>
+              <div class="mann mann-blue">
+                <div class="mann-inner"><strong>Two stacks.</strong> The main stack holds data; the alt-stack is a secondary store via <code style="font-size:6.5pt;background:#f0f0f0;padding:0 2px">OP_TOALTSTACK</code>. This allows temporary storage without breaking linear execution.</div>
+              </div>
+              <div class="mcl"><span class="mln">228</span><span class="mlc">    <span style="color:#0086b3">int</span> nOpCount = <span style="color:#50a14f">0</span>;</span></div>
+              <div class="mcl"><span class="mln">229</span><span class="mlc"></span></div>
+              <div class="mcl"><span class="mln">230</span><span class="mlc">    <span style="color:#d73a49">try</span></span></div>
+              <div class="mcl"><span class="mln">231</span><span class="mlc">    {</span></div>
+              <div class="mcl"><span class="mln">232</span><span class="mlc">        <span style="color:#d73a49">while</span> (pc &lt; pend)</span></div>
+              <div class="mcl"><span class="mln">233</span><span class="mlc">        {</span></div>
+              <div class="mcl"><span class="mln">234</span><span class="mlc">            <span style="color:#d73a49">if</span> (!<span style="color:#0086b3">GetOp</span>(pc, pend, opcode, vchPushValue))</span></div>
+              <div class="mcl"><span class="mln">235</span><span class="mlc">                <span style="color:#d73a49">return</span> <span style="color:#50a14f">false</span>;</span></div>
+              <div class="mann mann-red">
+                <div class="mann-inner"><strong>Consensus-critical.</strong> Any failure to parse an opcode aborts execution. This hard failure mode is intentional — malformed scripts are rejected, not silently skipped. Changing this would require a hard fork.</div>
+              </div>
+              <div class="mcl"><span class="mln">236</span><span class="mlc">            <span style="color:#d73a49">if</span> (opcode > <span style="color:#0086b3">OP_16</span> &amp;&amp; ++nOpCount > <span style="color:#50a14f">200</span>)</span></div>
+              <div class="mcl"><span class="mln">237</span><span class="mlc">                <span style="color:#d73a49">return</span> <span style="color:#50a14f">false</span>;</span></div>
+            </div>
+            <div class="mock-ftr"><span>42</span><span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="mock-wrap">
+        <div class="mock-caption">Verso — dense code</div>
+        <div class="mock-outer">
+          <div class="mock-inner">
+            <div class="mock-hdr"><span>BITCOIN v0.01 ALPHA</span><span>TRANSACTION VALIDATION</span></div>
+            <div class="mock-body">
+              <div class="mcl"><span class="mln">180</span><span class="mlc"><span style="color:#0086b3">bool</span> <span style="color:#0086b3">CTransaction</span>::<span style="color:#0086b3">CheckTransaction</span>() <span style="color:#0086b3">const</span></span></div>
+              <div class="mcl"><span class="mln">181</span><span class="mlc">{</span></div>
+              <div class="mcl"><span class="mln">182</span><span class="mlc">    <span style="color:#d73a49">if</span> (vin.empty() || vout.empty())</span></div>
+              <div class="mcl"><span class="mln">183</span><span class="mlc">        <span style="color:#d73a49">return</span> <span style="color:#0086b3">error</span>(<span style="color:#50a14f">"CTransaction::CheckTransaction() : "</span></span></div>
+              <div class="mcl"><span class="mln">184</span><span class="mlc">                      <span style="color:#50a14f">"vin or vout empty"</span>);</span></div>
+              <div class="mann">
+                <div class="mann-inner"><strong>Input and output validation.</strong> Every transaction must have at least one input and one output. A transaction with no outputs could destroy coins permanently — this guard prevents that.</div>
+              </div>
+              <div class="mcl"><span class="mln">185</span><span class="mlc">    <span style="color:#d73a49">if</span> (IsCoinBase())</span></div>
+              <div class="mcl"><span class="mln">186</span><span class="mlc">    {</span></div>
+              <div class="mcl"><span class="mln">187</span><span class="mlc">        <span style="color:#d73a49">if</span> (vin[<span style="color:#50a14f">0</span>].scriptSig.size() &lt; <span style="color:#50a14f">2</span> ||</span></div>
+              <div class="mcl"><span class="mln">188</span><span class="mlc">            vin[<span style="color:#50a14f">0</span>].scriptSig.size() > <span style="color:#50a14f">100</span>)</span></div>
+              <div class="mcl"><span class="mln">189</span><span class="mlc">            <span style="color:#d73a49">return</span> <span style="color:#0086b3">error</span>(<span style="color:#50a14f">"bad coinbase scriptsig size"</span>);</span></div>
+              <div class="mann mann-red">
+                <div class="mann-inner"><strong>Coinbase script size.</strong> The miner's coinbase field must be 2–100 bytes. The upper bound prevents data spam in the coinbase; the lower bound ensures there's always some data present. This range is consensus-critical.</div>
+              </div>
+              <div class="mcl"><span class="mln">190</span><span class="mlc">    }</span></div>
+              <div class="mcl"><span class="mln">191</span><span class="mlc">    <span style="color:#d73a49">else</span></span></div>
+              <div class="mcl"><span class="mln">192</span><span class="mlc">    {</span></div>
+              <div class="mcl"><span class="mln">193</span><span class="mlc">        <span style="color:#d73a49">for</span> (<span style="color:#d73a49">int</span> i = <span style="color:#50a14f">0</span>; i &lt; vin.size(); i++)</span></div>
+              <div class="mcl"><span class="mln">194</span><span class="mlc">            <span style="color:#d73a49">if</span> (vin[i].prevout.<span style="color:#0086b3">IsNull</span>())</span></div>
+              <div class="mcl"><span class="mln">195</span><span class="mlc">                <span style="color:#d73a49">return</span> <span style="color:#0086b3">error</span>(<span style="color:#50a14f">"prevout is null"</span>);</span></div>
+              <div class="mcl"><span class="mln">196</span><span class="mlc">    }</span></div>
+              <div class="mcl"><span class="mln">197</span><span class="mlc">    <span style="color:#d73a49">return</span> <span style="color:#50a14f">true</span>;</span></div>
+              <div class="mcl"><span class="mln">198</span><span class="mlc">}</span></div>
+            </div>
+            <div class="mock-ftr"><span></span><span>43</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAPTER OPENER -->
+    <div class="mock-stack" id="mock-chapter">
+      <div class="mock-wrap">
+        <div class="mock-caption">Recto — chapter opener</div>
+        <div class="mock-outer">
+          <div class="mock-inner">
+            <div class="mock-chapter-body">
+              <div class="mc-num">03</div>
+              <div class="mc-file">script.cpp</div>
+              <div class="mc-subtitle">Script Interpreter · Lines 1–605</div>
+              <hr class="mc-rule">
+              <div class="mc-desc">The Script interpreter is Bitcoin's programmable transaction layer. Satoshi designed it as a deliberately constrained stack machine — powerful enough for multi-signature and time-lock conditions, limited enough to remain predictable and auditable.</div>
+              <div class="mc-toc">
+                <div class="mc-toc-title">Contents</div>
+                <div class="mc-toc-item"><span>Opcode definitions</span><span>1–48</span></div>
+                <div class="mc-toc-item"><span>CScript serialization</span><span>49–120</span></div>
+                <div class="mc-toc-item"><span>EvalScript — the engine</span><span>121–410</span></div>
+                <div class="mc-toc-item"><span>Signature verification</span><span>411–520</span></div>
+                <div class="mc-toc-item"><span>Standard script patterns</span><span>521–605</span></div>
+              </div>
+            </div>
+            <div class="mock-ftr"><span>68</span><span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="mock-wrap">
+        <div class="mock-caption">Verso — blank / part title</div>
+        <div class="mock-outer">
+          <div class="mock-inner" style="display:flex;align-items:center;justify-content:center;height:100%">
+            <div style="text-align:center;padding:0 80px">
+              <div style="font-size:7pt;letter-spacing:0.3em;text-transform:uppercase;color:#bbb;margin-bottom:20px">Part II</div>
+              <div class="mc-file" style="font-size:22pt;text-align:center">The Source</div>
+              <div style="font-size:8pt;color:#888;margin-top:16px;line-height:1.6;font-family:var(--mf-body,'Inter',sans-serif)">Six C++ files. 17,000 lines. The complete Bitcoin v0.01 codebase annotated line by line.</div>
+            </div>
+          </div>
+          <div class="mock-ftr"><span></span><span>67</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION INTRO -->
+    <div class="mock-stack" id="mock-section">
+      <div class="mock-wrap">
+        <div class="mock-caption">Recto — section opener</div>
+        <div class="mock-outer">
+          <div class="mock-inner">
+            <div class="mock-hdr"><span>SCRIPT.CPP</span><span>BITCOIN v0.01 ALPHA</span></div>
+            <div class="mock-section-body">
+              <div class="ms-eyebrow">§ 3.4 · Opcode Execution</div>
+              <div class="ms-title">The<br>Stack<br>Machine</div>
+              <hr class="ms-rule">
+              <div class="ms-body">
+                <p>Bitcoin Script executes as a simple stack machine. Each opcode reads from the top of the stack, performs its operation, and pushes the result. No loops, no recursion — just a linear sequence of transformations.</p>
+                <p>This intentional simplicity makes Script auditable: any validator can trace execution step by step and verify the outcome deterministically.</p>
+              </div>
+            </div>
+            <div class="ms-meta">
+              <div class="ms-meta-item"><span class="ms-meta-key">Lines</span><span>217 – 410</span></div>
+              <div class="ms-meta-item"><span class="ms-meta-key">Opcodes</span><span>75 defined, 67 active</span></div>
+              <div class="ms-meta-item"><span class="ms-meta-key">Stack depth</span><span>max 1000 items</span></div>
+            </div>
+            <div class="mock-ftr"><span>86</span><span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="mock-wrap">
+        <div class="mock-caption">Verso — first code of section</div>
+        <div class="mock-outer">
+          <div class="mock-inner">
+            <div class="mock-hdr"><span>BITCOIN v0.01 ALPHA</span><span>THE STACK MACHINE</span></div>
+            <div class="mock-body">
+              <div class="mcl"><span class="mln">217</span><span class="mlc"><span style="color:#0086b3">bool</span> <span style="color:#0086b3">EvalScript</span>(<span style="color:#0086b3">const</span> <span style="color:#0086b3">CScript</span>&amp; script,</span></div>
+              <div class="mcl"><span class="mln">218</span><span class="mlc">             <span style="color:#0086b3">const</span> <span style="color:#0086b3">CTransaction</span>&amp; txTo,</span></div>
+              <div class="mcl"><span class="mln">219</span><span class="mlc">             <span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">int</span> nIn, <span style="color:#0086b3">int</span> nHashType)</span></div>
+              <div class="mcl"><span class="mln">220</span><span class="mlc">{</span></div>
+              <div class="mann">
+                <div class="mann-inner"><strong>Entry point.</strong> The script and transaction context are passed as const references — the evaluator reads them but never modifies them. nIn identifies which input is being validated; nHashType controls the signature hash algorithm.</div>
+              </div>
+              <div class="mcl"><span class="mln">221</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt;&gt; stack;</span></div>
+              <div class="mcl"><span class="mln">222</span><span class="mlc">    <span style="color:#0086b3">CScript</span>::<span style="color:#0086b3">const_iterator</span> pc = script.begin();</span></div>
+              <div class="mcl"><span class="mln">223</span><span class="mlc">    <span style="color:#0086b3">CScript</span>::<span style="color:#0086b3">const_iterator</span> pend = script.end();</span></div>
+              <div class="mcl"><span class="mln">224</span><span class="mlc">    <span style="color:#d73a49">opcodetype</span> opcode;</span></div>
+              <div class="mcl"><span class="mln">225</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt; vchPushValue;</span></div>
+              <div class="mcl"><span class="mln">226</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">bool</span>&gt; vfExec;</span></div>
+              <div class="mcl"><span class="mln">227</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt;&gt; altstack;</span></div>
+              <div class="mcl"><span class="mln">228</span><span class="mlc">    <span style="color:#0086b3">int</span> nOpCount = <span style="color:#50a14f">0</span>;</span></div>
+            </div>
+            <div class="mock-ftr"><span></span><span>87</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TEXT / ANNOTATION HEAVY -->
+    <div class="mock-stack" id="mock-text">
+      <div class="mock-wrap">
+        <div class="mock-caption">Recto — annotation-heavy</div>
+        <div class="mock-outer">
+          <div class="mock-inner">
+            <div class="mock-hdr"><span>MAIN.CPP</span><span>BITCOIN v0.01 ALPHA</span></div>
+            <div class="mock-text-body">
+              <div class="mt-ann-block red">
+                <div class="mt-ann-head">Consensus · Line 1242</div>
+                <div class="mt-ann-text"><strong>The 21 million cap.</strong> <code style="font-size:6pt;background:#f0e0e0;padding:0 2px">nSubsidy</code> halves every 210,000 blocks. This arithmetic determines the absolute supply ceiling — one of the most consequential constants in the entire codebase. It cannot change without a hard fork of the entire network.</div>
+              </div>
+              <div class="mt-code-snippet">int64 nSubsidy = 50 * COIN;
+nSubsidy >>= (nHeight / 210000);</div>
+              <div class="mt-ann-block">
+                <div class="mt-ann-head">Design note · Line 1248</div>
+                <div class="mt-ann-text"><strong>Right-shift halving.</strong> Rather than dividing by 2 each halving epoch, Satoshi uses a bit-shift. At epoch 33 (year ~2140), the shift exceeds 64 bits and the subsidy rounds to zero — ending new issuance permanently.</div>
+              </div>
+              <div class="mt-pull">
+                "The root problem with conventional currency is all the trust that's required to make it work."
+              </div>
+              <div class="mt-ann-block blue">
+                <div class="mt-ann-head">Historical context</div>
+                <div class="mt-ann-text">The genesis block coinbase contains Satoshi's famous Times headline: <em>"Chancellor on brink of second bailout for banks."</em> This was not just a timestamp — it was a statement of intent embedded permanently in the chain's first block.</div>
+              </div>
+              <div class="mt-ann-block">
+                <div class="mt-ann-head">Line 1267 — GetBlockValue</div>
+                <div class="mt-ann-text">The block reward function is remarkably compact for something so consequential. Three lines of C++ encode the entire monetary policy of a global currency network.</div>
+              </div>
+            </div>
+            <div class="mock-ftr"><span>124</span><span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="mock-wrap">
+        <div class="mock-caption">Verso — mixed code + prose</div>
+        <div class="mock-outer">
+          <div class="mock-inner">
+            <div class="mock-hdr"><span>BITCOIN v0.01 ALPHA</span><span>BLOCK REWARDS</span></div>
+            <div class="mock-body">
+              <div class="mcl"><span class="mln">1262</span><span class="mlc"><span style="color:#0086b3">int64</span> <span style="color:#0086b3">GetBlockValue</span>(<span style="color:#0086b3">int</span> nHeight,</span></div>
+              <div class="mcl"><span class="mln">1263</span><span class="mlc">                 <span style="color:#0086b3">int64</span> nFees)</span></div>
+              <div class="mcl"><span class="mln">1264</span><span class="mlc">{</span></div>
+              <div class="mcl"><span class="mln">1265</span><span class="mlc">    <span style="color:#0086b3">int64</span> nSubsidy = <span style="color:#50a14f">50</span> * <span style="color:#0086b3">COIN</span>;</span></div>
+              <div class="mann mann-red">
+                <div class="mann-inner"><strong>50 BTC genesis reward.</strong> COIN = 100,000,000 satoshis. The initial subsidy of 50 BTC per block, combined with the 10-minute target and 4-year halving schedule, was carefully back-calculated to reach the 21 million cap.</div>
+              </div>
+              <div class="mcl"><span class="mln">1266</span><span class="mlc">    nSubsidy >>= (nHeight / <span style="color:#50a14f">210000</span>);</span></div>
+              <div class="mann">
+                <div class="mann-inner">Each halving epoch spans 210,000 blocks ≈ 4 years. After 33 halvings (~year 2140), the shift produces zero and mining revenue becomes purely fee-based. Transaction fees become the sole security budget.</div>
+              </div>
+              <div class="mcl"><span class="mln">1267</span><span class="mlc">    <span style="color:#d73a49">return</span> nSubsidy + nFees;</span></div>
+              <div class="mcl"><span class="mln">1268</span><span class="mlc">}</span></div>
+              <div class="mann">
+                <div class="mann-inner"><strong>Fee aggregation.</strong> From day one, Satoshi anticipated a fee market. Transaction fees are explicitly added to the subsidy, establishing the economic model that will sustain the network after the final halving.</div>
+              </div>
+            </div>
+            <div class="mock-ftr"><span></span><span>125</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /ds-pasteboard -->
+
+  <!-- Info panels -->
+  <div class="ds-info-layout">
+    <div class="ds-info-panel">
+      <div class="ds-info-title">Colour system</div>
+      <div class="palette">
+        <div class="sw"><div class="sw-color" style="background:#d73a49"></div><div class="sw-name">Keyword</div><div class="sw-hex">#d73a49</div></div>
+        <div class="sw"><div class="sw-color" style="background:#0086b3"></div><div class="sw-name">Type / Fn</div><div class="sw-hex">#0086b3</div></div>
+        <div class="sw"><div class="sw-color" style="background:#50a14f"></div><div class="sw-name">String</div><div class="sw-hex">#50a14f</div></div>
+        <div class="sw"><div class="sw-color" style="background:#986801"></div><div class="sw-name">Preproc</div><div class="sw-hex">#986801</div></div>
+        <div class="sw"><div class="sw-color" style="background:#8a8a8a"></div><div class="sw-name">Comment</div><div class="sw-hex">#8a8a8a</div></div>
+        <div class="sw"><div class="sw-color" style="background:#444444"></div><div class="sw-name">Punct</div><div class="sw-hex">#444444</div></div>
+        <div class="sw"><div class="sw-color" style="background:#222222"></div><div class="sw-name">Default</div><div class="sw-hex">#222222</div></div>
+        <div class="sw"><div class="sw-color" style="background:#fff;border:1px solid #ccc"></div><div class="sw-name">Page bg</div><div class="sw-hex">#ffffff</div></div>
+      </div>
+      <div class="highlight-legend">
+        <div class="legend-title">Annotation bar colours</div>
+        <div class="legend-items">
+          <div class="li"><div class="li-bar" style="background:#e63946"></div><div class="li-code">consensus-imperative</div><div class="li-desc">Hard fork required to change</div></div>
+          <div class="li"><div class="li-bar" style="background:#2d6a4f"></div><div class="li-code">proof-of-work</div><div class="li-desc">Mining + difficulty</div></div>
+          <div class="li"><div class="li-bar" style="background:#0077b6"></div><div class="li-code">crypto</div><div class="li-desc">ECDSA, SHA-256, hashes</div></div>
+          <div class="li"><div class="li-bar" style="background:#8338ec"></div><div class="li-code">transaction</div><div class="li-desc">UTXO creation + spending</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ds-info-panel">
+      <div class="ds-info-title">Type scale</div>
+      <div class="type-scale" id="ds-type-scale">
+        <div class="ts-row">
+          <div class="ts-meta">42pt · 700<br>Chapter num</div>
+          <div class="ts-pre ds-heading" style="font-size:26px;font-weight:700;letter-spacing:-0.01em">03</div>
+        </div>
+        <div class="ts-row">
+          <div class="ts-meta">28pt · 600<br>File title</div>
+          <div class="ts-pre ds-heading" style="font-size:20px;font-weight:600">main.cpp</div>
+        </div>
+        <div class="ts-row">
+          <div class="ts-meta">11pt · 600<br>Section title</div>
+          <div class="ts-pre ds-heading" style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Block Rewards</div>
+        </div>
+        <div class="ts-row">
+          <div class="ts-meta">8pt · 400<br>Annotation</div>
+          <div class="ts-pre ds-body" style="font-size:12px;color:var(--text-2)">Satoshi's 50 BTC genesis reward, combined with the 4-year halving, calculates precisely to 21 million.</div>
+        </div>
+        <div class="ts-row">
+          <div class="ts-meta">6pt · 400<br>Code</div>
+          <div class="ts-pre ds-code" style="font-size:11px;color:var(--text-1)">nSubsidy >>= (nHeight / 210000);</div>
+        </div>
+        <div class="ts-row">
+          <div class="ts-meta">7pt · 400<br>Running hdr</div>
+          <div class="ts-pre ds-code" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2)">MAIN.CPP</div>
+        </div>
+        <div class="ts-row">
+          <div class="ts-meta">7pt · 400<br>Page number</div>
+          <div class="ts-pre ds-code" style="font-size:10px;color:var(--text-2)">124</div>
+        </div>
+      </div>
+      <div class="ts-note" id="ds-type-note">Code: <strong>Basis Grotesque Mono Pro</strong> · Body: <strong>Inter</strong></div>
+    </div>
+
+    <div class="ds-info-panel">
+      <div class="ds-info-title">Code token colours</div>
+      <div class="tokens">
+        <div class="tk"><div class="tk-dot" style="background:#d73a49"></div><div class="tk-name">keyword</div><div class="tk-ex" style="color:#d73a49">if · while · return</div><div class="tk-hex">#d73a49</div></div>
+        <div class="tk"><div class="tk-dot" style="background:#0086b3"></div><div class="tk-name">type / function</div><div class="tk-ex" style="color:#0086b3">uint256 · GetHash</div><div class="tk-hex">#0086b3</div></div>
+        <div class="tk"><div class="tk-dot" style="background:#50a14f"></div><div class="tk-name">string / literal</div><div class="tk-ex" style="color:#50a14f">"bitcoin" · true</div><div class="tk-hex">#50a14f</div></div>
+        <div class="tk"><div class="tk-dot" style="background:#986801"></div><div class="tk-name">preprocessor</div><div class="tk-ex" style="color:#986801">#include · #define</div><div class="tk-hex">#986801</div></div>
+        <div class="tk"><div class="tk-dot" style="background:#8a8a8a"></div><div class="tk-name">comment</div><div class="tk-ex" style="color:#8a8a8a;font-style:italic">// original comment</div><div class="tk-hex">#8a8a8a</div></div>
+        <div class="tk"><div class="tk-dot" style="background:#444"></div><div class="tk-name">punctuation</div><div class="tk-ex" style="color:#555">{ } ( ) ; &lt; &gt;</div><div class="tk-hex">#444444</div></div>
+      </div>
+      <p class="tokens-note">Theme derived from One Light, recalibrated for CMYK and legibility at 6pt on 60# uncoated. Contrast verified against SWOP coated profiles.</p>
+    </div>
+  </div>
+
+</section>
+
+<!-- ── COMMANDS ──────────────────────────────────────────────────── -->
+<section class="content-section reveal" id="commands">
+  <div class="section-header">
+    <span class="section-num">04 /</span>
+    <h2 class="section-title">Commands</h2>
+    <p class="section-hint">Run from the project root. Click any row to copy the command.</p>
+  </div>
+
+  <!-- Pipeline diagram -->
+  <div class="pipeline">
+    <div class="pipeline-label">npm run ship — release + preview server</div>
+    <div class="pipeline-box">
+      <div class="pipeline-box-title">npm run release</div>
+      <div class="pipeline-steps">
+        <div class="pipeline-step">build</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">pdf</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">cover</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">cover:pdf</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">thumbnails</div>
+        <div class="pipeline-arrow">→</div>
+        <div class="pipeline-step">archive to releases/</div>
+      </div>
+    </div>
+    <div class="pipeline-then">then</div>
+    <div class="pipeline-box pipeline-box--server">
+      <div class="pipeline-box-title">npm run preview</div>
+      <div class="pipeline-steps">
+        <div class="pipeline-step">localhost:3000</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cmd-groups">
+
+    <!-- Release -->
+    <div>
+      <div class="cmd-group-title">Release</div>
+      <div class="cmd-row cmd-row--primary" data-cmd="npm run ship">
+        <div class="cmd-shell"><span class="cmd-prefix">npm run </span>ship</div>
+        <div class="cmd-desc">Full release pipeline then starts the preview server at <code>localhost:3000</code> — the one command to do everything</div>
+        <button class="cmd-copy">copy</button>
+      </div>
+      <div class="cmd-row" data-cmd="npm run release">
+        <div class="cmd-shell"><span class="cmd-prefix">npm run </span>release</div>
+        <div class="cmd-desc">Full pipeline — build, PDF, cover, thumbnails, then archive everything to <code>releases/YYYY-MM-DD_HH-MM-SS/</code></div>
+        <button class="cmd-copy">copy</button>
+      </div>
+    </div>
+
+    <!-- Build -->
+    <div>
+      <div class="cmd-group-title">Build</div>
+      <div class="cmd-row" data-cmd="npm run build">
+        <div class="cmd-shell"><span class="cmd-prefix">npm run </span>build</div>
+        <div class="cmd-desc">Compile all source files and annotations into <code>output/bitcoin-alpha-book.html</code></div>
+        <button class="cmd-copy">copy</button>
+      </div>
+      <div class="cmd-row" data-cmd="npm run pdf">
+        <div class="cmd-shell"><span class="cmd-prefix">npm run </span>pdf</div>
+        <div class="cmd-desc">Render book PDF via Paged.js + Puppeteer. Also writes <code>book-meta.json</code> with page count</div>
+        <button class="cmd-copy">copy</button>
+      </div>
+      <div class="cmd-row" data-cmd="npm run thumbnails">
+        <div class="cmd-shell"><span class="cmd-prefix">npm run </span>thumbnails</div>
+        <div class="cmd-desc">Write <code>thumbnails.png/html</code> (flat grid) and <code>contact-sheet.png/html</code> (spreads + cover)</div>
+        <button class="cmd-copy">copy</button>
+      </div>
+    </div>
+
+    <!-- Cover -->
+    <div>
+      <div class="cmd-group-title">Cover</div>
+      <div class="cmd-row" data-cmd="npm run cover">
+        <div class="cmd-shell"><span class="cmd-prefix">npm run </span>cover</div>
+        <div class="cmd-desc">Build cover HTML — reads page count from <code>book-meta.json</code> to calculate spine width</div>
+        <button class="cmd-copy">copy</button>
+      </div>
+      <div class="cmd-row" data-cmd="npm run cover:pdf">
+        <div class="cmd-shell"><span class="cmd-prefix">npm run </span>cover:pdf</div>
+        <div class="cmd-desc">Render cover to print-ready PDF at full bleed canvas size</div>
+        <button class="cmd-copy">copy</button>
+      </div>
+      <div class="cmd-row" data-cmd="npm run donation:derive">
+        <div class="cmd-shell"><span class="cmd-prefix">npm run </span>donation:derive</div>
+        <div class="cmd-desc">Derive next Bitcoin donation address from <code>BITCOIN_DONATION_XPUB</code> env var and generate QR code</div>
+        <button class="cmd-copy">copy</button>
+      </div>
+    </div>
+
+    <!-- Preview -->
+    <div>
+      <div class="cmd-group-title">Preview</div>
+      <div class="cmd-row" data-cmd="npm run preview">
+        <div class="cmd-shell"><span class="cmd-prefix">npm run </span>preview</div>
+        <div class="cmd-desc">Start preview server at <code>localhost:3000</code> — home, book, cover, thumbnails, contact sheet</div>
+        <button class="cmd-copy">copy</button>
+      </div>
+    </div>
+
+    <!-- Source -->
+    <div>
+      <div class="cmd-group-title">Source</div>
+      <div class="cmd-row" data-cmd="npm run fetch">
+        <div class="cmd-shell"><span class="cmd-prefix">npm run </span>fetch</div>
+        <div class="cmd-desc">Fetch Bitcoin v0.01 source files from the Nakamoto Institute repository</div>
+        <button class="cmd-copy">copy</button>
+      </div>
+    </div>
+
+    <!-- Debug -->
+    <div>
+      <div class="cmd-group-title">Debug &amp; Test</div>
+      <div class="cmd-row" data-cmd="npm run test:index">
+        <div class="cmd-shell"><span class="cmd-prefix">npm run </span>test:index</div>
+        <div class="cmd-desc">Validate index — check all page number references resolve correctly</div>
+        <button class="cmd-copy">copy</button>
+      </div>
+      <div class="cmd-row" data-cmd="npm run debug:index">
+        <div class="cmd-shell"><span class="cmd-prefix">npm run </span>debug:index</div>
+        <div class="cmd-desc">Print detailed index page mapping diagnostics to the console</div>
+        <button class="cmd-copy">copy</button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ── COVER ─────────────────────────────────────────────────────── -->
+<section class="content-section reveal" id="cover">
+  <div class="section-header">
+    <span class="section-num">05 /</span>
+    <h2 class="section-title">Cover Design</h2>
+    <p class="section-hint">Full-spread print cover with bleed and crop marks. Spine width is derived from the live page count.</p>
+  </div>
+  <div class="cover-layout">
+    <div class="cover-preview-wrap" id="cover-preview-wrap">
+      <div class="cover-not-built">Cover not yet built.<br>Run <code>npm run cover</code> to generate it.</div>
+    </div>
+    <div id="cover-aside"></div>
+  </div>
+</section>
+
+<!-- ── ABOUT ─────────────────────────────────────────────────────── -->
+<section class="content-section reveal" id="about">
+  <div class="section-header">
+    <span class="section-num">06 /</span>
+    <h2 class="section-title">About the Book</h2>
+  </div>
+  <div class="about-layout">
+    <div class="about-main">
+      <h3>The Source Code Behind the Genesis Block</h3>
+      <p>On January 9, 2009, Satoshi Nakamoto announced Bitcoin v0.01 to the Cryptography Mailing List. It was complete, functional software — written in C++ with a wxWidgets GUI, BerkeleyDB storage, and a peer-to-peer network built on raw TCP sockets. <strong>This book is a complete, line-by-line reading of that code.</strong></p>
+      <p>Bitcoin v0.01 is 31,000 lines spread across 32 source files. In that space it implements proof-of-work mining, UTXO-based transactions, ECDSA digital signatures, a stack-based scripting language, P2P networking with IRC bootstrapping, wallet management, and a full desktop GUI. Everything Nakamoto needed to demonstrate the concept — written before any of it had a name.</p>
+
+      <div class="blockquote">
+        <p>"The root problem with conventional currency is all the trust that's required to make it work. The central bank must be trusted not to debase the currency, but the history of fiat currencies is full of breaches of that trust."</p>
+        <cite>Satoshi Nakamoto · P2P Foundation · February 11, 2009</cite>
+      </div>
+
+      <p>The annotations explain every significant function, data structure, and design choice — connecting code to its cryptographic foundations, to the history of digital cash that preceded it, and to the broader architectural decisions that made Bitcoin resilient enough to survive. <strong>Six primer chapters</strong> establish the necessary context: C++, cryptography, networking, and the cypherpunk movement.</p>
+      <p>This is an annotated edition in the tradition of <em>The Annotated Turing</em> and <em>Structure and Interpretation of Computer Programs</em> — a close reading of source code as both a technical document and a historical artifact.</p>
+    </div>
+
+    <div class="about-aside">
+      <div class="aside-card">
+        <h4>Publication Specs</h4>
+        <div class="spec-row"><span class="spec-k">Format</span><span class="spec-v">7″ × 10″ Perfect Bound</span></div>
+        <div class="spec-row"><span class="spec-k">Pages</span><span class="spec-v" id="about-pages">527</span></div>
+        <div class="spec-row"><span class="spec-k">Paper</span><span class="spec-v">60# White Uncoated</span></div>
+        <div class="spec-row"><span class="spec-k">Code font</span><span class="spec-v">Basis Grotesque Mono Pro</span></div>
+        <div class="spec-row"><span class="spec-k">Body font</span><span class="spec-v">Inter</span></div>
+        <div class="spec-row"><span class="spec-k">Code size</span><span class="spec-v">6pt / 1.4 leading</span></div>
+        <div class="spec-row"><span class="spec-k">Render engine</span><span class="spec-v">Paged.js + Puppeteer</span></div>
+      </div>
+      <div class="aside-card">
+        <h4>Source Repository</h4>
+        <div class="spec-row"><span class="spec-k">Version</span><span class="spec-v">Bitcoin v0.01</span></div>
+        <div class="spec-row"><span class="spec-k">Release date</span><span class="spec-v">January 9, 2009</span></div>
+        <div class="spec-row"><span class="spec-k">Files</span><span class="spec-v">32</span></div>
+        <div class="spec-row"><span class="spec-k">Lines of code</span><span class="spec-v">~31,000</span></div>
+        <div class="spec-row"><span class="spec-k">Language</span><span class="spec-v">C++ (GCC 3.4 era)</span></div>
+        <div class="spec-row"><span class="spec-k">GUI framework</span><span class="spec-v">wxWidgets 2.8</span></div>
+        <div class="spec-row"><span class="spec-k">Database</span><span class="spec-v">BerkeleyDB 4.x</span></div>
+        <div class="spec-row"><span class="spec-k">Crypto</span><span class="spec-v">OpenSSL (ECDSA)</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── FOOTER ─────────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-left">Bitcoin Alpha Book · Annotated Edition · 2026</div>
+  <div class="footer-links">
+    <a href="/book">Preview</a>
+    <a href="/cover">Cover</a>
+    <a href="/thumbnails">Thumbnails</a>
+    <a href="/contact-sheet">Contact sheet</a>
+    <a href="#releases">Releases</a>
+  </div>
+</footer>
+
+<script>
+/* ── DATA ──────────────────────────────────────────────────────────── */
+const CHAPTERS = [
+  { t:'intro',  n:'Introduction',       d:'Why this book exists and how to read it' },
+  { t:'intro',  n:'The Road to Bitcoin',d:'Cypherpunks, e-cash, and the ideas that made Bitcoin possible' },
+  { t:'intro',  n:'Computer Concepts',  d:'Data structures, networks, and cryptographic primitives' },
+  { t:'intro',  n:'Cryptography Basics',d:'Hash functions, ECDSA, and public-key cryptography' },
+  { t:'intro',  n:'C++ Primer',         d:'C++ patterns used throughout Bitcoin v0.01' },
+  { t:'intro',  n:'rc/ Resources',      d:'UI resources, icons, and bitmap assets' },
+
+  { t:'header', n:'base58.h',     d:'Base58 encoding for Bitcoin addresses' },
+  { t:'header', n:'bignum.h',     d:'Big-integer arithmetic via OpenSSL BIGNUM' },
+  { t:'header', n:'db.h',         d:'BerkeleyDB wrapper for wallet and blockchain storage' },
+  { t:'header', n:'headers.h',    d:'Master include — all dependencies in one file' },
+  { t:'header', n:'irc.h',        d:'IRC-based peer-discovery declarations' },
+  { t:'header', n:'key.h',        d:'Private/public key management using OpenSSL' },
+  { t:'header', n:'main.h',       d:'Core types: CBlock, CTransaction, CTxIn/Out' },
+  { t:'header', n:'market.h',     d:'Experimental marketplace declarations' },
+  { t:'header', n:'net.h',        d:'P2P networking layer declarations' },
+  { t:'header', n:'script.h',     d:'Bitcoin Script opcodes and evaluation engine' },
+  { t:'header', n:'serialize.h',  d:'Binary serialisation framework for all data types' },
+  { t:'header', n:'sha.h',        d:'SHA-256 and SHA-512 declarations' },
+  { t:'header', n:'ui.h',         d:'wxWidgets GUI declarations' },
+  { t:'header', n:'uibase.h',     d:'Auto-generated wxFormBuilder base classes' },
+  { t:'header', n:'uint256.h',    d:'256-bit integer type for block hashes and work' },
+  { t:'header', n:'util.h',       d:'Utilities, logging, and global settings' },
+
+  { t:'source', n:'db.cpp',       d:'Wallet and blockchain storage implementation' },
+  { t:'source', n:'irc.cpp',      d:'IRC peer bootstrapping — how early nodes found each other' },
+  { t:'source', n:'main.cpp',     d:'The core: proof-of-work, validation, block processing' },
+  { t:'source', n:'market.cpp',   d:'Experimental P2P marketplace (never shipped)' },
+  { t:'source', n:'net.cpp',      d:'TCP socket management and peer communication' },
+  { t:'source', n:'script.cpp',   d:'Bitcoin Script interpreter — programmable transaction locks' },
+  { t:'source', n:'sha.cpp',      d:'Pure-C SHA-256, independent of OpenSSL' },
+  { t:'source', n:'ui.cpp',       d:'wxWidgets GUI: send, receive, transaction history' },
+  { t:'source', n:'uibase.cpp',   d:'Auto-generated wxFormBuilder base implementation' },
+  { t:'source', n:'util.cpp',     d:'Global init, hex conversion, error handling' },
+
+  { t:'build',  n:'makefile',         d:'Linux / macOS build configuration' },
+  { t:'build',  n:'makefile.vc',      d:'Visual C++ build configuration' },
+  { t:'build',  n:'ui.rc',            d:'Windows resource file — icons and dialogs' },
+  { t:'build',  n:'uiproject.fbp',    d:'wxFormBuilder project — all UI layouts defined here' },
+  { t:'build',  n:'license.txt',      d:'MIT License' },
+  { t:'build',  n:'readme.txt',       d:'Original README by Satoshi Nakamoto' },
+
+  { t:'back',   n:'What Came After',  d:"Bitcoin's evolution after v0.01" },
+  { t:'back',   n:'Index',            d:'Comprehensive term index with page references' },
+];
+
+const TYPE_LABELS = { intro:'Primer', header:'.h Header', source:'.cpp Source', build:'Build / Config', back:'Reference' };
+
+/* ── CHAPTERS GRID ────────────────────────────────────────────────── */
+function renderChapters(filter) {
+  const grid = document.getElementById('ch-grid');
+  grid.innerHTML = CHAPTERS.map(ch => {
+    const hide = (filter !== 'all' && ch.t !== filter) ? ' hidden' : '';
+    return `<a class="ch-card${hide}" data-t="${ch.t}" href="/book" target="_blank">
+      <div class="ch-badge">${TYPE_LABELS[ch.t]}</div>
+      <div class="ch-name">${ch.n}</div>
+      <div class="ch-desc">${ch.d}</div>
+    </a>`;
+  }).join('');
+}
+renderChapters('all');
+
+document.querySelectorAll('.flt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.flt').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    renderChapters(btn.dataset.f);
+  });
+});
+
+/* ── RELEASES ─────────────────────────────────────────────────────── */
+const FILE_LABELS = {
+  'bitcoin-alpha-book.pdf': ['Book PDF', true],
+  'cover.pdf':              ['Cover PDF', true],
+  'thumbnails.html':        ['Thumbnails', false],
+  'contact-sheet.html':     ['Contact sheet', false],
+  'book-meta.json':         ['Metadata', false],
+};
+
+/** Omitted from release chips — PNGs stay in the folder for the strip image & sharing */
+const RELEASE_FILES_OMIT = new Set(['thumbnails.png', 'contact-sheet.png']);
+
+async function loadReleases() {
+  const list = document.getElementById('releases-list');
+  try {
+    const res = await fetch('/api/releases');
+    if (!res.ok) throw new Error('no api');
+    const data = await res.json();
+
+    if (data.current && data.current.pageCount) {
+      const pc = data.current.pageCount;
+      document.getElementById('stat-pages').textContent = pc;
+      document.getElementById('about-pages').textContent = pc;
+    }
+
+    renderCoverSection(data);
+
+    if (!data.releases || data.releases.length === 0) {
+      list.innerHTML = '<div class="releases-empty">No releases yet. Run <code>npm run release</code> to create one.</div>';
+      return;
+    }
+
+    list.innerHTML = data.releases.map((r, i) => {
+      const [date, time] = r.name.split('_');
+      const timeFmt = (time || '').replace(/-/g, ':');
+      const isLatest = i === 0;
+
+      const files = (r.files || [])
+        .filter(f => !RELEASE_FILES_OMIT.has(f))
+        .map(f => {
+        const [label, isPdf] = FILE_LABELS[f] || [f, false];
+        const sheet = f === 'thumbnails.html' || f === 'contact-sheet.html';
+        return `<a class="rf${isPdf ? ' is-pdf' : ''}${sheet ? ' rf-sheet' : ''}" href="/releases/${r.name}/${f}" target="_blank">${isPdf ? '↓' : '→'} ${label}</a>`;
+      }).join('');
+
+      return `<div class="release-row">
+        <div class="release-ts">
+          <div class="release-date">${date}${isLatest ? '<span class="release-latest-badge">LATEST</span>' : ''}</div>
+          <div class="release-time">${timeFmt}</div>
+        </div>
+        <div class="release-files">${files}</div>
+        <div class="release-meta">${r.pageCount ? r.pageCount + ' pages' : ''}</div>
+      </div>`;
+    }).join('');
+
+    /* thumbnail strip from latest release (prefer print overview contact sheet) */
+    const latest = data.releases[0];
+    const files = latest && (latest.files || []);
+    const sheetPng = files.includes('contact-sheet.png') ? 'contact-sheet.png' : 'thumbnails.png';
+    const sheetHref = files.includes('contact-sheet.png') ? '/contact-sheet' : '/thumbnails';
+    if (latest && files.includes(sheetPng)) {
+      document.getElementById('thumb-strip').innerHTML = `
+        <div class="thumb-strip-wrap">
+          <a class="thumb-link" href="${sheetHref}" title="Open full sheet"></a>
+          <img src="/releases/${latest.name}/${sheetPng}" alt="Page overview" loading="lazy">
+          <div class="thumb-strip-cap">Latest release · ${latest.name.split('_')[0]} · click for ${files.includes('contact-sheet.png') ? 'contact sheet' : 'thumbnails'}</div>
+        </div>`;
+    }
+  } catch(e) {
+    list.innerHTML = '<div class="releases-empty">Could not load releases. Is the preview server running?</div>';
+  }
+}
+loadReleases();
+
+/* ── COVER SECTION ────────────────────────────────────────────────── */
+function renderCoverSection(data) {
+  const wrap  = document.getElementById('cover-preview-wrap');
+  const aside = document.getElementById('cover-aside');
+  const DPI   = 96;
+  const cm    = data.coverMeta;
+
+  if (!data.hasCoverHtml) {
+    wrap.innerHTML = `<div class="cover-not-built">
+      Cover not yet built.<br>
+      Run <code>npm run cover</code> then <code>npm run cover:pdf</code>.
+    </div>`;
+    aside.innerHTML = '';
+    return;
+  }
+
+  // Cover body is rendered at exact pixel dimensions — use those directly.
+  // cm values are in inches; multiply by 96dpi and round to match build output.
+  const canvasW = cm ? Math.round(cm.canvasW * DPI) : 1542;
+  const canvasH = cm ? Math.round(cm.canvasH * DPI) : 1044;
+  // The cover iframe needs a matching viewport so the body fills it exactly.
+  wrap.style.setProperty('--cover-aspect', `${canvasW} / ${canvasH}`);
+
+  wrap.innerHTML = `<iframe id="cover-iframe" src="/cover" scrolling="no" title="Cover preview"></iframe>`;
+
+  function sizeFrame() {
+    const iframe = document.getElementById('cover-iframe');
+    if (!iframe) return;
+    const w = wrap.getBoundingClientRect().width || wrap.offsetWidth;
+    if (!w) return;
+    const scale = w / canvasW;
+    iframe.style.width     = canvasW + 'px';
+    iframe.style.height    = canvasH + 'px';
+    iframe.style.transform = `scale(${scale})`;
+    // keep the wrapper's height in sync so it doesn't collapse
+    wrap.style.height = Math.round(canvasH * scale) + 'px';
+    wrap.style.aspectRatio = 'unset';
+  }
+
+  // Size on load, on resize, and via ResizeObserver for reveal animations
+  window.addEventListener('resize', sizeFrame);
+  const ro = new ResizeObserver(() => sizeFrame());
+  ro.observe(wrap);
+  // Also fire after a short delay to catch post-reveal paint
+  setTimeout(sizeFrame, 100);
+  setTimeout(sizeFrame, 500);
+
+  if (!cm) { aside.innerHTML = ''; return; }
+
+  const spineIn  = cm.spine.toFixed(3);
+  const spinePct = (cm.spine / cm.canvasW * 100).toFixed(2);
+
+  aside.innerHTML = `
+    <div class="cover-aside-title">Cover Specs</div>
+    <div class="cover-specs">
+      <div class="csr"><span class="csk">Canvas (with bleed)</span>
+        <span class="csv">${cm.canvasW.toFixed(3)}" × ${cm.canvasH.toFixed(3)}"
+          <small>${canvasW} × ${canvasH} px at 96 dpi</small></span></div>
+      <div class="csr"><span class="csk">Spine</span>
+        <span class="csv">${spineIn}"
+          <small>${cm.pageCount} pages × 0.002252 in/page</small></span></div>
+      <div class="csr"><span class="csk">Trim (each panel)</span>
+        <span class="csv">7" × 10"</span></div>
+      <div class="csr"><span class="csk">Bleed</span>
+        <span class="csv">0.125" all sides</span></div>
+      <div class="csr"><span class="csk">Paper</span>
+        <span class="csv">60# white uncoated</span></div>
+      <div class="csr"><span class="csk">Total width</span>
+        <span class="csv">${cm.canvasW.toFixed(3)}"
+          <small>back + spine + front + bleed</small></span></div>
+    </div>
+    <div class="cover-spine-vis">
+      <div class="spine-label">Spread breakdown</div>
+      <div class="spine-diagram">
+        <div class="spine-back">Back</div>
+        <div class="spine-spine" style="width:${spinePct}%">
+          <span>${spineIn}"</span>
+        </div>
+        <div class="spine-front">Front</div>
+      </div>
+    </div>
+    <div class="cover-actions">
+      <a href="/cover" target="_blank" class="btn btn-ghost">Open Cover →</a>
+      ${data.hasCoverPdf ? `<a href="/cover.pdf" target="_blank" class="btn btn-ghost">↓ Download Cover PDF</a>` : ''}
+    </div>`;
+}
+
+/* ── COMMANDS — copy buttons ─────────────────────────────────────── */
+document.querySelectorAll('.cmd-row').forEach(row => {
+  const btn = row.querySelector('.cmd-copy');
+  const cmd = row.dataset.cmd;
+  if (!btn || !cmd) return;
+
+  const copy = () => {
+    navigator.clipboard.writeText(cmd).then(() => {
+      btn.textContent = 'copied';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'copy';
+        btn.classList.remove('copied');
+      }, 1800);
+    });
+  };
+
+  btn.addEventListener('click', copy);
+  row.addEventListener('click', e => {
+    if (e.target !== btn) copy();
+  });
+});
+
+/* ── DESIGN SYSTEM — page type tabs ─────────────────────────────── */
+document.querySelectorAll('.ds-page-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.ds-page-tab').forEach(t => t.classList.remove('on'));
+    tab.classList.add('on');
+    const pb = document.getElementById('ds-pasteboard');
+    if (tab.dataset.mock === 'all') {
+      document.querySelectorAll('.mock-stack').forEach(s => s.classList.add('on'));
+      if (pb) pb.classList.add('all-mode');
+    } else {
+      document.querySelectorAll('.mock-stack').forEach(s => s.classList.remove('on'));
+      if (pb) pb.classList.remove('all-mode');
+      const el = document.getElementById('mock-' + tab.dataset.mock);
+      if (el) el.classList.add('on');
+    }
+  });
+});
+
+/* ── DESIGN SYSTEM — typeface switcher ──────────────────────────── */
+const TYPEFACES = {
+  'redhat|inter':          { code: "'Red Hat Mono', monospace",                               body: "'Inter', sans-serif",             label: 'Red Hat Mono · Inter' },
+  'jetbrains|lora':        { code: "'JetBrains Mono', monospace",                  body: "'Lora', Georgia, serif",           label: 'JetBrains Mono · Lora' },
+  'plex|sourceserif':      { code: "'IBM Plex Mono', monospace",                   body: "'Source Serif 4', Georgia, serif", label: 'IBM Plex Mono · Source Serif 4' },
+  'firacode|crimson':      { code: "'Fira Code', monospace",                       body: "'Crimson Pro', Georgia, serif",    label: 'Fira Code · Crimson Pro' },
+  'jetbrains|merriweather':{ code: "'JetBrains Mono', monospace",                  body: "'Merriweather', Georgia, serif",   label: 'JetBrains Mono · Merriweather' },
+  'basis|inter':           { code: "'Basis Grotesque Mono Pro', monospace",        body: "'Inter', sans-serif",             label: 'Basis Grotesque Mono Pro · Inter' },
+};
+
+function applyTypeface(key) {
+  const tf = TYPEFACES[key];
+  if (!tf) return;
+  const pb = document.getElementById('ds-pasteboard');
+  if (pb) {
+    pb.style.setProperty('--mf-code', tf.code);
+    pb.style.setProperty('--mf-body', tf.body);
+  }
+  // Update the type scale preview
+  document.querySelectorAll('.ds-heading').forEach(el => el.style.fontFamily = tf.code);
+  document.querySelectorAll('.ds-body').forEach(el => el.style.fontFamily = tf.body);
+  document.querySelectorAll('.ds-code').forEach(el => el.style.fontFamily = tf.code);
+  // Update the note
+  const note = document.getElementById('ds-type-note');
+  if (note) {
+    const parts = tf.label.split(' · ');
+    note.innerHTML = `Code: <strong>${parts[0]}</strong> · Body: <strong>${parts[1]}</strong>`;
+  }
+}
+
+const tfSelect = document.getElementById('ds-typeface');
+if (tfSelect) {
+  tfSelect.addEventListener('change', () => applyTypeface(tfSelect.value));
+  // Apply default on load
+  applyTypeface(tfSelect.value);
+}
+
+/* ── SCROLL REVEAL ────────────────────────────────────────────────── */
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold: 0.06 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

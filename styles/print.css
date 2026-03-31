@@ -20,7 +20,7 @@
   /* Page number - centered at bottom */
   @bottom-center {
     content: counter(page);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Basis Grotesque Mono Pro', monospace;
     font-size: 8pt;
     color: #333;
   }
@@ -32,7 +32,7 @@
   
   @top-left {
     content: string(current-section, first);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Basis Grotesque Mono Pro', monospace;
     font-size: 7pt;
     color: #666;
     text-transform: uppercase;
@@ -45,7 +45,7 @@
   
   @bottom-left {
     content: counter(page);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Basis Grotesque Mono Pro', monospace;
     font-size: 8pt;
     color: #333;
   }
@@ -61,7 +61,7 @@
   
   @top-right {
     content: 'BITCOIN v0.01 ALPHA';
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Basis Grotesque Mono Pro', monospace;
     font-size: 7pt;
     color: #666;
     text-transform: uppercase;
@@ -74,7 +74,7 @@
   
   @bottom-right {
     content: counter(page);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Basis Grotesque Mono Pro', monospace;
     font-size: 8pt;
     color: #333;
   }
@@ -160,6 +160,16 @@
   @top-center { content: none; }
 }
 
+/* Part divider pages - no headers or footers */
+@page part-divider {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+  @bottom-center { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
 /* Index section */
 @page index-page:first {
   @top-left { content: none; }
@@ -218,6 +228,11 @@ p, .code-line {
   break-after: avoid;
 }
 
+/* Keep section/paragraph headings with their following content */
+h2, h3, h4 {
+  break-after: avoid;
+}
+
 /* ============================================
    PRINT OPTIMIZATIONS
    ============================================ */
@@ -234,11 +249,17 @@ p, .code-line {
   .no-print {
     display: none !important;
   }
-  
+
   /* Ensure links don't show URLs */
   a[href]:after {
     content: none !important;
   }
+}
+
+/* Strip hyperlink styling for print — this is a physical book */
+a {
+  color: inherit !important;
+  text-decoration: none !important;
 }
 
 /* ============================================

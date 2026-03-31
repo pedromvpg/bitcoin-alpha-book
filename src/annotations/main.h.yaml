@@ -38,81 +38,89 @@ annotations:
   # Constants - the economic parameters
   - line: 17
     type: margin
-    text: "MAX_SIZE = 32 MB (0x02000000 bytes). This general-purpose limit applies to blocks, transactions, and scripts. Notably, this is NOT the famous '1 MB block size limit'—that was added by Satoshi in July 2010 (commit 172f006), over a year after v0.1. The 1 MB limit was likely a temporary anti-spam measure that became permanent, eventually causing the 'block size wars' and the Bitcoin Cash fork in 2017. In v0.1, blocks could theoretically reach 32 MB, though mining code limited them to 16 MB (MAX_SIZE/2)."
+    text: "<code>MAX_SIZE</code> = 32 MB (0x02000000 bytes). This general-purpose limit applies to blocks, transactions, and scripts. Notably, this is NOT the famous '1 MB block size limit'—that was added by Satoshi in July 2010 (commit 172f006), over a year after v0.1. The 1 MB limit was likely a temporary anti-spam measure that became permanent, eventually causing the 'block size wars' and the Bitcoin Cash fork in 2017. In v0.1, blocks could theoretically reach 32 MB, though mining code limited them to 16 MB (MAX_SIZE/2)."
 
   - line: 18
     type: margin
-    text: "COIN = 100,000,000 satoshis. Satoshi chose 8 decimal places for maximum divisibility—more than any fiat currency. Why 100 million? It allows a single bitcoin to be divided into pieces small enough for micropayments even if BTC reaches millions of dollars per coin. The unit was later named 'satoshi' by the community; Satoshi himself never used the term. Internally, all calculations use satoshis (integers) to avoid floating-point precision errors."
+    text: "<code>COIN</code> = 100,000,000 satoshis. Satoshi chose 8 decimal places for maximum divisibility—more than any fiat currency. Why 100 million? It allows a single bitcoin to be divided into pieces small enough for micropayments even if BTC reaches millions of dollars per coin. The unit was later named 'satoshi' by the community; Satoshi himself never used the term. Internally, all calculations use satoshis (integers) to avoid floating-point precision errors."
 
   - line: 19
     type: margin
-    text: "CENT = 1,000,000 satoshis (0.01 BTC). This naming reveals Satoshi's framing: Bitcoin as currency, not commodity. He consistently used monetary language—'coins,' 'cents,' 'transactions'—to shape how people thought about the system. The cent unit appeared in fee calculations and the GUI, making Bitcoin feel like familiar money."
+    text: "<code>CENT</code> = 1,000,000 satoshis (0.01 BTC). This naming reveals Satoshi's framing: Bitcoin as currency, not commodity. He consistently used monetary language—'coins,' 'cents,' 'transactions'—to shape how people thought about the system. The cent unit appeared in fee calculations and the GUI, making Bitcoin feel like familiar money."
 
   - line: 20
     type: margin
-    text: "COINBASE_MATURITY = 100 blocks (~17 hours). Freshly mined coins cannot be spent for 100 blocks. Why? If a miner's block gets orphaned in a chain reorganization, the mining reward disappears—it never existed on the winning chain. Without this delay, recipients of those coins would lose money through no fault of their own. 100 blocks provides statistical certainty that reorganizations won't affect mined coins."
+    text: "<code>COINBASE_MATURITY</code> = 100 blocks (~17 hours). Freshly mined coins cannot be spent for 100 blocks. Why? If a miner's block gets orphaned in a chain reorganization, the mining reward disappears—it never existed on the winning chain. Without this delay, recipients of those coins would lose money through no fault of their own. 100 blocks provides statistical certainty that reorganizations won't affect mined coins."
 
   - line: 22
     type: margin
-    text: "bnProofOfWorkLimit—the easiest possible difficulty, used for the genesis block. Expressed as <code>~uint256(0) >> 32</code>, meaning valid hashes must have at least 32 leading zero bits. This was trivially easy by modern standards: Satoshi's personal computer could find valid blocks in minutes. As more miners joined, difficulty automatically increased. Today's difficulty requires ~80+ leading zeros—approximately 10 trillion times harder than this initial value."
+    text: "<code>bnProofOfWorkLimit</code>—the easiest possible difficulty, used for the genesis block. Expressed as <code>~uint256(0) >> 32</code>, meaning valid hashes must have at least 32 leading zero bits. This was trivially easy by modern standards: Satoshi's personal computer could find valid blocks in minutes. As more miners joined, difficulty automatically increased. Today's difficulty requires ~80+ leading zeros—approximately 10 trillion times harder than this initial value."
 
   # Global state declarations
   - line: 33
     type: margin
-    text: "nBestHeight - current chain height. This simple integer represents humanity's consensus on Bitcoin's state. Elegant simplicity."
+    text: "<code>nBestHeight</code> - current chain height. This simple integer represents humanity's consensus on Bitcoin's state. Elegant simplicity."
 
   - line: 35
     type: margin
-    text: "pindexBest - pointer to chain tip. All new blocks must extend from here. The 'longest chain' rule implemented as a single pointer."
+    text: "<code>pindexBest</code> - pointer to chain tip. All new blocks must extend from here. The 'longest chain' rule implemented as a single pointer."
 
   - line: 41
     type: margin
-    text: "fGenerateBitcoins - mining flag. Satoshi's 'one-CPU-one-vote' vision. In 2009, turning this on meant your laptop joined the mining democracy."
+    text: "<code>fGenerateBitcoins</code> - mining flag. Satoshi's 'one-CPU-one-vote' vision. In 2009, turning this on meant your laptop joined the mining democracy."
 
   # Transaction building blocks
   - line: 147
     type: margin
-    text: "COutPoint—a pointer to a specific coin in the UTXO set. Just two fields: a transaction hash and an output index. Together they uniquely identify any output ever created. This simple structure is the foundation of Bitcoin's ownership model: you don't own 'bitcoin in an account,' you own the right to spend specific outputs. When you check your balance, your wallet scans the blockchain for COutPoints that your keys can spend."
+    text: "<code>COutPoint</code>—a pointer to a specific coin in the UTXO set. Just two fields: a transaction hash and an output index. Together they uniquely identify any output ever created. This simple structure is the foundation of Bitcoin's ownership model: you don't own 'bitcoin in an account,' you own the right to spend specific outputs. When you check your balance, your wallet scans the blockchain for COutPoints that your keys can spend."
 
   - line: 193
     type: margin
-    text: "CTxIn—how coins are consumed. Each input contains: (1) a COutPoint referencing which output to spend, (2) a scriptSig providing proof of ownership (typically a signature), and (3) nSequence for transaction replacement (mostly unused in v0.1). When a transaction is validated, each CTxIn must reference an existing, unspent output, and the scriptSig must satisfy that output's spending conditions. This is the 'chain of digital signatures' from the whitepaper."
+    text: "<code>CTxIn</code>—how coins are consumed. Each input contains: (1) a COutPoint referencing which output to spend, (2) a scriptSig providing proof of ownership (typically a signature), and (3) nSequence for transaction replacement (mostly unused in v0.1). When a transaction is validated, each CTxIn must reference an existing, unspent output, and the scriptSig must satisfy that output's spending conditions. This is the 'chain of digital signatures' from the whitepaper."
 
   - line: 274
     type: margin
-    text: "CTxOut—how coins are created. Contains just two fields: nValue (amount in satoshis) and scriptPubKey (the spending conditions). The scriptPubKey is a mini program that specifies who can spend this output—typically 'whoever can provide a signature matching this public key.' Once created, a CTxOut exists forever in the blockchain history, but can only be spent once. The sum of all unspent CTxOuts is the UTXO set—the complete state of who owns what."
+    text: "<code>CTxOut</code>—how coins are created. Contains just two fields: nValue (amount in satoshis) and scriptPubKey (the spending conditions). The scriptPubKey is a mini program that specifies who can spend this output—typically 'whoever can provide a signature matching this public key.' Once created, a CTxOut exists forever in the blockchain history, but can only be spent once. The sum of all unspent CTxOuts is the UTXO set—the complete state of who owns what."
 
   # The transaction class
   - line: 357
     type: margin
-    text: "CTransaction—the fundamental unit of value transfer. Every bitcoin movement is a CTransaction: a set of inputs (coins being spent) and outputs (coins being created). The transaction is atomic—either all inputs are spent and all outputs created, or nothing happens. This atomicity enables trustless exchanges: Alice can pay Bob in one indivisible operation. Satoshi's whitepaper Section 2: 'We define an electronic coin as a chain of digital signatures.'"
+    text: "<code>CTransaction</code>—the fundamental unit of value transfer. Every bitcoin movement is a CTransaction: a set of inputs (coins being spent) and outputs (coins being created). The transaction is atomic—either all inputs are spent and all outputs created, or nothing happens. This atomicity enables trustless exchanges: Alice can pay Bob in one indivisible operation. Satoshi's whitepaper Section 2: 'We define an electronic coin as a chain of digital signatures.'"
 
   - line: 504
     type: margin
-    text: "GetMinFee()—calculates the minimum required fee. Transaction fees are implicit: total inputs minus total outputs. Since inputs don't store amounts (only references), nodes must look up each referenced output to calculate the fee. This elegant design means fees don't bloat transaction size. In v0.1, minimum fee was 0.01 BTC per 1000 bytes—optional but encouraged. As Satoshi wrote: 'Free transactions are nice if people don't abuse them.'"
+    text: "<code>GetMinFee()</code>—calculates the minimum required fee. Transaction fees are implicit: total inputs minus total outputs. Since inputs don't store amounts (only references), nodes must look up each referenced output to calculate the fee. This elegant design means fees don't bloat transaction size. In v0.1, minimum fee was 0.01 BTC per 1000 bytes—optional but encouraged. As Satoshi wrote: 'Free transactions are nice if people don't abuse them.'"
 
   # Merkle transactions
   - line: 598
     type: margin
-    text: "CMerkleTx - transaction with merkle proof. Whitepaper Section 8: enables SPV clients to verify inclusion without full blockchain."
+    text: "<code>CMerkleTx</code> - transaction with merkle proof. Whitepaper Section 8: enables SPV clients to verify inclusion without full blockchain."
 
   - line: 660
     type: margin
-    text: "CWalletTx - your transaction view. Adds wallet metadata (credit, debit, time) to the base transaction. The user-facing layer."
+    text: "<code>CWalletTx</code> - your transaction view. Adds wallet metadata (credit, debit, time) to the base transaction. The user-facing layer."
 
   # Block structure
   - line: 805
     type: margin
-    text: "CBlock - a block of transactions with proof-of-work. The atomic unit of blockchain consensus. Each ~10 minutes, one is added."
+    text: "<code>CBlock</code> - a block of transactions with proof-of-work. The atomic unit of blockchain consensus. Each ~10 minutes, one is added."
 
   # Block index
   - line: 1009
     type: margin
-    text: "CBlockIndex - in-memory block metadata. Height, work, timestamps. Enables fast chain traversal without reading full blocks from disk."
+    text: "<code>CBlockIndex</code> - in-memory block metadata. Height, work, timestamps. Enables fast chain traversal without reading full blocks from disk."
 
   - line: 1212
     type: margin
-    text: "CBlockLocator - compact chain representation for syncing. Exponentially spaced block hashes let nodes find common ancestor efficiently."
+    text: "<code>CBlockLocator</code> - compact chain representation for syncing. Exponentially spaced block hashes let nodes find common ancestor efficiently."
+
+  - lines: [17, 19]
+    type: highlight
+    category: consensus-imperative
+
+  - lines: [987, 987]
+    type: highlight
+    category: consensus-imperative
 
 conclusion: |
   <p>

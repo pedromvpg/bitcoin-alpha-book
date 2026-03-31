@@ -5,40 +5,156 @@ title: "The Hash That Secures Trillions"
 
 introduction: |
   <p>
-    Cryptographic hashing is the foundation of Bitcoin's security. This file
-    implements the SHA-256 hash function that is used throughout Bitcoin
-    for everything from transaction IDs to proof-of-work mining.
+    This file is not Satoshi's code. It is Crypto++ 5.5.2, written by Wei Dai,
+    who adapted it from Steve Reid's public domain SHA-1 implementation. Three
+    authors, two algorithms, one file — and Bitcoin depends on every byte being
+    correct. <code>sha.cpp</code> is the implementation of the cryptographic
+    hash functions that underpin every transaction ID, every block, and every
+    proof-of-work in the network.
   </p>
   <p>
-    A hash function takes any input and produces a fixed-size output (256 bits
-    for SHA-256). The key properties are:
+    A hash function takes arbitrary input and produces a fixed-size output —
+    256 bits for SHA-256, 160 bits for SHA-1. The output is a <em>digest</em>:
+    a fingerprint that changes completely if even one bit of input changes. The
+    key properties are preimage resistance (you cannot find the input from the
+    output), second-preimage resistance (you cannot find a different input with
+    the same output), and collision resistance (you cannot find any two inputs
+    with the same output). SHA-256 provides roughly 128 bits of security against
+    each of these attacks — strong enough that no practical weakness has ever
+    been found.
   </p>
-  <ul>
-    <li><strong>Deterministic:</strong> Same input always gives same output</li>
-    <li><strong>One-way:</strong> Cannot reverse the hash to find the input</li>
-    <li><strong>Collision-resistant:</strong> Nearly impossible to find two inputs with the same hash</li>
-  </ul>
+  <p>
+    Bitcoin uses SHA-256 in a double-application pattern. Every transaction ID,
+    block hash, and Merkle tree node is computed as
+    <code>SHA256(SHA256(data))</code> — abbreviated SHA256d. The double
+    application was a common defensive practice in 2009, designed to eliminate a
+    class of length-extension attacks that affect single SHA-256. In retrospect
+    it was unnecessary for Bitcoin's specific usage, but the cost is negligible.
+  </p>
+  <p>
+    SHA-1 appears here because Crypto++ included it, not because Bitcoin uses it.
+    Satoshi used SHA-256 exclusively. SHA-1 was already known to be weakening in
+    2009 — Wang Xiaoyun had demonstrated theoretical collision attacks in 2005.
+    Its presence in the file is historical artifact, not design.
+  </p>
 
 annotations:
+  - line: 7
+    type: margin
+    text: "Three authorship layers. Steve Reid wrote the original SHA-1 in C (sha1.c), public domain. Wei Dai ported it to C++ for Crypto++ and added SHA-256. Satoshi included Crypto++ 5.5.2 verbatim rather than writing hash functions from scratch — the same delegation strategy he used with OpenSSL for elliptic curve arithmetic. The comment attributing Reid and Wei Dai is doing important work: it documents the provenance of code that secures billions of dollars."
+
+  - line: 24
+    type: margin
+    text: "SHA-1 initial state: five 32-bit magic constants. These are not arbitrary. Each is the fractional part of the square root of a small integer: 0x67452301 ≈ frac(√2) × 2³², 0xEFCDAB89 ≈ frac(√3) × 2³², 0x98BADCFE ≈ frac(√5) × 2³², 0x10325476 ≈ frac(√7) × 2³², 0xC3D2E1F0 ≈ frac(√11) × 2³². The 'nothing up my sleeve' principle: constants derived from well-known mathematical expressions cannot encode a backdoor, because anyone can verify the derivation."
+
+  - line: 33
+    type: margin
+    text: "SHA-1's four Boolean mixing functions. f1 is Choose: if x then y else z. f2 is Parity: x XOR y XOR z. f3 is Majority: the value held by at least two of the three inputs. f4 is Parity again. These four functions are used in four groups of 20 rounds each. The mathematical diversity of the mixing operations — bitwise AND, OR, XOR in different combinations — is what makes SHA-1 resist differential cryptanalysis. The same principle governs SHA-256's Ch and Maj macros."
+
+  - line: 39
+    type: margin
+    text: "SHA-1 round constants: one per 20-round group. 0x5A827999 = floor(2³⁰ × √2), 0x6ED9EBA1 = floor(2³⁰ × √3), 0x8F1BBCDC = floor(2³⁰ × √5), 0xCA62C1D6 = floor(2³⁰ × √10). Again, square roots of small primes — verifiably non-random. SHA-256 uses 64 distinct constants (cube roots of 64 primes) instead of 4 repeated ones. The more varied schedule was part of the SHA-2 hardening."
+
+  - line: 45
+    type: margin
+    text: "SHA-1 compression function: 80 rounds, fully unrolled. The loop is manually unrolled into 80 individual macro calls — no loop overhead, no branch prediction misses. At each round, the five working variables (a,b,c,d,e) rotate: e gets the new computed value, and all others shift by one position. The message block W[16] is expanded in-place via blk1's XOR-rotate schedule. By round 80, every input bit has influenced every output bit — the avalanche effect."
+
+  - line: 76
+    type: margin
+    text: "Merkle-Damgård finalisation. After 80 rounds, the working variables are added back to the incoming state. This is the Merkle-Damgård construction: the output of each 512-bit block feeds into the next as initial state. A single-bit change anywhere in the input propagates through all subsequent blocks. It is also why SHA-1 is vulnerable to length-extension — the chaining value after the last block is directly the hash output, allowing an attacker to continue hashing without knowing the original input."
+
   - line: 93
     type: margin
-    text: "SHA256 initialization - sets the initial hash values"
+    text: "SHA-256 initial hash values: eight 32-bit constants. These are the first 32 bits of the fractional parts of the square roots of the first eight primes (2, 3, 5, 7, 11, 13, 17, 19). 0x6a09e667 ≈ frac(√2) × 2³², 0xbb67ae85 ≈ frac(√3) × 2³², and so on through prime 19. Every SHA-256 computation in Bitcoin — every transaction ID, every block hash — starts here, with these eight values. They are the fixed point from which all digests are computed."
 
   - line: 99
     type: margin
-    text: "SHA256_K constants - derived from cube roots of first 64 primes"
+    text: "SHA-256 round constants: 64 values, one per round. Each is the first 32 bits of the fractional part of the cube root of a prime: 0x428a2f98 ≈ frac(∛2) × 2³², 0x71374491 ≈ frac(∛3) × 2³², through the 64th prime. These constants break the symmetry that would otherwise make the round function self-similar. Without distinct constants per round, an attacker could find structural cancellations across rounds — the constants prevent it. Bitcoin miners compute these 64 additions billions of times per second."
+
+  - line: 99
+    type: highlight
+    category: consensus-imperative
+
+  - line: 118
+    type: margin
+    text: "Message schedule expansion. blk0 loads raw input; blk2 computes the expanded schedule. W[i&15] is updated in-place, so only 16 words of storage are needed for a 64-round schedule. The expansion mixes four previous words with two sigma rotations: s1 applied to W[i-2] and s0 applied to W[i-15]. This ensures that each expanded word depends on many input bits — a change to any input word affects 48 subsequent schedule words."
+
+  - line: 120
+    type: margin
+    text: "<code>Ch</code> and Maj: the Boolean heart of SHA-256. Ch(x,y,z) = (x & y) | (~x & z) — 'choose': if bit of x is 1, take the bit from y; if 0, take from z. Maj(x,y,z) = (x & y) | (z & (x | y)) — 'majority': the bit value held by at least two of the three inputs. Wei Dai's implementation uses the identity (z ^ (x & (y ^ z))) for Ch to avoid computing ~x — arithmetically equivalent but one fewer NOT. Both functions are the same as the f1 and f3 from SHA-1, now applied to all 64 rounds rather than alternating."
+
+  - line: 123
+    type: margin
+    text: "Circular state indexing. Instead of eight named variables a–h that must be explicitly rotated each round, Wei Dai stores the state in T[8] and accesses it via modular index macros. a(i) = T[(0-i)&7], b(i) = T[(1-i)&7], etc. At round i, 'a' refers to whatever slot currently holds the top of the rotation. The effect: no actual rotation happens. This is a performance optimisation — the compiler sees eight array accesses instead of eight assignments. The mathematical result is identical; the generated machine code is faster."
+
+  - line: 132
+    type: margin
+    text: "The SHA-256 round macro in full. One round of SHA-256 in two lines: T1 = h + S1(e) + Ch(e,f,g) + K[i+j] + W[i]; d += T1; h = T1 + S0(a) + Maj(a,b,c). The big-sigma functions S0 and S1 are three-way XOR of rotations: S0(x) = ROTR(x,2) ^ ROTR(x,13) ^ ROTR(x,22); S1(x) = ROTR(x,6) ^ ROTR(x,11) ^ ROTR(x,25). These specific rotation amounts were chosen by NIST to maximise diffusion — each output bit depends on many input bits within one round."
+
+  - line: 136
+    type: margin
+    text: "Big-sigma vs. little-sigma. S0 and S1 (capital) operate on state variables; s0 and s1 (lowercase) operate on the message schedule. SHA-256 uses only XOR of rotations for the big-sigma functions and XOR of rotations plus a right-shift for the little-sigma functions. The shift (>> 3 and >> 10) introduces asymmetry that prevents the schedule from being self-similar. The macro names are #undef'd at line 241 before SHA-512 redefines them with different rotation amounts — SHA-512 uses 64-bit words and different constants, but the same algebraic structure."
 
   - line: 141
     type: margin
-    text: "SHA256 Transform - the core compression function"
+    text: "<code>SHA256::Transform</code>: the Bitcoin consensus function. Every node in the network must compute this function identically on every block header. A single-bit divergence in this code — a wrong rotation constant, an off-by-one in the loop bound — would cause a chain split: the node would accept or reject blocks differently from all other nodes. Bitcoin Core has never changed this function's output since 2009. It is consensus-critical in the strictest sense: it is the definition of what a valid Bitcoin block is."
 
-  - line: 168
+  - line: 141
+    type: highlight
+    category: consensus-imperative
+
+  - line: 146
     type: margin
-    text: "SHA256_Transform - external entry point for hashing"
+    text: "<code>T[8]</code> holds the working state; state[] holds the persistent chain value. memcpy copies the incoming state (the previous block's output, or the initial values for the first block) into T. After 64 rounds of mixing, the result is added back to state[]. This addition — not replacement — is the Merkle-Damgård construction. It ensures that even if an attacker can engineer a specific T[] output, the final result still depends on the full prior chain."
+
+  - line: 148
+    type: margin
+    text: "64 rounds, partially unrolled into groups of 16. Full unrolling would produce 64 × 2 = 128 lines; Wei Dai chose 16 per iteration as a compromise between code size and branch overhead. The variable j steps through 0, 16, 32, 48. Inside each group, j is fixed, so K[i+j] and (j?blk2(i):blk0(i)) correctly select either raw input (j=0, first 16 rounds) or expanded schedule (j>0, rounds 17–64). Bitcoin miners run this loop for every nonce they try — billions of times per second."
+
+  - line: 166
+    type: margin
+    text: "The commented-out 'smaller but slower' alternative. This is Wei Dai's original reference implementation, preserved in a block comment. It uses explicit variables rather than the circular-index trick, making the SHA-256 round structure much clearer. It was commented out because the indexed version is measurably faster on real hardware — the compiler can better schedule the modular array accesses. The comment is a rare gift: two complete implementations of SHA-256 in the same file, one optimised, one readable."
+
+  - line: 271
+    type: margin
+    text: "SHA-512 round constants. 80 entries (SHA-512 runs 80 rounds versus SHA-256's 64), each a 64-bit word derived from the cube roots of the first 80 primes. The same nothing-up-my-sleeve derivation, extended to 64-bit precision. Bitcoin does not use SHA-512 — it appears here because Crypto++ 5.5.2 was included wholesale. Ethereum later adopted SHA-3 (Keccak), a completely different construction, partly to avoid any dependency on the NIST hash functions."
+
+  - line: 316
+    type: margin
+    text: "SSE2-accelerated SHA-512: inline assembly for x86. Wei Dai wrote a hand-optimised MMX/SSE2 implementation that operates on two 64-bit words simultaneously using 128-bit XMM registers. The macros SSE2_S0_S1, SSE2_s0, SSE2_s1 implement the sigma functions entirely in SIMD instructions. This is 2007-era performance engineering — before compiler auto-vectorisation was reliable, hand-written assembly was the only way to fully exploit Intel's vector units. Bitcoin v0.01 ships this code but never calls it."
+
+  - line: 511
+    type: margin
+    text: "SHA-512 pure C++ fallback: same structure as SHA-256, 80 rounds, 64-bit words. S0/S1/s0/s1 are redefined here with SHA-512's rotation amounts (28/34/39 for S0; 14/18/41 for S1; 1/8/7 for s0; 19/61/6 for s1) — different from SHA-256's constants but the same algebraic form. The #undef/#define pattern means the macros from the SHA-256 section are replaced cleanly. SHA-512 processes 1024-bit blocks; SHA-256 processes 512-bit blocks. Otherwise the designs are parallel."
 
 conclusion: |
   <p>
-    Every block header is hashed with SHA-256 (actually double SHA-256) to
-    produce the block's identifier. Miners must find a hash below a target
-    value, which is computationally expensive but easy to verify.
+    <code>sha.cpp</code> contains the single most consensus-critical code in
+    all of Bitcoin: <code>SHA256::Transform</code>. Every block that has ever
+    been mined, every transaction that has ever been confirmed, every proof-of-work
+    ever validated — all were computed with this function. It has never changed.
+    Any change would instantly fork the network.
+  </p>
+  <p>
+    The file's structure reveals the engineering pragmatism of the era. Satoshi
+    did not write hash functions; he imported Crypto++ 5.5.2. Wei Dai did not
+    write SHA-1; he adapted Steve Reid's public domain C. The dependency chain
+    extends back to 1995, when Reid published his implementation. Bitcoin's
+    cryptographic foundation rests on this accumulated public-domain work.
+  </p>
+  <p>
+    The "nothing up my sleeve" constants — initial values from square roots,
+    round constants from cube roots — are the hash function community's answer
+    to the backdoor question. They are the mathematical proof that the designers
+    had no special knowledge of a weakness: anyone can verify the derivation,
+    and any unexplained constant is a red flag. secp256k1 applied the same
+    principle to elliptic curve parameters. Bitcoin's security assumptions
+    are, wherever possible, publicly verifiable.
+  </p>
+  <p>
+    SHA-256 has held since 1999. No practical preimage, second-preimage, or
+    collision attack exists. The best known attacks reduce the round count from
+    64 to 31 — still 33 rounds of security margin. For Bitcoin, where a
+    SHA-256 collision would allow double-spend at the Merkle tree level, this
+    margin is the foundation of every unspent output in every wallet.
   </p>

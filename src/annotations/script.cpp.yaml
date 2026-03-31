@@ -5,9 +5,9 @@ title: "The Virtual Machine"
 
 introduction: |
   <p>
-    This file implements Bitcoin's script interpreter—the virtual machine that
-    determines who can spend coins. Every bitcoin ever transferred—hundreds of
-    billions of dollars in value—passed through this exact code. The interpreter
+    This file implements Bitcoin's script interpreter — the virtual machine that
+    determines who can spend coins. Every bitcoin ever transferred — hundreds of
+    billions of dollars in value — passed through this exact code. The interpreter
     is deceptively simple: a stack of byte arrays, a program counter, and roughly
     100 opcodes. Yet this simplicity is its strength.
   </p>
@@ -15,16 +15,17 @@ introduction: |
     Satoshi designed Script using "reverse Polish notation" (RPN), a Forth-style
     syntax where operators come after operands. Instead of "3 + 4", you write "3 4 +".
     The interpreter maintains a stack; data pushes go onto the stack, operations pop
-    arguments and push results. This approach eliminates parsing complexity—no
+    arguments and push results. This approach eliminates parsing complexity — no
     operator precedence, no parentheses, no ambiguity. The stack state after execution
     determines validity: if the top element is non-zero (truthy), the script passes.
   </p>
   <p>
-    What makes this remarkable is its generality. Satoshi didn't hardcode "check signature
-    against public key" as the only spending rule. Instead, he created a language that
-    expresses arbitrary conditions. Want multi-signature? OP_CHECKMULTISIG. Time locks?
-    OP_CHECKLOCKTIMEVERIFY (added later, but the architecture supported it). Escrow?
-    Hash locks? All possible without protocol changes—just different scripts.
+    What makes this remarkable is its generality. Satoshi didn't hardcode "check
+    signature against public key" as the only spending rule. Instead, he created a
+    language that expresses arbitrary conditions. Multi-signature escrow, hash locks,
+    time-locked payments — all possible without protocol changes, just different
+    scripts. This foresight enabled P2SH, SegWit, Taproot, and Lightning without
+    ever replacing the core spending mechanism.
   </p>
   <p>
     The script system is also why Bitcoin survived its early bugs. When critical
@@ -34,29 +35,153 @@ introduction: |
   </p>
 
 annotations:
-  - line: 7
+  - line: 11
     type: margin
-    text: "CheckSig - heart of Bitcoin security. Verifies ECDSA signature against transaction hash. If this function has bugs, Bitcoin breaks."
+    text: "<code>valtype</code> — the fundamental unit of Script. A script stack element is a vector of bytes, which can represent a number, a hash, a public key, or a signature. Everything on the stack is just bytes; opcodes interpret them according to context."
+
+  - line: 12
+    type: margin
+    text: "Script boolean constants: vchFalse and vchZero are empty byte vectors (the falsy value), vchTrue is a single byte 0x01. The BigNum versions (bnZero, bnOne) are for arithmetic opcodes. Satoshi defines both representations up front for clarity."
+
+  - line: 21
+    type: margin
+    text: "<code>CastToBool</code> — the truthiness rule: a stack element is true if it is a non-zero BigNum. An empty vector or a vector encoding zero is false. This means 0x00, 0x0000, and an empty byte array are all false; anything else is true."
+
+  - line: 41
+    type: margin
+    text: "<code>stacktop(i)</code> macro: negative indexing into the stack vector — stacktop(-1) is the top element, stacktop(-2) is second from top. stack.at() throws if out of range, providing bounds checking. This Forth-style negative indexing matches the mental model of a stack."
 
   - line: 44
     type: margin
-    text: "EvalScript - the interpreter main loop. Reads opcodes, manipulates stack, checks conditions. Script evaluates to TRUE (non-empty stack, top!=0) or FALSE."
+    text: "<code>EvalScript</code> — the interpreter entry point. Takes a complete script (scriptSig prepended to scriptPubKey via OP_CODESEPARATOR), the spending transaction, the input index, and hash type. Returns true only if execution completes without error and the top of the stack is truthy."
+
+  - line: 51
+    type: margin
+    text: "<code>vfExec</code> — the conditional execution stack. Each OP_IF pushes a boolean; OP_ELSE toggles the top; OP_ENDIF pops it. fExec (line 60) is true only when all levels are true — unexecuted branches are skipped but still parsed. This enables nested conditionals in scripts."
+
+  - line: 58
+    type: margin
+    text: "The main interpreter loop iterates over opcodes one by one, advancing the program counter pc. There are no jumps, no loops, no recursion — Script is intentionally not Turing complete. This makes script execution time provably bounded, which is essential for validating thousands of transactions per block."
+
+  - line: 60
+    type: margin
+    text: "<code>fExec</code> — whether the current position is in an active (non-skipped) branch. If any level of vfExec contains false, the current code is inside a not-taken branch. Data pushes and most opcodes are skipped; only OP_IF/OP_ELSE/OP_ENDIF are processed while in a skipped branch to maintain correct nesting."
 
   - line: 70
     type: margin
-    text: "Data push opcodes (0x01-0x4b) push that many bytes onto stack. OP_PUSHDATA1/2/4 handle larger pushes. Most scripts are mostly data pushes."
+    text: "Data push dispatch: opcodes 0x01–0x4b push that many bytes. OP_PUSHDATA1 uses the next byte as a length, OP_PUSHDATA2 uses two bytes, OP_PUSHDATA4 uses four. These cover everything from a 1-byte integer to a 520-byte maximum push. The vast majority of real scripts are mostly push operations followed by a few crypto opcodes."
 
   - line: 78
     type: margin
-    text: "OP_1 through OP_16 - push small integers. OP_1NEGATE pushes -1. These enable compact scripts without encoding full numbers."
+    text: "<code>OP_1</code> through OP_16 push small integers onto the stack without encoding them as byte vectors. The value is computed from the opcode byte: (opcode − OP_1 + 1). OP_1NEGATE pushes −1. Multi-signature scripts use these: e.g. OP_2 for \"require 2 of...\" in a 2-of-3 multisig."
+
+  - line: 109
+    type: margin
+    text: "<code>OP_VER</code> pushes the client's VERSION constant. This was intended to allow version-sensitive scripts — a script could branch based on protocol version. It was deprecated before widespread use; OP_VERIF and OP_VERNOTIF below were its conditional counterparts."
 
   - line: 116
     type: margin
-    text: "OP_IF/OP_NOTIF - conditional execution. Scripts can have branches! Combined with OP_ELSE/OP_ENDIF, enables complex spending conditions."
+    text: "<code>OP_IF</code>/OP_NOTIF: pop the top stack element, evaluate as boolean, push result onto vfExec. If false, the branch up to OP_ELSE/OP_ENDIF is skipped. OP_VERIF/OP_VERNOTIF compare the version number instead of a stack value — a forward-compatibility mechanism Satoshi included but never deployed."
 
-  - line: 128
+  - line: 156
     type: margin
-    text: "OP_VERIF/OP_VERNOTIF - immediately fail if reached. Satoshi reserved these for future soft-fork upgrades. Clever forward-compatibility."
+    text: "<code>OP_VERIFY</code>: if the top element is false, abort execution (set pc = pend, which will make the script fail). If true, pop the element and continue. Used as a suffix to convert \"push bool\" opcodes into immediate fail conditions — OP_EQUALVERIFY is OP_EQUAL + OP_VERIFY."
+
+  - line: 180
+    type: margin
+    text: "Alt stack: a secondary stack separate from the main stack. OP_TOALTSTACK moves the top element there; OP_FROMALTSTACK brings it back. Allows scripts to save a value, do other operations, and restore it later — essential for complex multi-step scripts without stack pollution."
+
+  - line: 377
+    type: margin
+    text: "<code>OP_CAT</code> — concatenates the top two stack elements. This opcode was present in v0.01 but disabled in August 2010 after a vulnerability was discovered: repeatedly concatenating elements could create exponentially large byte vectors, exhausting memory. A single transaction could crash nodes. Satoshi pushed a patch disabling it within hours of the report."
+
+  - line: 444
+    type: margin
+    text: "Bitwise opcodes: OP_INVERT flips all bits; OP_AND/OP_OR/OP_XOR operate bitwise on equal-length byte vectors (MakeSameSize pads the shorter one with zeros). These are powerful for bitmask operations but were disabled along with OP_CAT. Current Bitcoin scripts cannot use bitwise logic."
+
+  - line: 484
+    type: margin
+    text: "<code>OP_EQUAL</code> compares two stack elements as byte arrays (exact byte-for-byte equality, not numeric). The comment about OP_NOTEQUAL explains why it was disabled: numeric encoding is not unique (0x01 = 0x0001), so byte inequality doesn't imply numeric inequality. Numeric comparison uses OP_NUMNOTEQUAL instead."
+
+  - line: 516
+    type: margin
+    text: "Unary numeric opcodes operate on a BigNum decoded from the top stack element. OP_2MUL and OP_2DIV are simple shifts (<<1, >>1). OP_NOT is logical — returns 1 if input is zero. All operate through OpenSSL's CBigNum which handles arbitrary precision; these were later disabled to limit script complexity."
+
+  - line: 545
+    type: margin
+    text: "Binary arithmetic opcodes: OP_MUL and OP_DIV use OpenSSL BN_mul/BN_div for arbitrary precision. OP_MOD uses BN_mod. These were disabled in 2010 because arbitrary-precision multiplication of untrusted inputs is a DoS vector — a transaction could force validators to multiply 512-byte numbers millions of times."
+
+  - line: 653
+    type: margin
+    text: "Hash opcodes: five hash functions available in Script. OP_RIPEMD160 (20 bytes), OP_SHA1 (20 bytes), OP_SHA256 (32 bytes) are single-pass. OP_HASH160 = RIPEMD160(SHA256(x)) — this is the Bitcoin address hash. OP_HASH256 = SHA256(SHA256(x)) — the double-SHA256 used for block and transaction IDs. All implemented via OpenSSL."
+
+  - line: 685
+    type: margin
+    text: "<code>OP_CODESEPARATOR</code> — marks the start of the \"code\" that is signed. SignatureHash (below) hashes only the script from the most recent OP_CODESEPARATOR to the end. This allows a script to split its signing scope, though in practice standard P2PKH scripts never use it. It also appears implicitly between scriptSig and scriptPubKey during verification."
+
+  - line: 692
+    type: margin
+    text: "<code>OP_CHECKSIG</code> — the most important opcode in Bitcoin. Pops a public key and signature from the stack, calls CheckSig() which calls SignatureHash() and ECDSA verify. Pushes 1 if valid, 0 if not. Every standard P2PKH and P2PK transaction ends with this opcode. It is the lock that makes Bitcoin spend-once."
+
+  - line: 709
+    type: margin
+    text: "<code>scriptCode.FindAndDelete(CScript(vchSig))</code> removes the signature itself from the script before hashing. Without this, a signature would need to sign itself — which is impossible. This is why the \"code\" being signed can never contain the signature that will be checked against it."
+
+  - line: 727
+    type: margin
+    text: "<code>OP_CHECKMULTISIG</code> — M-of-N multi-signature. Reads nKeysCount public keys, then nSigsCount signatures. Verifies each signature against keys in order; succeeds if at least nSigsCount signatures verify. One bug: consumes an extra stack element (a historical accident that required a dummy OP_0 push — this off-by-one was never fixed for compatibility reasons)."
+
+  - lines: [44, 806]
+    type: highlight
+    category: consensus-imperative
+
+  - line: 803
+    type: margin
+    text: "Final result: execution succeeds if the stack is non-empty and the top element is truthy (CastToBool). An empty stack is failure. If pvStackRet is provided, the full stack is returned — used by the wallet to inspect script results without re-running the interpreter."
+
+  - line: 818
+    type: margin
+    text: "<code>SignatureHash</code> — constructs the exact bytes that get signed. Creates a modified copy of the transaction, clears other inputs' signatures, then hashes txTmp plus the hash type using double-SHA256. The result is what the private key signs and OP_CHECKSIG verifies. Getting this wrong in any implementation breaks cross-client compatibility."
+
+  - line: 832
+    type: margin
+    text: "<code>SIGHASH_ALL</code> (default): signs all inputs and all outputs — the complete transaction is committed to. No one can alter the recipients, amounts, or other inputs without invalidating the signature."
+
+  - line: 837
+    type: margin
+    text: "<code>SIGHASH_NONE</code>: signs inputs but clears all outputs — the signer authorizes spending without specifying where coins go. Anyone can modify outputs after signing. Intended for \"blank check\" scenarios; rarely used in practice."
+
+  - line: 847
+    type: margin
+    text: "<code>SIGHASH_SINGLE</code>: locks only the output at the same index as the signed input. Other outputs can change. Useful for partially-signed transactions where parties contribute independently. The edge case where nOut >= vout.size() is a known bug that returns hash=1 rather than failing — discovered years later as the \"SIGHASH_SINGLE bug\"."
+
+  - line: 867
+    type: margin
+    text: "<code>SIGHASH_ANYONECANPAY</code>: combined with any of the above, strips all inputs except the one being signed. Other signers can add their own inputs later. Enables crowdfunding-style transactions where contributions can be added after initial signatures."
+
+  - line: 881
+    type: margin
+    text: "<code>CheckSig</code> — the security gateway. Loads the public key, extracts the hash type from the last byte of the signature (or uses the provided nHashType if specified), strips the hash type byte, then calls key.Verify() which performs the ECDSA signature verification via OpenSSL. Returns false on any error."
+
+  - line: 913
+    type: margin
+    text: "<code>Solver</code> (pattern matcher) — identifies the type of a scriptPubKey by comparing against known templates. Two templates recognized in v0.01: P2PK (direct pubkey + CHECKSIG) and P2PKH (DUP HASH160 pubkeyhash EQUALVERIFY CHECKSIG). Returns the extracted placeholder values (public key or hash)."
+
+  - line: 975
+    type: margin
+    text: "<code>Solver</code> (signing overload) — given a scriptPubKey and a hash to sign, uses pattern matching to build the scriptSig. For P2PK: signs with the private key for that pubkey. For P2PKH: looks up the pubkey from mapPubKeys by hash, then signs. Appends the nHashType byte to each signature."
+
+  - line: 1028
+    type: margin
+    text: "<code>IsMine</code> — the wallet ownership check. Calls Solver with hash=0 (\"just match the pattern, don't actually sign\"). Returns true if this node's wallet holds the private key needed to satisfy the scriptPubKey. Used pervasively to filter incoming transactions for wallet balance."
+
+  - line: 1090
+    type: margin
+    text: "<code>SignSignature</code> — produces a complete signed input for a transaction. Calls SignatureHash on the output being spent, calls Solver to build the scriptSig, then verifies the result by re-running EvalScript. The self-test at line 1108 catches signing errors before they propagate."
+
+  - line: 1115
+    type: margin
+    text: "<code>VerifySignature</code> — the full validation path for a transaction input. Concatenates scriptSig + OP_CODESEPARATOR + scriptPubKey into a single script, then calls EvalScript. This is how every transaction in a block is validated during ConnectInputs in main.cpp."
 
 conclusion: |
   <p>
@@ -65,11 +190,14 @@ conclusion: |
   </p>
   <ol>
     <li>OP_DUP: Duplicate the provided public key</li>
-    <li>OP_HASH160: Hash it to get address</li>
-    <li>OP_EQUALVERIFY: Compare to expected address, fail if mismatch</li>
-    <li>OP_CHECKSIG: Verify signature proves ownership of that public key</li>
+    <li>OP_HASH160: Hash it to get the address</li>
+    <li>OP_EQUALVERIFY: Compare to the expected address, fail if mismatch</li>
+    <li>OP_CHECKSIG: Verify the signature proves ownership of that public key</li>
   </ol>
   <p>
-    This elegance—proving ownership in four operations—is why Satoshi's
-    scripting design has survived 15+ years of attacks.
+    This elegance — proving ownership in four operations — is why Satoshi's
+    scripting design has survived 15+ years of attacks, $1 trillion in value
+    secured, and multiple generations of protocol upgrades without replacement.
+    Every complex Bitcoin feature built since — multisig, Lightning, Taproot —
+    is ultimately an extension of these same opcodes on this same stack.
   </p>

@@ -1,85 +1,136 @@
-# Annotation for key.h - Cryptographic Keys
+# Annotation for key.h - Elliptic Curve Cryptography
 file: "key.h"
 
 title: "Elliptic Curve Cryptography"
 
 introduction: |
   <p>
-    This file defines how Bitcoin handles cryptographic keys—the mathematical
-    foundation of ownership. Without cryptography, Bitcoin is just a database.
-    With it, Bitcoin becomes a system where you can prove ownership of coins
-    without trusting anyone, simply by knowing a 256-bit number.
+    This file is the mathematical core of Bitcoin ownership. Everything else in the
+    system — transactions, blocks, the entire network — is ultimately protected by
+    ninety-one lines of C++. If cryptography is the lock, <code>key.h</code> is the
+    locksmith's shop.
   </p>
   <p>
-    Satoshi chose <strong>elliptic curve cryptography (ECC)</strong> using the
-    <code>secp256k1</code> curve—a decision that seemed unremarkable in 2009 but
-    later appeared prophetic. The common choice at the time was NIST's secp256r1
-    curve, which was endorsed by the US government and widely implemented. But
-    Satoshi went with secp256k1, an obscure Koblitz curve from Certicom's SEC2
-    standard that almost nobody used.
+    Satoshi chose <strong>elliptic curve cryptography (ECC)</strong> on the
+    <code>secp256k1</code> curve. In 2009 this was an unusual choice — nearly
+    everyone used NIST's secp256r1. The Koblitz curve Satoshi picked was obscure,
+    supported by few libraries, and lacked the institutional endorsement of the
+    NIST alternatives. What it had instead was something more valuable: its
+    parameters are <em>verifiably non-random</em>. The prime field, the curve
+    coefficients <code>a=0, b=7</code>, and the generator point can all be derived
+    from simple mathematical expressions. There is no room to hide a backdoor.
   </p>
   <p>
-    When asked why secp256k1 specifically, Satoshi admitted in a 2011 email to
-    Mike Hearn: "I didn't find anything to recommend a curve type so I just...
-    picked one." But the choice has a crucial property: secp256k1's parameters
-    are verifiably non-random. The prime and generator point can be derived from
-    simple mathematical expressions, making it impossible to hide a backdoor in
-    the curve constants. After the 2013 Snowden revelations showed the NSA had
-    inserted backdoors into NIST cryptographic standards (Dual_EC_DRBG), researchers
-    began questioning whether NIST curves had similar weaknesses. Bitcoin was immune.
+    The Snowden revelations of 2013 vindicated this paranoia. NSA documents showed
+    the agency had deliberately weakened Dual_EC_DRBG, a NIST-blessed random number
+    generator. Security researchers immediately questioned whether NIST's elliptic
+    curves had been similarly compromised. Bitcoin was immune — it had never used them.
   </p>
   <p>
-    <em>Your private key IS your bitcoins.</em> This cannot be overstated. The
-    private key is a 256-bit random number—one of 2^256 possibilities (more than
-    atoms in the observable universe). Anyone who discovers this number can spend
-    your coins instantly, irreversibly, from anywhere in the world. There is no
-    customer service, no chargeback, no recovery. This is the price of decentralization:
-    ultimate ownership, ultimate responsibility.
+    <em>A private key is a 256-bit random number. That is all it is.</em> One of
+    approximately 2<sup>256</sup> possibilities — more than the estimated number of
+    atoms in the observable universe. The public key and Bitcoin address are derived
+    from it via one-way mathematics. Anyone who learns your private key can spend your
+    coins instantly, irreversibly, from anywhere. There is no customer service. No
+    chargeback. No recovery. This is the price of trustlessness.
   </p>
 
 annotations:
+  - line: 6
+    type: margin
+    text: "Satoshi's rejected alternatives. These four commented-out blocks are a rare window into the design process. secp160k1 through secp224k1 were considered and rejected, presumably because their shorter key lengths offered insufficient security margins at the time. secp256k1 — the chosen curve — sits at the bottom of the list as the final answer."
+
   - line: 21
     type: margin
-    text: "secp256k1 parameters: PRIVATE_KEY_SIZE=279, PUBLIC_KEY_SIZE=65, SIGNATURE_SIZE=72. Satoshi chose this Koblitz curve over NIST's secp256r1—it has non-random, verifiable parameters and is 30% faster. These constants define Bitcoin's cryptographic identity."
+    text: "secp256k1 constants: private key 279 bytes (DER-encoded), public key 65 bytes (uncompressed point: 04 prefix + 32-byte x + 32-byte y), signature up to 72 bytes (DER-encoded r and s). These three numbers define the wire format of Bitcoin cryptography — every wallet, every transaction, every signature must agree on them exactly."
+
+  - line: 31
+    type: margin
+    text: "key_error inherits std::runtime_error rather than returning error codes. In cryptographic code, an exception is safer than a return value that might be silently ignored. If a key operation fails and the caller doesn't check the return, Bitcoin might use an uninitialized key. An uncaught exception crashes the program loudly instead."
+
+  - line: 39
+    type: margin
+    text: "CPrivKey is a byte vector with a custom allocator. secure_allocator (defined in serialize.h) ensures that when the vector is destroyed, its memory is zeroed before being freed — preventing private key material from lingering in memory where it could be found by another process or recovered from swap. This is why std::vector<unsigned char> is not used directly."
 
   - line: 43
     type: margin
-    text: "CKey class - wraps OpenSSL's EC_KEY. This object holds your private key in memory. When destroyed, the key is gone unless backed up."
+    text: "CKey is a thin RAII wrapper around OpenSSL's EC_KEY. The design is deliberate: Satoshi doesn't implement elliptic curve arithmetic directly — he delegates entirely to OpenSSL, inheriting both its correctness and its audited implementation. The private key bytes never leave this object in raw form; all operations go through OpenSSL's API."
 
   - line: 51
     type: margin
-    text: "NID_secp256k1 - Satoshi delegates to OpenSSL for all curve parameters: the prime field (p), curve coefficients (a=0, b=7), and crucially the generator point G. By using a standard curve identifier, Bitcoin inherits well-audited cryptographic constants without Satoshi needing to hardcode them."
+    text: "NID_secp256k1 is an OpenSSL numeric identifier. This single call pulls in everything: the prime field p = 2²⁵⁶ − 2³² − 977, the curve equation y² = x³ + 7, the generator point G, and its order n. Satoshi didn't hardcode these constants — he relied on OpenSSL's built-in curve library, meaning Bitcoin's security depends on OpenSSL implementing the curve correctly."
+
+  - line: 56
+    type: margin
+    text: "Copy constructor uses EC_KEY_dup rather than copying the struct directly. EC_KEY contains internal OpenSSL state (reference counts, cached values) that can't be naively memcpy'd. Missing this distinction — using a raw copy instead of dup — would create two objects sharing the same memory, leading to a double-free when both are destroyed. A subtle bug that would be nearly impossible to detect in testing but catastrophic in production."
+
+  - line: 70
+    type: margin
+    text: "Destructor calls EC_KEY_free, which decrements OpenSSL's internal reference count and zeros key material. This is the RAII guarantee: the private key is securely erased the moment the CKey goes out of scope, even if an exception is thrown. Without this, key material would persist on the heap until the memory was reallocated and overwritten."
 
   - line: 75
     type: margin
-    text: "MakeNewKey()—the moment a bitcoin address is born. This function generates 256 random bits via OpenSSL's EC_KEY_generate_key(), which ultimately uses the operating system's entropy sources (CPU timing, disk activity, mouse movements). The security of every bitcoin secured by this key depends entirely on these 256 bits being unpredictable. A famous 2013 Android bug produced weak random numbers, allowing attackers to drain wallets. Randomness is literally everything."
+    text: "Key generation. EC_KEY_generate_key asks OpenSSL to generate a cryptographically secure random 256-bit private key and derive the corresponding public key. OpenSSL seeds its CSPRNG from the operating system entropy pool — /dev/urandom on Linux, CryptGenRandom on Windows — which aggregates CPU jitter, hardware interrupts, and other unpredictable sources. The entire security of every bitcoin created at this moment rests on these 256 bits being genuinely unpredictable. A 2013 Android flaw in SecureRandom caused thousands of wallets to generate weak keys; attackers systematically drained them."
+
+  - line: 81
+    type: margin
+    text: "d2i_ECPrivateKey — 'd2i' is OpenSSL shorthand for 'DER to internal'. DER (Distinguished Encoding Rules) is the binary serialisation format used throughout Bitcoin's wire protocol. The private key is stored as an ASN.1 structure containing the raw key bytes plus curve parameters. This is why PRIVATE_KEY_SIZE is 279, not 32 — the DER wrapper adds metadata around the 32-byte key."
+
+  - line: 89
+    type: margin
+    text: "i2d_ECPrivateKey — 'i2d' is 'internal to DER'. Calling with a NULL output pointer is the OpenSSL idiom for querying the required buffer size before allocating. This two-pass pattern (size query, then serialise) avoids fixed-size buffers that might overflow or waste memory. The returned CPrivKey is what gets written to wallet.dat."
+
+  - line: 101
+    type: margin
+    text: "o2i_ECPublicKey — 'o2i' is 'octet string to internal'. Public keys in Bitcoin v0.01 use the uncompressed point format: a leading 0x04 byte followed by the 32-byte x-coordinate and 32-byte y-coordinate of the point P = privKey × G on the secp256k1 curve. Compressed keys (33 bytes, 0x02 or 0x03 prefix) were not yet standard — that came later with BIP-0137."
 
   - line: 109
     type: margin
-    text: "GetPubKey()—derives the public key from private key using elliptic curve point multiplication: pubKey = privKey × G, where G is the secp256k1 generator point. This operation takes microseconds. The reverse—finding privKey given pubKey—would require approximately 2^128 operations (birthday attack on 256-bit curve). Even if every computer on Earth worked together, it would take longer than the age of the universe. This asymmetry is why Bitcoin works."
+    text: "GetPubKey computes pubKey = privKey × G — scalar multiplication of the secp256k1 generator point. 'Multiplication' here is iterated point addition on the elliptic curve, not arithmetic multiplication. Computing it forward takes microseconds. The reverse — finding the private key scalar given the public point — is the elliptic curve discrete logarithm problem, believed to require approximately 2¹²⁸ group operations. No algorithm better than this is known. The asymmetry is why Bitcoin works."
 
   - line: 121
     type: margin
-    text: "Sign()—creates an ECDSA (Elliptic Curve Digital Signature Algorithm) signature. The signature proves you know the private key without revealing it—a mathematical magic trick called a 'zero-knowledge proof.' The signature includes a random nonce (k); if the same k is ever reused with different messages, the private key can be calculated. PlayStation 3's master key was leaked this way. Bitcoin's ECDSA implementation ensures k is unique per signature."
+    text: "ECDSA_sign takes a 256-bit message hash (not the message itself) and produces a signature. Internally, OpenSSL generates a random nonce k, computes a curve point R = k × G, and sets r = R.x mod n. Then s = k⁻¹(hash + r·privKey) mod n. The signature is the pair (r, s), DER-encoded. The pchSig[10000] buffer is dramatically oversized for a max-72-byte signature — Satoshi was being defensive about the output length query."
+
+  - line: 121
+    type: highlight
+    category: crypto
+
+  - line: 126
+    type: margin
+    text: "Nonce reuse is catastrophic. If the same k is ever used to sign two different messages, the private key can be algebraically recovered from the two signatures: privKey = (s1·hash2 - s2·hash1) / (r·(s1-s2)) mod n. This is not theoretical — it has happened. The PlayStation 3 team used a fixed k when signing firmware, allowing George Hotz to extract Sony's master key in 2010. Bitcoin's OpenSSL ECDSA always generates a fresh random k per signature."
 
   - line: 133
     type: margin
-    text: "Verify()—anyone can verify a signature is valid using only the public key and message. They learn nothing about the private key—only that whoever signed definitely knew it. This asymmetry (easy to verify, impossible to forge) is the mathematical foundation of trustless verification. Every Bitcoin node independently verifies every signature, trusting math instead of institutions."
+    text: "Verify takes the public key, message hash, and signature — and checks the math. The verifier computes u1 = s⁻¹·hash mod n and u2 = s⁻¹·r mod n, then confirms that (u1·G + u2·pubKey).x ≡ r mod n. This works because of the homomorphic structure of ECDSA. Crucially: the verifier never sees or needs the private key. Every node in the Bitcoin network independently verifies every signature, trusting mathematics instead of any authority."
+
+  - line: 133
+    type: highlight
+    category: crypto
 
   - line: 141
     type: margin
-    text: "Static Sign/Verify - convenience methods for one-off operations. Create temporary CKey, use it, destroy it."
+    text: "Static convenience wrappers. The pattern — construct CKey, load key, call method, implicitly destroy — ensures the temporary key is securely erased when the stack unwinds. These are called during transaction validation (Verify) and wallet signing (Sign), where the caller only has a serialised key and doesn't need a persistent CKey object."
 
 conclusion: |
   <p>
-    The security of Bitcoin relies on the discrete logarithm problem in elliptic
-    curves. Given a public key (a point on the curve), finding the private key
-    (the scalar multiplier) would require solving a problem believed to need
-    2^128 operations—more than the universe's atoms. Yet the reverse takes
-    milliseconds. This asymmetry is Bitcoin's cryptographic foundation.
+    The CKey class is Satoshi's entire cryptographic interface — 113 lines that
+    abstract away elliptic curve group law, DER encoding, OpenSSL internals,
+    and ECDSA arithmetic. The design principle throughout is delegation: don't
+    implement cryptography yourself, use audited libraries and correct abstractions.
   </p>
   <p>
-    Forensic note: Satoshi's choice of secp256k1 was unusual in 2009. The curve
-    was rarely used. Post-Snowden revelations about NSA influence on NIST curves
-    made this choice look either lucky or prescient. The truth remains unknown.
+    The choice of secp256k1 has proven historically significant. The curve's
+    verifiably non-random constants, combined with the post-Snowden distrust of
+    NIST algorithms, meant that secp256k1 eventually became the most widely
+    deployed elliptic curve on Earth — used by Ethereum, Litecoin, and hundreds
+    of other cryptocurrencies, all following Satoshi's original choice.
+  </p>
+  <p>
+    The one meaningful weakness in this implementation is the absence of
+    deterministic nonce generation (RFC 6979). Random k values require high-quality
+    entropy on every signing operation. Deterministic ECDSA removes that dependency
+    by deriving k from the private key and message hash, making signatures
+    reproducible and eliminating the catastrophic nonce-reuse failure mode. This
+    was added to Bitcoin Core years after v0.01.
   </p>

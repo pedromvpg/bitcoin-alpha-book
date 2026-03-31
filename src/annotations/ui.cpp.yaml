@@ -5,27 +5,212 @@ title: "The Face of Bitcoin"
 
 introduction: |
   <p>
-    The original Bitcoin client had a graphical user interface built
-    with wxWidgets. This file contains the logic behind the GUI—handling
-    button clicks, updating displays, and managing user interactions.
+    At 3,228 lines, ui.cpp is the largest file in Bitcoin v0.01. It implements
+    the entire graphical user interface using wxWidgets — a cross-platform GUI
+    toolkit that lets the same C++ code run on Windows, macOS, and Linux.
+    This is where the abstract machinery of cryptography, networking, and
+    consensus becomes a window a person can interact with.
+  </p>
+  <p>
+    The original Bitcoin client looks deceptively simple: a transaction list,
+    a balance, a "Send Coins" button, and a status bar showing connections and
+    blocks. But beneath this surface, the UI handles a genuinely difficult
+    problem: presenting a live, multithreaded financial system to a user who
+    expects a coherent, responsive interface.
+  </p>
+  <p>
+    The fundamental challenge is thread safety. Bitcoin's networking and block
+    processing run in background threads that constantly update shared state.
+    The UI must display this state without stalling the network threads or
+    showing inconsistent data. Satoshi's solution is a combination of
+    TRY_CRITICAL_BLOCK (non-blocking mutex attempts), wxYield() to let the
+    event loop breathe during bulk operations, and a cross-thread event system
+    to safely dispatch UI updates from worker threads.
+  </p>
+  <p>
+    The file also contains Bitcoin v0.01's most ambitious unfinished feature:
+    an IP-to-IP payment protocol where the sender connects directly to the
+    recipient's node, requests a fresh public key, and delivers a signed
+    transaction over the peer-to-peer network. This "online" payment mode
+    coexisted with the now-standard Bitcoin address (offline) mode. It was
+    ultimately abandoned — privacy, NAT traversal, and the need to be online
+    to receive made it impractical — but its traces remain throughout the code.
   </p>
 
 annotations:
+  - line: 12
+    type: margin
+    text: "wxWidgets custom event types. CROSSTHREADCALL allows worker threads to post events to the main UI thread safely. REPLY1/2/3 carry network response payloads to dialog handlers. TABLE_ADDED/UPDATED/DELETED were for the marketplace feature."
+
+  - line: 20
+    type: margin
+    text: "<code>pframeMain</code> — the global singleton for the main window. Worker threads check this pointer before posting UI events; if NULL, the window has been destroyed and no callbacks should fire. The networking and wallet threads indirectly use this to trigger UI repaints."
+
+  - line: 21
+    type: margin
+    text: "<code>mapAddressBook</code> — the human-readable address book. Maps Bitcoin addresses (base58 strings) to contact names. Stored separately from the wallet; allows labelling received addresses with names like \"Alice\" or \"Donation pool\"."
+
+  - line: 186
+    type: margin
+    text: "<code>setCallbackAvailable</code> — a thread-safe registry of dialog pointers that are still alive. When a network response arrives, the handler first checks IsCallbackAvailable() before calling the dialog method. If the dialog was closed while the network call was in flight, the pointer is no longer in the set and the callback is safely dropped."
+
+  - line: 208
+    type: margin
+    text: "<code>AddPendingCustomEvent</code> — the cross-thread messaging bridge. Worker threads cannot call wxWidgets methods directly (not thread-safe). Instead, they serialize data into a wxCommandEvent string payload and add it to the event queue. The UI thread processes it on its next iteration. This is a producer/consumer queue built on wxWidgets' existing event system."
+
   - line: 268
     type: margin
-    text: "CMainFrame constructor - initializes the main window"
+    text: "<code>CMainFrame</code> constructor — wires up the main window. Creates the toolbar with PNG icons loaded from Windows resources, sets up 7 columns in the transaction list (hidden sort key, hidden hash, Status, Date, Description, Debit, Credit), and calls RefreshListCtrl() to populate from the wallet database."
+
+  - line: 278
+    type: margin
+    text: "Initial balance display: reads from GetBalance() (sum of all unspent wallet outputs), formatted via FormatMoney() as a decimal BTC value. The trailing spaces prevent the label from being cut off when the number grows longer."
+
+  - line: 281
+    type: margin
+    text: "<code>m_menuOptions->Check</code> — reflects the saved fGenerateBitcoins setting in the menu checkbox. If the user was mining when they last quit, the menu appears checked immediately on startup before the miner thread is launched."
+
+  - line: 298
+    type: margin
+    text: "Date column width is computed dynamically from the formatted width of a specific timestamp (1229413914 = December 16, 2008 — days after Bitcoin launched). Multiplying by 6 approximates pixels-per-character for the monospace font. This ensures the column fits dates in any locale's format."
+
+  - line: 331
+    type: margin
+    text: "<code>ReadDefaultKey</code> — loads the user's primary public key from wallet.dat and converts it to a Bitcoin address displayed in the \"Your Bitcoin Address\" box. This is the address users share to receive payments. Satoshi designed Bitcoin with single-address wallets in mind; address reuse was not yet a privacy concern."
+
+  - line: 343
+    type: margin
+    text: "<code>Shutdown</code> — the clean exit sequence. Sets fShutdown to stop all network threads, flushes the Berkeley DB to disk (twice: once to checkpoint, once to force sync), then calls exit(0). Run in a separate thread so the window can close immediately while disk I/O completes in the background."
+
+  - line: 365
+    type: margin
+    text: "<code>OnMouseEvents</code> — harvests entropy from mouse movements for OpenSSL's random number generator. Every mouse event adds the X and Y coordinates to the entropy pool (RAND_add). Bitcoin keys require high-quality randomness; this ensures user activity continuously replenishes the pool. RandAddSeed() additionally mixes in the current time."
+
+  - line: 379
+    type: margin
+    text: "<code>InsertLine</code> — the transaction list's insert/update method. Uses a sort key as column 0 (hidden, determines list order) and the transaction hash as column 1 (hidden, used to find rows for updates). When the sort key changes (e.g., a transaction gets confirmed and moves from INT_MAX height to a real block height), the row must be deleted and re-inserted to maintain sort order."
+
+  - line: 420
+    type: margin
+    text: "<code>FormatTxStatus</code> — converts confirmation depth to a human-readable status string. Unconfirmed transactions show \"0/unconfirmed\". Transactions with fewer than 6 confirmations show \"N/unconfirmed\". At 6+ confirmations the block depth is shown. This 6-confirmation threshold reflects the probabilistic finality argument in Satoshi's whitepaper."
 
   - line: 432
     type: margin
-    text: "InsertTransaction - displays a transaction in the list"
+    text: "<code>InsertTransaction</code> — the core display logic for all transaction types. A transaction can appear in up to three ways: as a credit (bitcoin received), as a debit (bitcoin sent with one row per recipient output), or as \"Payment to yourself\" (when all inputs and outputs belong to the same wallet). Coinbase transactions get special treatment."
+
+  - line: 449
+    type: margin
+    text: "Sort key construction: zero-pads block height and time so lexicographic sort matches chronological order. Unconfirmed transactions (not yet in a block) sort to the top using INT_MAX as height. Coinbase transactions within a block sort after regular transactions (the 1 vs 0 flag) so mined coins appear below received ones."
+
+  - line: 462
+    type: margin
+    text: "Coinbase display: mined coins appear as \"Generated\" with a maturity countdown. Until 100 blocks deep, the credit is shown as \"(X BTC matures in N blocks)\" — grayed out and unspendable. This countdown is the visual manifestation of the coinbase maturity rule that prevents miners from spending freshly minted coins immediately."
+
+  - line: 527
+    type: margin
+    text: "Payment classification logic: fAllFromMe checks whether every input is controlled by this wallet. fAllToMe checks the same for outputs. The matrix determines how the transaction is displayed: (both) = self-payment, (fromMe only) = debit with recipient breakdown, (neither/mixed) = complex transaction shown as net amount only."
+
+  - line: 551
+    type: margin
+    text: "Debit display: iterates outputs to find the recipient (non-wallet) outputs. Skips our own change outputs (txout.IsMine()). Shows each recipient separately with address lookup. The transaction fee is computed as nDebit − GetValueOut() — the difference between what we sent and what recipients receive."
 
   - line: 621
     type: margin
-    text: "RefreshStatus - updates balance and connection status"
+    text: "<code>RefreshStatus</code> — updates only the visible rows' status columns without rebuilding the entire list. Limits to the top 100 visible items for performance. Skips the update if neither the scroll position nor the best block has changed since last call — a simple dirty-flag optimization."
+
+  - line: 660
+    type: margin
+    text: "<code>RefreshListCtrl</code> — schedules a full wallet reload by setting fRefreshListCtrl=true and calling wxWakeUpIdle(). The actual work happens in OnIdle() to avoid blocking the UI thread. Called whenever new transactions arrive or blocks are connected."
+
+  - line: 666
+    type: margin
+    text: "<code>OnIdle</code> — the lazy refresh handler. Runs during UI idle time, preventing it from starving the event loop. Sorts all wallet transactions by time (newest first using UINT_MAX minus timestamp), clears the list, then re-inserts all transactions. Calls wxYield() every 100 or 500 items to keep the UI responsive during large wallet loads."
+
+  - line: 740
+    type: margin
+    text: "<code>OnPaintListCtrl</code> — the combined repaint handler for the transaction list. Fires on every paint event: processes pending wallet updates (vWalletUpdated), calls RefreshStatus for visible rows, updates the status bar, and repaints the balance. This single repaint event drives all UI liveness."
+
+  - line: 774
+    type: margin
+    text: "Status bar format: three fields. Left: empty or \"Generating\" / \"(not connected)\". Middle: 81px for mining status. Right: a live snapshot of connections, chain height, and transaction count. The format string encodes the user's current view of the network's health in one line."
+
+  - line: 821
+    type: margin
+    text: "<code>OnMenuOptionsGenerate</code> — the mining toggle. Writes the new value to wallet.dat settings, then spawns a ThreadBitcoinMiner thread if enabled. Mining cannot be \"stopped\" cleanly in v0.01 — the thread runs to completion. This is why the menu is checked before the thread is ready."
+
+  - line: 848
+    type: margin
+    text: "<code>OnButtonSend</code> — opens the CSendDialog. Contains a hidden \"random send test\" mode (fRandSendTest) for stress-testing, which Satoshi left in. The Send dialog supports two payment modes: Bitcoin address (P2PKH scriptPubKey) and IP address (live peer connection)."
+
+  - line: 900
+    type: margin
+    text: "<code>OnButtonChange</code> — allows selecting a different receiving address. Validates the address by converting it to a hash160 and checking mapPubKeys for the corresponding public key. Only addresses whose private keys are in the wallet can be set as the default — you can't receive to an address you can't spend from."
+
+  - line: 971
+    type: margin
+    text: "<code>CTxDetailsDialog</code> — the transaction detail popup. Builds an HTML string describing the transaction in human terms: status, date, from/to addresses (with address book names if available), credit/debit amounts, transaction fee, and optional message field. When fDebug is enabled, shows raw transaction hex and input spending details."
+
+  - line: 1141
+    type: margin
+    text: "<code>mapValue[\"message\"]</code> — Bitcoin v0.01 supported attaching free-text messages to transactions. For IP-to-IP payments, sender and recipient contact details were also stored in mapValue[\"from\"] and mapValue[\"to\"]. These fields exist only in the local wallet, not on the blockchain — they are never broadcast."
+
+  - line: 1201
+    type: margin
+    text: "<code>COptionsDialog</code> — minimal settings dialog. In v0.01, the only user-configurable option is the transaction fee. ParseMoney() handles decimal input (\"0.01\" = 1,000,000 satoshis). The fee is persisted to wallet.dat under the key \"nTransactionFee\"."
+
+  - line: 1241
+    type: margin
+    text: "<code>CAboutDialog</code> — shows the version string: \"version 0.N.N Alpha\" computed from the VERSION constant. The UTF-8 workaround removes the copyright symbol (©) which wxWidgets couldn't render correctly without UTF-8 support — a practical limitation of the 2009 era toolkit."
+
+  - line: 1265
+    type: margin
+    text: "<code>CSendDialog</code> — the payment form. Detects whether the entered address is a Bitcoin address (base58, starts with 1) or an IP address. Bitcoin address mode disables the From/Message fields — those only apply to IP-to-IP payments where the recipient can see them."
+
+  - line: 1292
+    type: margin
+    text: "Address validation feedback: IsValidBitcoinAddress() checks base58 encoding and checksum. A green checkmark appears live as the user types — immediate feedback without a submit button. This UX detail shows Satoshi's care for usability even in an alpha."
+
+  - line: 1337
+    type: margin
+    text: "<code>OnButtonSend</code> — two payment paths. Bitcoin address: builds a P2PKH scriptPubKey directly (OP_DUP OP_HASH160 hash160 OP_EQUALVERIFY OP_CHECKSIG) and calls SendMoney(). IP address: creates a CSendingDialog which runs the full peer-to-peer payment handshake in a background thread."
+
+  - line: 1368
+    type: margin
+    text: "P2PKH script construction inline: << OP_DUP << OP_HASH160 << hash160 << OP_EQUALVERIFY << OP_CHECKSIG. The << operator on CScript appends opcodes and push data. This five-opcode script is the standard Bitcoin address locking script, unchanged to this day."
+
+  - line: 1418
+    type: margin
+    text: "<code>CSendingDialog</code> — the IP-to-IP payment protocol UI. Runs the payment handshake in a background thread (SendingDialogStartTransfer) while showing a status dialog to the user. The fWorkDone/fUIDone flags implement a two-party shutdown: whichever side finishes last destroys the dialog object."
+
+  - line: 1574
+    type: margin
+    text: "<code>StartTransfer</code> — the IP-to-IP payment protocol: (1) connect to the recipient's node, (2) send a \"checkorder\" request with the proposed transaction, (3) receive a response with the recipient's public key (OnReply2), (4) build and sign the transaction, (5) send \"submitorder\" with the signed payment. The recipient's wallet responds automatically without user action."
+
+  - line: 1596
+    type: margin
+    text: "<code>PushRequest(\"checkorder\")</code> — sends the unsigned transaction to the recipient for approval. The recipient's node can reject it (e.g., amount too small) or return a fresh scriptPubKey. This handshake prevents address reuse — every IP-to-IP payment goes to a new key generated on demand by the recipient."
+
+  - line: 1640
+    type: margin
+    text: "2-second cancel window: after receiving the recipient's public key but before committing the transaction, the dialog pauses for 2 seconds. During this window the user can still cancel. Once CommitTransactionSpent() is called below, the coins are gone — hence fCanCancel = false immediately before commit."
+
+  - line: 1683
+    type: margin
+    text: "<code>CommitTransactionSpent</code> — marks the inputs as spent in the wallet database, making them unavailable for other transactions. This is irreversible locally. AcceptTransaction() then validates the transaction against the current mempool, and RelayWalletTransaction() broadcasts it to all connected peers."
 
 conclusion: |
   <p>
-    Every dialog box, every status update, every user action flows
-    through this code. It's where the abstract blockchain meets the
-    human user.
+    The UI reveals what Bitcoin v0.01 was designed to be: not just a protocol,
+    but a complete payment application. The address book, the From/Message
+    fields, the IP-to-IP handshake — these were features for a world where
+    Bitcoin would be used for everyday commerce between online merchants
+    and their customers.
+  </p>
+  <p>
+    Much of this vision was shed as Bitcoin evolved. IP-to-IP payments were
+    removed in 2012. The marketplace features (products, orders) were never
+    shipped. What survived is the simple, elegant core: a transaction list,
+    a balance, an address to receive, a button to send. That minimal interface
+    — connecting a cryptographic engine to a human being — proved to be
+    exactly the right abstraction for a global monetary network.
   </p>

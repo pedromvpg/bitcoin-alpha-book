@@ -10,6 +10,12 @@ import { join, basename, extname, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import yaml from 'js-yaml';
 import Prism from 'prismjs';
+import { getEccPrimerFigures } from './ecc-figures.mjs';
+import { EDITION } from './edition.mjs';
+import {
+  SOURCE_FILE_ORDER as FILE_ORDER,
+  chapterIdFromFilename,
+} from './source-file-order.mjs';
 
 // Load additional Prism languages
 import 'prismjs/components/prism-c.js';
@@ -25,42 +31,6 @@ const SOURCE_DIR = join(ROOT_DIR, 'src', 'bitcoin-0.01', 'src');
 const ANNOTATIONS_DIR = join(ROOT_DIR, 'src', 'annotations');
 const STYLES_DIR = join(ROOT_DIR, 'styles');
 const OUTPUT_DIR = join(ROOT_DIR, 'output');
-
-// File order (matching your cover image)
-const FILE_ORDER = [
-  'base58.h',
-  'bignum.h',
-  'db.cpp',
-  'db.h',
-  'headers.h',
-  'irc.cpp',
-  'irc.h',
-  'key.h',
-  'license.txt',
-  'main.cpp',
-  'main.h',
-  'makefile',
-  'makefile.vc',
-  'market.cpp',
-  'market.h',
-  'net.cpp',
-  'net.h',
-  'readme.txt',
-  'script.cpp',
-  'script.h',
-  'serialize.h',
-  'sha.cpp',
-  'sha.h',
-  'ui.cpp',
-  'ui.h',
-  'ui.rc',
-  'uibase.cpp',
-  'uibase.h',
-  'uint256.h',
-  'uiproject.fbp',
-  'util.cpp',
-  'util.h'
-];
 
 // =============================================================================
 // INDEX TERMS
@@ -450,6 +420,13 @@ function generateCodeBlockHtml(filename, code, language, annotations) {
       if (ann.type === 'margin' && ann.line) {
         lineAnnotations.set(ann.line, ann);
       }
+      if (ann.type === 'highlight' && ann.lines) {
+        for (let i = ann.lines[0]; i <= ann.lines[1]; i++) {
+          if (!lineAnnotations.has(i)) {
+            lineAnnotations.set(i, { type: 'highlight', category: ann.category });
+          }
+        }
+      }
     }
   }
   
@@ -466,7 +443,10 @@ function generateCodeBlockHtml(filename, code, language, annotations) {
     if (annotation && annotation.text) {
       lineClass += ' has-annotation';
     }
-    
+    if (annotation && annotation.type === 'highlight') {
+      lineClass += ` highlighted ${annotation.category || ''}`;
+    }
+
     linesHtml += `<div class="${lineClass}"><span class="line-num">${String(lineNum).padStart(4, ' ')}</span><span class="line-code">${highlightedContent}</span></div>`;
     
     // Add annotation block after the line
@@ -490,13 +470,16 @@ function generateCodeBlockHtml(filename, code, language, annotations) {
  * Generate the complete book HTML
  */
 function generateBookHtml(files) {
+  const eccFigs = getEccPrimerFigures();
   const printCss = readFileSync(join(STYLES_DIR, 'print.css'), 'utf8');
   const syntaxCss = readFileSync(join(STYLES_DIR, 'syntax.css'), 'utf8');
-  const typographyCss = readFileSync(join(STYLES_DIR, 'typography.css'), 'utf8');
+  // Rewrite relative font URLs so they resolve correctly from output/ (both file:// and http://)
+  const typographyCss = readFileSync(join(STYLES_DIR, 'typography.css'), 'utf8')
+    .replace(/url\('fonts\//g, "url('../styles/fonts/");
   
   // Generate TOC entries - start with intro sections
   let tocHtml = `
-      <li class="toc-part-header">Part I: Fundamentals</li>
+      <li class="toc-part-header">Fundamentals</li>
       <li class="toc-item">
         <span class="toc-filename">Introduction</span>
         <span class="toc-page" data-target="introduction"></span>
@@ -517,7 +500,7 @@ function generateBookHtml(files) {
         <span class="toc-filename">C++ Primer</span>
         <span class="toc-page" data-target="cpp-primer"></span>
       </li>
-      <li class="toc-part-header">Part II: The Source Code</li>
+      <li class="toc-part-header">The Source Code</li>
       <li class="toc-item">
         <span class="toc-filename">rc/ (Resources)</span>
         <span class="toc-page" data-target="rc-resources"></span>
@@ -542,6 +525,10 @@ function generateBookHtml(files) {
       <li class="toc-item">
         <span class="toc-filename">Index</span>
         <span class="toc-page" data-target="index"></span>
+      </li>
+      <li class="toc-item">
+        <span class="toc-filename">Colophon</span>
+        <span class="toc-page" data-target="colophon"></span>
       </li>`;
 
   // Generate chapters
@@ -549,8 +536,19 @@ function generateBookHtml(files) {
   for (const file of files) {
     const annotation = file.annotation || {};
 
-    // Add special class for uiproject.fbp (dense XML file)
-    const extraClass = file.filename === 'uiproject.fbp' ? ' chapter-dense' : '';
+    // Blank pages before chapters
+    if (['main.cpp', 'net.cpp', 'market.h', 'readme.txt', 'ui.cpp', 'base58.h',
+         'key.h', 'headers.h', 'irc.h', 'irc.cpp', 'script.h',
+         'ui.rc', 'uibase.cpp', 'uibase.h', 'uint256.h', 'uiproject.fbp',
+         'util.cpp', 'util.h'].includes(file.filename)) {
+      chaptersHtml += `\n    <section class="blank-page"></section>`;
+    }
+
+    // Add special class for dense/compact files
+    const compactFiles = ['uibase.cpp', 'uibase.h', 'ui.cpp', 'ui.h'];
+    const extraClass = file.filename === 'uiproject.fbp' ? ' chapter-dense'
+                     : compactFiles.includes(file.filename) ? ' chapter-compact'
+                     : '';
 
     chaptersHtml += `
     <section class="chapter${extraClass}" id="${file.id}">
@@ -580,6 +578,14 @@ function generateBookHtml(files) {
         ${annotation.conclusion}
       </div>` : ''}
     </section>`;
+
+    // Blank pages after chapters
+    if (['market.h', 'net.h', 'readme.txt', 'base58.h',
+         'key.h', 'headers.h', 'irc.h', 'irc.cpp', 'license.txt', 'script.h',
+         'ui.rc', 'uibase.cpp', 'uibase.h', 'uint256.h', 'uiproject.fbp',
+         'util.cpp', 'util.h'].includes(file.filename)) {
+      chaptersHtml += `\n    <section class="blank-page"></section>`;
+    }
   }
   
   // Build intro sections content for index searching
@@ -604,12 +610,12 @@ function generateBookHtml(files) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bitcoin v0.01 Alpha - Source Code</title>
+  <title>Bitcoin v0.01 Alpha — Annotated Edition</title>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Red+Hat+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   
   <style>
 ${printCss}
@@ -699,9 +705,10 @@ ${typographyCss}
     <div class="title-content">
       <h1 class="book-title">BITCOIN</h1>
       <p class="book-subtitle">v0.01 ALPHA</p>
+      <p class="book-edition-banner">Annotated edition — ${EDITION}</p>
     </div>
     <div class="footer-content">
-      <p class="annotations-credit">Annotations by Claude Opus 4.5</p>
+      <p class="annotations-credit">Annotations by Claude Sonnet 4.6</p>
       <p class="copyright">Copyright (c) 2009 Satoshi Nakamoto</p>
     </div>
   </section>
@@ -789,7 +796,6 @@ ${typographyCss}
 
   <!-- PART I DIVIDER (page-break-before: right handles blank page if needed) -->
   <section class="part-divider">
-    <span class="part-number">Part I</span>
     <h1 class="part-title">Fundamentals</h1>
     <p class="part-subtitle">The history, cryptography, and computer science concepts behind Bitcoin</p>
   </section>
@@ -1197,11 +1203,11 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
     <pre class="example">
                         PRIOR INNOVATIONS
     ┌─────────────────┬─────────────────┬─────────────────┐
-    │    IDENTITY     │   PROOF-OF-WORK │     HISTORY     │
+    │    IDENTITY     │  PROOF-OF-WORK  │     HISTORY     │
     │                 │                 │                 │
-    │ Diffie-Hellman  │    Hashcash     │ Haber-Stornetta │
-    │ RSA, ECC        │    b-money      │  Merkle Trees   │
-    │ Public Keys     │    Bit Gold     │  Timestamping   │
+    │ Diffie-Hellman  │   Hashcash      │ Haber-Stornetta │
+    │ RSA, ECC        │   b-money       │  Merkle Trees   │
+    │ Public Keys     │   Bit Gold      │  Timestamping   │
     └────────┬────────┴────────┬────────┴────────┬────────┘
              │                 │                 │
              └─────────────────┼─────────────────┘
@@ -1237,6 +1243,8 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       that doomed them."
     </p>
   </section>
+
+  <section class="blank-page"></section>
 
   <!-- COMPUTER CONCEPTS -->
   <section class="chapter concepts" id="computer-concepts">
@@ -1395,6 +1403,8 @@ SHA256("bitcoin") =  (just lowercase 'b')
     </ul>
   </section>
   
+  <section class="blank-page"></section>
+
   <!-- CRYPTOGRAPHY CONCEPTS -->
   <section class="chapter concepts" id="cryptography-primer">
     <h1 class="chapter-title">Cryptography Basics</h1>
@@ -1463,70 +1473,84 @@ Hard:    3^? mod 17 = 6       (which exponent gives 6?)</pre>
 <span class="token class-name">Bitcoin</span> (<span class="token variable">secp256k1</span>): <span class="token variable">y</span>² = <span class="token variable">x</span>³ + <span class="token number">7</span>   (<span class="token variable">a</span>=<span class="token number">0</span>, <span class="token variable">b</span>=<span class="token number">7</span>)</pre>
     <p>
       The curve has a distinctive shape—symmetric about the x-axis, with a 
-      "bulge" on the left and extending to infinity on the right:
+      "bulge" on the left and extending to infinity on the right. Textbooks often
+      show the same Weierstrass equation as the intersection of an algebraic surface
+      with a plane—your mental model can be “the locus lives in a chart embedded in
+      something higher-dimensional,” then projected to the page. For embedded-systems
+      treatments of how modular arithmetic changes the geometry, see for example
+      <a href="https://www.allaboutcircuits.com/technical-articles/elliptic-curve-cryptography-in-embedded-systems/">How Elliptic Curve Cryptography Works</a>
+      (All About Circuits, 2019).
     </p>
-    <pre class="example">
-                          y
-                          │           ╱
-                          │          ╱
-                   •──────┼─────────╱
-                  ╱       │        │
-                 ╱        │        │
-                │         │        │
-    ────────────┼─────────┼────────┼──────── x
-                │         │        │
-                 ╲        │        │
-                  ╲       │        │
-                   •──────┼─────────╲
-                          │          ╲
-                          │           ╲
-</pre>
+    <div class="ecc-block">
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Schematic affine chart and real plot of y squared equals x cubed plus seven">
+        ${eccFigs.curveSpatial}
+      </figure>
+    </div>
     <p>
-      For any point P = (x, y) on the curve, there's a mirror point 
-      -P = (x, -y). This symmetry is key to the mathematics.
+      In real cryptography the coordinates are not arbitrary-precision reals: they live
+      in a <strong>finite field</strong> <span class="token variable">𝔽<sub>p</sub></span>
+      (for secp256k1, a huge prime <span class="token variable">p</span>). Addition
+      still follows chord-and-tangent, but values wrap modulo <span class="token variable">p</span>.
+      A tiny field makes the pattern visible—each valid <span class="token variable">(x, y)</span>
+      pair below satisfies <span class="token variable">y</span>² ≡ <span class="token variable">x</span>³ + 7 (mod 17):
+    </p>
+    <div class="ecc-block">
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Toy elliptic curve points over the field with seventeen elements">
+        ${eccFigs.finiteFieldToy}
+      </figure>
+    </div>
+    <p>
+      The scatter plot looks nothing like the smooth curve over ℝ — and that is
+      the point. The wrapping of coordinates modulo <span class="token variable">p</span>
+      gives the field a hidden topology. Because both <span class="token variable">x</span>
+      and <span class="token variable">y</span> wrap at <span class="token variable">p</span>
+      (0 and <span class="token variable">p</span> are the same value), the flat grid
+      has its top edge identified with its bottom edge, and its left edge identified with
+      its right edge. Gluing one pair of opposite edges gives a cylinder; gluing both pairs
+      gives a <strong>torus</strong>. Mathematically, 𝔽<sub>p</sub> × 𝔽<sub>p</sub> has
+      the topology of a torus — and the curve points live on its surface.
+    </p>
+    <div class="ecc-block">
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Step-by-step: flat square to torus by identifying opposite edges">
+        ${eccFigs.planeToTorus}
+      </figure>
+    </div>
+    <div class="ecc-block">
+      <figure class="ecc-figure ecc-figure--wide" aria-label="How the flat finite field grid wraps into a torus">
+        ${eccFigs.torus}
+      </figure>
+    </div>
+    <p>
+      For any point <span class="token variable">P</span> = (<span class="token variable">x</span>, <span class="token variable">y</span>) on the curve, negation is reflection across the
+      horizontal midline: −<span class="token variable">P</span> = (<span class="token variable">x</span>, −<span class="token variable">y</span> mod <span class="token variable">p</span>).
+      On the torus this is a half-turn around the latitude circle.
+      Addition still follows chord-and-tangent — but now the "line" wraps modulo <span class="token variable">p</span>.
     </p>
     <p>
-      Points on this curve can be "added" together using a geometric rule.
-      To add points P and Q:
+      Points on the curve can be "added" together using the same geometric rule as over ℝ.
+      To add points <span class="token variable">P</span> and <span class="token variable">Q</span>:
     </p>
     <ol>
-      <li>Draw a line through P and Q</li>
-      <li>Find where the line intersects the curve (point R')</li>
-      <li>Reflect R' across the x-axis to get R = P + Q</li>
+      <li>Draw the line through <span class="token variable">P</span> and <span class="token variable">Q</span> (modulo <span class="token variable">p</span>)</li>
+      <li>Find the third curve intersection <span class="token variable">R′</span></li>
+      <li>Reflect <span class="token variable">R′</span> across the x-axis to get <span class="token variable">R</span> = <span class="token variable">P</span> ⊕ <span class="token variable">Q</span></li>
     </ol>
-    <pre class="example">
-       <span class="token class-name">Point Addition</span>: P + Q = R
-
-                      │           ╱
-               P •────┼──────────• R'  ← line intersects curve
-                ╱╲    │         ╱│
-               ╱  ╲   │        ╱ │
-              ╱    ╲  │       │  │ reflect across x-axis
-     ────────┼──────╲─┼───────┼──┼─────
-              ╲    Q •│       │  │
-               ╲      │        ╲ ↓
-                ╲     │         ╲• R = P + Q
-                 •────┼──────────╲
-                      │           ╲
-</pre>
+    <div class="ecc-block">
+      <p class="ecc-caption"><span class="token class-name">Point addition</span> (<span class="token variable">P</span> ⊕ <span class="token variable">Q</span>): the dashed secant meets the curve at <span class="token variable">P</span>, <span class="token variable">Q</span>, and a third point <span class="token variable">R′</span>; reflecting <span class="token variable">R′</span> across the <span class="token variable">x</span>-axis gives <span class="token variable">R</span> = <span class="token variable">P</span> ⊕ <span class="token variable">Q</span>.</p>
+      <figure class="ecc-figure" aria-label="Point addition on the elliptic curve">
+        ${eccFigs.pointAdd}
+      </figure>
+    </div>
     <p>
       To <strong>double</strong> a point (add it to itself), draw the 
       <strong>tangent line</strong> at P, find where it intersects, and reflect:
     </p>
-    <pre class="example">
-       <span class="token class-name">Point Doubling</span>: P + P = 2P
-
-                      │           ╱
-                      │          • R'  ← tangent intersects
-               P •────┼─────────╱│
-                ╱ ╲   │        ╱ │
-               ╱tangent        │  │ reflect
-     ─────────┼───────┼────────┼──┼───
-               ╲      │        │  │
-                ╲     │         ╲ ↓
-                 •────┼──────────• 2P
-                      │           ╲
-</pre>
+    <div class="ecc-block">
+      <p class="ecc-caption"><span class="token class-name">Point doubling</span>: <span class="token variable">P</span> ⊕ <span class="token variable">P</span> = 2<span class="token variable">P</span>. The tangent at <span class="token variable">P</span> meets the curve again at <span class="token variable">R′</span>; reflect across the <span class="token variable">x</span>-axis to get 2<span class="token variable">P</span>.</p>
+      <figure class="ecc-figure" aria-label="Point doubling on the elliptic curve">
+        ${eccFigs.pointDouble}
+      </figure>
+    </div>
     <p>
       Using these operations, you can compute kG (adding G to itself k times):
     </p>
@@ -1789,7 +1813,11 @@ Miner tries:
       No trusted authority is needed—mathematics provides the guarantees.
     </p>
   </section>
-  
+
+  <section class="blank-page"></section>
+
+  <section class="blank-page"></section>
+
   <!-- C++ PRIMER -->
   <section class="chapter concepts" id="cpp-primer">
     <h1 class="chapter-title">C++ Primer</h1>
@@ -2346,13 +2374,11 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 <span class="token comment">// deleted automatically when function returns</span></pre>
   </section>
   
-  <!-- Blank spread before Part II -->
-  <section class="blank-page"></section>
+  <!-- Blank page before Part II -->
   <section class="blank-page"></section>
 
   <!-- PART II DIVIDER -->
   <section class="part-divider">
-    <span class="part-number">Part II</span>
     <h1 class="part-title">The Source Code</h1>
     <p class="part-subtitle">Bitcoin v0.01 — annotated and explained</p>
   </section>
@@ -2786,33 +2812,67 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     </p>
   </section>
 
-  <!-- Blank spread before Index -->
-  <section class="blank-page"></section>
-  <section class="blank-page"></section>
-
-  <!-- INDEX -->
+  <!-- INDEX — starts on left side of spread -->
   ${indexHtml}
 
-  <!-- Blank spread before Colophon -->
-  <section class="blank-page"></section>
-  <section class="blank-page"></section>
+  <!-- COLOPHON — break-before: right handled by .chapter CSS -->
+  <section class="chapter colophon" id="colophon">
+    <span class="section-title">Colophon</span>
+    <h1 class="chapter-title">COLOPHON</h1>
 
-  <!-- COLOPHON -->
-  <section class="chapter colophon">
-    <h2 class="section-title">Colophon</h2>
     <p>
-      This book contains the complete source code of Bitcoin v0.01, 
-      the first public release of Bitcoin by Satoshi Nakamoto in January 2009.
+      <strong>Book edition: ${EDITION}.</strong>
     </p>
+
     <p>
-      <strong>Typography:</strong> JetBrains Mono for code, IBM Plex Serif for body text, 
-      IBM Plex Sans for headings.
+      <strong>About this edition.</strong>
+      <em>Bitcoin v0.01 Alpha — Annotated Edition</em> presents the first public Bitcoin release
+      (January 2009) as a single volume: original C++ source and headers with inline commentary,
+      introductory primers, and reference material. The line-by-line annotations are designed for
+      continuous reading alongside the code, not as a bare source listing.
     </p>
+
     <p>
-      <strong>Specifications:</strong> 7" × 10" (Executive), 60# Uncoated White, 
-      Perfect Bound Paperback with Glossy Cover.
+      <strong>Source material.</strong>
+      Program text is reproduced from Satoshi Nakamoto’s v0.01 Alpha tree. Source code is
+      copyright © 2009 Satoshi Nakamoto and licensed under the MIT/X11 License unless noted
+      in individual files. Commentary, selection, and book design are additional material to
+      that release.
+    </p>
+
+    <p>
+      <strong>Typography.</strong>
+      Body and annotations are set in <strong>Inter</strong>. Code listings, headings, and UI
+      labels use <strong>Basis Grotesque Mono Pro</strong> (with a monospaced fallback stack for print).
+    </p>
+
+    <p>
+      <strong>Production.</strong>
+      This volume was generated from a structured HTML manuscript: syntax highlighting via
+      Prism, pagination via Paged.js, and PDF output via headless Chromium (Puppeteer). The
+      toolchain is Node.js-based and open source.
+    </p>
+
+    <p>
+      <strong>Intended print specification.</strong>
+      Trim <strong>7″ × 10″</strong> (executive), black text, perfect-bound paperback; body
+      stock typically <strong>60#</strong> uncoated white or equivalent; cover per printer
+      profile (e.g. gloss or matte laminate). Exact stock and binding may vary by print vendor.
+    </p>
+
+    <p>
+      <strong>Credits.</strong>
+      Annotations are credited on the title page. Publisher mark: <strong>PirateHash</strong>.
+    </p>
+
+    <p>
+      <strong>Errata and updates.</strong>
+      For corrections or to rebuild this edition from source, use the project that produced
+      this file (version-controlled content, scripts, and styles).
     </p>
   </section>
+
+  <section class="blank-page"></section>
 </body>
 </html>`;
 }
@@ -2882,6 +2942,13 @@ function generateResourcesChapter() {
           ${rcAnnotation?.introduction ? `<div class="description">${rcAnnotation.introduction}</div>` : ''}
         </div>
       </header>
+    </section>
+
+    <section class="blank-page"></section>
+
+    <section class="chapter rc-resources-grid">
+      <span class="section-title">rc/ (Resources)</span>
+      <span class="chapter-title">Bitcoin v0.01 Alpha</span>
 
       ${resourcesHtml}
 
@@ -2992,7 +3059,7 @@ async function build() {
     );
     
     processedFiles.push({
-      id: filename.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase(),
+      id: chapterIdFromFilename(filename),
       filename,
       language,
       lineCount,

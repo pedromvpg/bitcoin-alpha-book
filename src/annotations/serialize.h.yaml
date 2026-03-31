@@ -67,7 +67,7 @@ annotations:
 
   - line: 145
     type: margin
-    text: "CompactSize format—Satoshi's comment explains the encoding. Most values in Bitcoin are small: transaction input counts, output counts, script lengths. Using 4 bytes for a count that's usually 1-10 wastes space. CompactSize uses 1 byte for values 0-252, growing only when needed. This saves millions of bytes across the blockchain."
+    text: "<code>CompactSize</code> format—Satoshi's comment explains the encoding. Most values in Bitcoin are small: transaction input counts, output counts, script lengths. Using 4 bytes for a count that's usually 1-10 wastes space. CompactSize uses 1 byte for values 0-252, growing only when needed. This saves millions of bytes across the blockchain."
 
   - line: 152
     type: margin
@@ -80,6 +80,10 @@ annotations:
   - line: 191
     type: margin
     text: "<code class=\"function\">ReadCompactSize()</code>—decodes a CompactSize integer. Reads one byte; if <code>&lt;253</code>, that's the value. If <code>253</code>/<code>254</code>/<code>255</code>, reads 2/4/8 more bytes for the actual value. The return type is <code>uint64</code>—large enough for any CompactSize. Callers typically cast to appropriate smaller types after validation."
+
+  - lines: [696, 974]
+    type: highlight
+    category: consensus-imperative
 
 conclusion: |
   <p>

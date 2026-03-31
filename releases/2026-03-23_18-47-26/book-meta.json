@@ -1,0 +1,137 @@
+{
+  "pageCount": 523,
+  "part2SourceToc": [
+    {
+      "label": "rc/ (Resources)",
+      "page": "53"
+    },
+    {
+      "label": "base58.h",
+      "page": "55"
+    },
+    {
+      "label": "bignum.h",
+      "page": "63"
+    },
+    {
+      "label": "db.cpp",
+      "page": "75"
+    },
+    {
+      "label": "db.h",
+      "page": "87"
+    },
+    {
+      "label": "headers.h",
+      "page": "99"
+    },
+    {
+      "label": "irc.cpp",
+      "page": "103"
+    },
+    {
+      "label": "irc.h",
+      "page": "109"
+    },
+    {
+      "label": "key.h",
+      "page": "111"
+    },
+    {
+      "label": "license.txt",
+      "page": "117"
+    },
+    {
+      "label": "main.cpp",
+      "page": "119"
+    },
+    {
+      "label": "main.h",
+      "page": "165"
+    },
+    {
+      "label": "makefile",
+      "page": "189"
+    },
+    {
+      "label": "makefile.vc",
+      "page": "193"
+    },
+    {
+      "label": "market.cpp",
+      "page": "197"
+    },
+    {
+      "label": "market.h",
+      "page": "203"
+    },
+    {
+      "label": "net.cpp",
+      "page": "207"
+    },
+    {
+      "label": "net.h",
+      "page": "225"
+    },
+    {
+      "label": "readme.txt",
+      "page": "243"
+    },
+    {
+      "label": "script.cpp",
+      "page": "247"
+    },
+    {
+      "label": "script.h",
+      "page": "265"
+    },
+    {
+      "label": "serialize.h",
+      "page": "277"
+    },
+    {
+      "label": "sha.cpp",
+      "page": "299"
+    },
+    {
+      "label": "sha.h",
+      "page": "309"
+    },
+    {
+      "label": "ui.cpp",
+      "page": "315"
+    },
+    {
+      "label": "ui.h",
+      "page": "363"
+    },
+    {
+      "label": "ui.rc",
+      "page": "371"
+    },
+    {
+      "label": "uibase.cpp",
+      "page": "373"
+    },
+    {
+      "label": "uibase.h",
+      "page": "407"
+    },
+    {
+      "label": "uint256.h",
+      "page": "419"
+    },
+    {
+      "label": "uiproject.fbp",
+      "page": "437"
+    },
+    {
+      "label": "util.cpp",
+      "page": "497"
+    },
+    {
+      "label": "util.h",
+      "page": "507"
+    }
+  ]
+}

@@ -37,40 +37,86 @@ annotations:
   # Global state
   - line: 16
     type: margin
-    text: "<code class=\"variable\">cs_main</code> - the global mutex. Bitcoin is heavily multi-threaded; this lock protects the blockchain state from race conditions during concurrent access."
+    text: "<code class=\"variable\">cs_main</code> — the global mutex. Bitcoin is heavily multi-threaded; this lock protects the blockchain state from race conditions during concurrent access by the network, mining, and UI threads."
 
   - line: 18
     type: margin
-    text: "<code class=\"variable\">mapTransactions</code> - the 'memory pool' (mempool). Unconfirmed transactions wait here."
+    text: "<code class=\"variable\">mapTransactions</code> — the memory pool (mempool). Unconfirmed transactions wait here after passing validation, until a miner includes them in a block. <code class=\"variable\">nTransactionsUpdated</code> is a generation counter; the mining thread polls it to detect when new transactions arrive and should be considered for the next block."
 
-  - line: 24
+  - line: 21
     type: margin
-    text: "The genesis block hash, hardcoded as a 256-bit constant. This cryptographic fingerprint anchors the entire blockchain—every subsequent block contains a chain of hashes leading back to this exact value. If even one bit of the genesis block were different, this hash would be completely different (avalanche effect), and no existing blockchain would validate. This is why the 'Times' headline matters: it proves this hash couldn't have been computed before January 3, 2009."
+    text: "<code class=\"variable\">mapNextTx</code> — in-memory UTXO index. Maps each output being spent (<code class=\"type\">COutPoint</code>) to the transaction spending it (<code class=\"type\">CInPoint</code>). Before a transaction enters the mempool, every input is checked here: if any input already appears in <code class=\"variable\">mapNextTx</code>, another mempool transaction is already spending it — a mempool double-spend."
+
+  - line: 23
+    type: margin
+    text: "<code class=\"variable\">mapBlockIndex</code> — the in-memory blockchain index. Maps every known block hash to its <code class=\"type\">CBlockIndex</code> (metadata + chain linkage). Loaded from BDB on startup by <code class=\"function\">CTxDB::LoadBlockIndex()</code>. Traversing the chain in either direction is O(1) per step because each <code class=\"type\">CBlockIndex</code> holds pointers to its predecessor (<code class=\"variable\">pprev</code>) and successor (<code class=\"variable\">pnext</code>)."
+
+  - line: 26
+    type: margin
+    text: "Chain tip state: <code class=\"variable\">nBestHeight</code> is the height of the current best chain (0 = genesis), <code class=\"variable\">hashBestChain</code> is its tip hash, and <code class=\"variable\">pindexBest</code> is a direct pointer to the tip's <code class=\"type\">CBlockIndex</code>. These three values are kept in sync by <code class=\"function\">SetBestChain()</code> and <code class=\"function\">Reorganize()</code>. The mining thread reads <code class=\"variable\">pindexBest</code> to build new block candidates."
 
   - line: 30
     type: margin
-    text: "Orphan blocks - blocks received before their parent. In a distributed network, blocks can arrive out of order. These are held until their parent arrives."
+    text: "Orphan blocks — blocks received before their parent. <code class=\"variable\">mapOrphanBlocks</code> indexes them by their own hash; <code class=\"variable\">mapOrphanBlocksByPrev</code> indexes them by their parent's hash. When a new block arrives and connects its parent, the node immediately checks <code class=\"variable\">mapOrphanBlocksByPrev</code> to process any orphans that were waiting for it."
 
   - line: 36
     type: margin
-    text: "<code class=\"variable\">mapWallet</code> - your coins. Maps transaction hashes to wallet data. Every transaction you've received is stored here."
+    text: "<code class=\"variable\">mapWallet</code> — your coins. Maps transaction hashes to <code class=\"type\">CWalletTx</code> (a <code class=\"type\">CTransaction</code> augmented with confirmation status, timestamps, and supporting transaction data). Every transaction you've sent or received lives here. <code class=\"variable\">vWalletUpdated</code> signals the UI thread when the wallet changes."
 
   - line: 40
     type: margin
-    text: "<code class=\"variable\">mapKeys</code> - private key storage. Your entire Bitcoin wealth is controlled by these keys."
+    text: "<code class=\"variable\">mapKeys</code> — private key storage. Maps public key bytes to the matching private key. <code class=\"variable\">mapPubKeys</code> maps the 160-bit hash of the public key (the Bitcoin address) back to the full public key — needed to construct spending scripts. Your entire Bitcoin wealth is controlled by what lives in these two maps."
+
+  - line: 43
+    type: margin
+    text: "<code class=\"variable\">keyUser</code> — the default keypair. The public key is your main Bitcoin address; the private key lets you sign spending transactions. Set once during <code class=\"function\">LoadWallet()</code> from the <code>\"defaultkey\"</code> wallet record. All GUI-initiated payments sign with this key's private key."
 
   - line: 49
     type: margin
-    text: "<code class=\"variable\">fGenerateBitcoins</code> - mining toggle. In v0.1, CPU mining was viable. Satoshi imagined 'one-CPU-one-vote' before ASICs changed the game."
+    text: "<code class=\"variable\">fGenerateBitcoins</code> — mining toggle. In v0.01, a typical consumer CPU could find a block in hours to days. Satoshi imagined 'one-CPU-one-vote' as the governance model before GPU mining (2010) and ASICs (2013) made CPU mining irrelevant."
 
   - line: 50
     type: margin
-    text: "<code class=\"variable\">nTransactionFee</code> - optional fee. Initially zero. Satoshi designed fees as spam prevention: 'Free transactions are nice...until we get slashdotted.'"
+    text: "<code class=\"variable\">nTransactionFee</code> — optional fee in satoshis. Initially zero. Satoshi designed fees as a spam prevention mechanism: 'Free transactions are nice...until we get slashdotted.' The fee is deducted from the sending wallet's balance; miners collect accumulated fees via <code class=\"function\">GetBlockValue(nFees)</code>."
 
-  # Key generation
+  # Key management
+  - line: 65
+    type: margin
+    text: "<code class=\"function\">AddKey()</code> — adds a keypair both to the in-memory maps and durably to <code>wallet.dat</code>. Critically, the disk write happens inside the same function call: if the program crashes after updating the map but before the BDB write, the key is lost. The correct order — memory first, then disk — ensures at worst a temporary inconsistency resolved by reloading from disk on restart."
+
   - line: 75
     type: margin
-    text: "<code class=\"function\">GenerateNewKey()</code> - creates a fresh private key. Uses OpenSSL's <code class=\"function\">RAND_bytes()</code>. Satoshi on randomness: security depends entirely on unpredictable key generation."
+    text: "<code class=\"function\">GenerateNewKey()</code> — creates a fresh ECDSA keypair on the secp256k1 curve using OpenSSL. The private key is 32 bytes of cryptographically secure random data. The security of every bitcoin stored at the resulting address depends entirely on this randomness — a weak RNG is catastrophic. Satoshi also called <code class=\"function\">RandAddSeed()</code> throughout the codebase to continuously feed entropy into OpenSSL's pool."
+
+  # Wallet update
+  - line: 92
+    type: margin
+    text: "<code class=\"function\">AddToWallet()</code> — idempotent wallet update. If the transaction is new, records the receive time and writes to disk. If already present, merges in any new information: the confirming block hash, merkle branch position, <code class=\"variable\">fFromMe</code> flag, or spent status. This merge logic handles the common case where a transaction is first seen in the mempool, then again when it confirms in a block — the second arrival updates confirmation data without duplicating the record."
+
+  - line: 149
+    type: margin
+    text: "<code class=\"function\">AddToWalletIfMine()</code> — the filter between the network and your wallet. <code class=\"function\">tx.IsMine()</code> checks whether any output pays to a key you control. If yes, the transaction is wrapped in a <code class=\"type\">CWalletTx</code>, optionally given a merkle branch (if included in a block), and added to the wallet. All received funds flow through this function."
+
+  # Transaction helpers
+  - line: 231
+    type: margin
+    text: "<code class=\"function\">CTxIn::IsMine()</code> — is this input spending our own coin? Looks up the previous transaction in the wallet; if the referenced output paid to a key we control, this input is ours (it's a debit). Used to distinguish 'money I'm sending' from 'money passing through' when calculating wallet balance."
+
+  - line: 247
+    type: margin
+    text: "<code class=\"function\">CTxIn::GetDebit()</code> — the satoshi value being debited from our wallet by this input. Returns 0 for inputs not ours. Summed across all inputs minus <code class=\"function\">GetCredit()</code> across all outputs gives the net balance change of a transaction."
+
+  - line: 263
+    type: margin
+    text: "<code class=\"function\">CWalletTx::GetTxTime()</code> — when did this transaction happen? For transactions received directly from the network, use the local arrival time. For transactions learned about through a block, use the block's median time (the median of the previous 11 block timestamps), which filters out miners' timestamp manipulation. Median time is a consensus rule: it can only move forward and is harder to fake than a single block's timestamp."
+
+  - line: 286
+    type: margin
+    text: "<code class=\"function\">CMerkleTx::SetMerkleBranch()</code> — links a transaction to its containing block via a merkle proof. Stores the block hash, the transaction's index within the block, and the sibling hashes needed to reconstruct the path from this transaction up to the block's merkle root. Returns the confirmation depth (how many blocks have been built on top). The SPV protocol Satoshi described in the whitepaper uses exactly these merkle branches — a lightweight client can verify a transaction is included in a block without downloading the full block."
+
+  - line: 339
+    type: margin
+    text: "<code class=\"function\">AddSupportingTransactions()</code> — bundles ancestor transactions with a wallet transaction for relay to peers. When you broadcast a transaction, the recipient might not have the previous transactions your inputs reference. <code>COPY_DEPTH = 3</code> means include up to 3 levels of ancestors. This was Satoshi's pragmatic solution to the 'parent not found' problem before the full mempool relay protocol was robust."
 
   # Orphan transaction handling
   - line: 185
@@ -268,6 +314,22 @@ annotations:
   - line: 2322
     type: margin
     text: "'proof-of-work found' - victory message. Satoshi: 'The proof-of-work also solves the problem of determining representation in majority decision making.'"
+
+  - lines: [675, 683]
+    type: highlight
+    category: consensus-imperative
+
+  - lines: [685, 729]
+    type: highlight
+    category: consensus-imperative
+
+  - lines: [937, 970]
+    type: highlight
+    category: consensus-imperative
+
+  - lines: [1154, 1190]
+    type: highlight
+    category: consensus-imperative
 
 conclusion: |
   <p>

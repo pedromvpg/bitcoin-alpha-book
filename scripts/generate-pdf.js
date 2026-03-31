@@ -7,6 +7,10 @@ import puppeteer from 'puppeteer';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import {
+  SOURCE_FILE_ORDER,
+  chapterIdFromFilename,
+} from './source-file-order.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -68,7 +72,7 @@ async function generatePDF() {
 
         @top-left {
           content: string(current-section, first);
-          font-family: 'Red Hat Mono', monospace;
+          font-family: 'Basis Grotesque Mono Pro', monospace;
           font-size: 7pt;
           color: #666;
           text-transform: uppercase;
@@ -85,7 +89,7 @@ async function generatePDF() {
 
         @bottom-left {
           content: counter(page);
-          font-family: 'Red Hat Mono', monospace;
+          font-family: 'Basis Grotesque Mono Pro', monospace;
           font-size: 8pt;
           color: #333;
         }
@@ -104,8 +108,8 @@ async function generatePDF() {
         margin: 0.85in 0.625in 0.75in 0.875in;
 
         @top-right {
-          content: 'BITCOIN v0.01 ALPHA';
-          font-family: 'Red Hat Mono', monospace;
+          content: 'BITCOIN v0.01 ALPHA — ANNOTATED';
+          font-family: 'Basis Grotesque Mono Pro', monospace;
           font-size: 7pt;
           color: #666;
           text-transform: uppercase;
@@ -122,7 +126,7 @@ async function generatePDF() {
 
         @bottom-right {
           content: counter(page);
-          font-family: 'Red Hat Mono', monospace;
+          font-family: 'Basis Grotesque Mono Pro', monospace;
           font-size: 8pt;
           color: #333;
         }
@@ -200,7 +204,7 @@ async function generatePDF() {
       }
 
       .title-page .book-title {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 42pt;
         font-weight: 700;
         color: #000000;
@@ -210,7 +214,7 @@ async function generatePDF() {
       }
 
       .title-page .book-subtitle {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 16pt;
         font-weight: 400;
         color: #444444;
@@ -220,7 +224,7 @@ async function generatePDF() {
       }
 
       .title-page .annotations-credit {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 10pt;
         color: #666666;
         letter-spacing: 0.5px;
@@ -228,7 +232,7 @@ async function generatePDF() {
       }
 
       .title-page .copyright {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 8pt;
         color: #666666;
         letter-spacing: 0.5px;
@@ -285,7 +289,7 @@ async function generatePDF() {
       }
 
       .part-number {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 14pt;
         font-weight: 400;
         letter-spacing: 0.2em;
@@ -295,9 +299,10 @@ async function generatePDF() {
       }
 
       .part-title {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 32pt;
         font-weight: 700;
+        line-height: 1.1;
         color: #000;
         margin: 0;
         letter-spacing: 0.05em;
@@ -320,7 +325,7 @@ async function generatePDF() {
       }
 
       .toc-section-header {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 8pt;
         font-weight: 700;
         color: #555;
@@ -346,9 +351,9 @@ async function generatePDF() {
       }
 
       .introduction h2 {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 13pt;
-        font-weight: 600;
+        font-weight: 700;
         margin-top: 1.5em;
         margin-bottom: 0.5em;
       }
@@ -370,11 +375,9 @@ async function generatePDF() {
       }
       
       .introduction code {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 0.9em;
-        background-color: #f0f0f0;
         padding: 0.1em 0.3em;
-        border-radius: 2px;
       }
       
       .introduction .closing {
@@ -388,17 +391,18 @@ async function generatePDF() {
       }
 
       .concepts h2 {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 13pt;
-        font-weight: 600;
+        font-weight: 700;
         margin-top: 3em;
         margin-bottom: 0.5em;
       }
 
       .concepts h3 {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 11pt;
         font-weight: 700;
+        -webkit-text-stroke: 0px currentColor;
         margin-top: 2em;
         margin-bottom: 0.4em;
       }
@@ -420,18 +424,17 @@ async function generatePDF() {
       }
       
       .concepts code {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 0.9em;
-        background-color: #f0f0f0;
         padding: 0.1em 0.3em;
-        border-radius: 2px;
       }
-      
+
       .concepts pre.example {
-        font-family: 'Red Hat Mono', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 6pt;
         line-height: 1.4;
-        background-color: #f5f5f5;
+        background-color: #ffffff;
+        border: 1px solid #dddddd;
         padding: 0.75em 1em;
         margin: 0.75em 0;
         white-space: pre-wrap;
@@ -455,7 +458,7 @@ async function generatePDF() {
         padding: 0;
         overflow: visible;
         break-inside: auto;
-        font-family: 'Red Hat Mono', 'Fira Code', monospace;
+        font-family: 'Basis Grotesque Mono Pro', monospace;
         font-size: 6pt;
         line-height: 1.4;
         background-color: #ffffff;
@@ -463,14 +466,14 @@ async function generatePDF() {
 
       .code-content {
         width: 100%;
-        background-color: #f3f3f3;
+        background-color: #ffffff;
       }
 
       /* Each line is a flex row */
       .code-line {
         display: flex;
         align-items: flex-start;
-        background-color: #f3f3f3;
+        background-color: #ffffff;
       }
 
       /* Line number - fixed width, doesn't wrap */
@@ -482,7 +485,7 @@ async function generatePDF() {
         padding-right: 1.5em;
         user-select: none;
         white-space: pre;
-        background-color: #f3f3f3;
+        background-color: #ffffff;
       }
 
       /* Code content - can wrap, line number stays fixed */
@@ -493,7 +496,7 @@ async function generatePDF() {
         word-wrap: break-word;
         overflow-wrap: break-word;
         min-width: 0;
-        background-color: #f3f3f3;
+        background-color: #ffffff;
       }
       
       /* Hide the inline section-title spans */
@@ -508,7 +511,7 @@ async function generatePDF() {
       
       /* Lines with annotations */
       .code-line.has-annotation {
-        background-color: #f3f3f3;
+        background-color: #ffffff;
       }
 
       .code-line.has-annotation .line-num {
@@ -520,10 +523,9 @@ async function generatePDF() {
       .annotation-block {
         background-color: #ffffff;
         border: 1px solid #dddddd;
-        border-bottom: 1px solid #949494;
         border-radius: 0;
         margin: 1em 0;
-        padding: 0.5em 0px 2em 0;
+        padding: 0.75em 0 1.5em 0;
         box-shadow: none;
         border-left: none;
         border-right: none;
@@ -647,6 +649,40 @@ async function generatePDF() {
         break;
       }
       lastCount = pageCount;
+    }
+
+    // Save page count + Part II source TOC (for print cover) — same DOM as index fill
+    if (lastCount > 0) {
+      const sectionPageMap = await page.evaluate(() => {
+        const map = {};
+        document.querySelectorAll('[id]').forEach(section => {
+          const p = section.closest('.pagedjs_page');
+          if (p) {
+            const n = p.getAttribute('data-page-number');
+            if (n) map[section.id] = n;
+          }
+        });
+        return map;
+      });
+
+      const part2SourceToc = [
+        { label: 'rc/ (Resources)', id: 'rc-resources' },
+        ...SOURCE_FILE_ORDER.map(fn => ({
+          label: fn,
+          id:    chapterIdFromFilename(fn),
+        })),
+      ].map(({ label, id }) => ({
+        label,
+        page: sectionPageMap[id] != null ? String(sectionPageMap[id]) : null,
+      }));
+
+      const bookMetaPath = join(OUTPUT_DIR, 'book-meta.json');
+      writeFileSync(
+        bookMetaPath,
+        JSON.stringify({ pageCount: lastCount, part2SourceToc }, null, 2),
+        'utf8',
+      );
+      console.log(`   ✓ Saved page count + Part II TOC (${part2SourceToc.length} rows) to book-meta.json`);
     }
   } catch (err) {
     console.log('   ⚠ Paged.js may not have fully rendered:', err.message);

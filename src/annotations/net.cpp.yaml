@@ -27,53 +27,172 @@ introduction: |
   </p>
   <p>
     The protocol uses a simple message format: 4-byte magic number (to identify
-    Bitcoin network), 12-byte command name, 4-byte payload size, 4-byte checksum,
-    then the payload. Messages include: "version" (handshake), "addr" (peer addresses),
-    "inv" (announce data), "getdata" (request data), "tx" (transaction), "block"
-    (block data). This simplicity enabled implementations in dozens of languages.
+    the Bitcoin network), 12-byte command name, 4-byte payload size, 4-byte
+    checksum, then the payload. Messages include: "version" (handshake), "addr"
+    (peer addresses), "inv" (announce data), "getdata" (request data), "tx"
+    (transaction), "block" (block data). This simplicity enabled implementations
+    in dozens of languages.
   </p>
 
 annotations:
+  - line: 20
+    type: margin
+    text: "<code>fClient</code> — whether to run in lightweight mode without full blockchain. If true, NODE_NETWORK bit is cleared from nLocalServices, signalling to peers that this node cannot serve historical blocks."
+
+  - line: 21
+    type: margin
+    text: "<code>nLocalServices</code> — bitmask of capabilities advertised to peers. NODE_NETWORK (bit 0) means the node stores and serves the full blockchain. Nodes use this to decide which peers to ask for block data."
+
   - line: 27
     type: margin
-    text: "vNodes - list of all connected peers. Bitcoin maintains 8-125 connections. Each CNode represents a live TCP connection to another node."
+    text: "<code>vNodes</code> — the live peer roster. Every TCP connection to another Bitcoin node is represented here as a CNode*. The socket handler, message handler, and connection opener all share this list via cs_vNodes. Typical target: 8–15 peers."
 
-  - line: 100
+  - line: 29
     type: margin
-    text: "GetMyExternalIP - discovers our public IP via external service. Early Bitcoin used whatismyip.com. Needed because NAT hides local IPs."
+    text: "<code>mapAddresses</code> — the address book of known peers. Keys are serialized IP+port; values are CAddress structs with last-seen time and service flags. Persisted to addr.txt on disk so peers survive restarts."
+
+  - line: 31
+    type: margin
+    text: "<code>mapRelay</code> — short-lived cache for relayed objects. When a node broadcasts a transaction it stores it here for a few minutes so peers who ask for it via getdata can receive it. vRelayExpiration tracks when entries expire."
+
+  - line: 34
+    type: margin
+    text: "<code>mapAlreadyAskedFor</code> — throttles duplicate requests. When we ask a peer for an object (by CInv hash), we record the time here. If another peer announces the same object, we skip asking until the timeout expires — preventing bandwidth waste."
+
+  - line: 40
+    type: margin
+    text: "<code>ConnectSocket</code> — creates a raw TCP connection to another node. Checks whether the target IP is a private (RFC 1918) address; if a SOCKS4 proxy is configured and the target is routable, routes through it instead of connecting directly."
+
+  - line: 48
+    type: margin
+    text: "Private IP detection: 10.x.x.x and 192.168.x.x are RFC 1918 private ranges, not routable on the public internet. Satoshi skips proxy for private IPs since they're presumably on the same LAN."
+
+  - line: 61
+    type: margin
+    text: "SOCKS4 handshake: the 9-byte request encodes VN=4, CD=1 (CONNECT), the destination port (big-endian), and IP (4 bytes). The string \"user\" is a null-terminated USERID field. A 0x5A response byte means the proxy accepted the connection."
+
+  - line: 92
+    type: margin
+    text: "<code>GetMyExternalIP</code> — discovers the node's public IP by making an HTTP GET to whatismyip.com. The response is a bare IP string (e.g. \"1.2.3.4\"). Needed because NAT routers hide the local IP; peers must know the public address to accept inbound connections."
+
+  - line: 136
+    type: margin
+    text: "<code>AddAddress</code> — adds a peer to the address book, deduplicating by key. Only stores routable (public internet) IPs; ignores our own address. If services bits have expanded for a known address, updates the record."
+
+  - line: 209
+    type: margin
+    text: "Pub/sub system — Bitcoin v0.01 included a publish-subscribe layer for relaying marketplace messages (products and orders). Nodes could subscribe to channels (MSG_TABLE, MSG_PRODUCT) and receive broadcasts from any subscriber. This was the embryo of an online marketplace, ultimately removed in later versions."
+
+  - line: 227
+    type: margin
+    text: "<code>CNode::Subscribe</code> — if no other node is currently subscribed to a channel, propagates a \"subscribe\" message to all peers (meet-in-the-middle relay). The comment calculates that with 100,000 nodes each subscribing to 1,000 random peers, 99.995% message delivery is achievable."
+
+  - line: 277
+    type: margin
+    text: "<code>FindNode</code> — O(n) search through vNodes. With the target peer count of 8–15 nodes this is fast enough. Returns the CNode* if connected, NULL otherwise. Two overloads: one searches by raw IP, the other by full CAddress (IP+port)."
 
   - line: 299
     type: margin
-    text: "ConnectNode - establishes TCP connection to peer. Performs version handshake, exchanges capabilities. The start of every peer relationship."
+    text: "<code>ConnectNode</code> — high-level peer connection: returns existing connection if already connected, otherwise calls ConnectSocket and creates a new CNode, adding it to vNodes. On failure, records the current time as nLastFailed to implement retry backoff."
 
-  - line: 500
+  - line: 395
     type: margin
-    text: "Socket select loop - the network heartbeat. Uses select() to efficiently wait on multiple sockets. Classic Unix network programming."
+    text: "<code>ThreadSocketHandler2</code> — the I/O engine. Runs in a dedicated thread, looping forever. Each iteration: disconnect stale nodes, call select() to wait for socket readiness, accept inbound connections, then read/write data for every active socket. The Sleep(10) at the end yields the CPU briefly each cycle."
+
+  - line: 410
+    type: margin
+    text: "Duplicate connection resolution: if two nodes connect to each other simultaneously (a race condition in a symmetric P2P network), both ends would have duplicate entries. The rule is: the node with the lower IP disconnects its outbound side. This deterministically breaks ties without coordination."
+
+  - line: 444
+    type: margin
+    text: "<code>ReadyToDisconnect()</code> checks whether a node's reference count has dropped to zero and its send/receive buffers are empty — safe to close. Disconnected nodes are held in a pool for up to 5 minutes before deletion in case threads still hold references."
+
+  - line: 488
+    type: margin
+    text: "<code>select()</code> multiplexing — classic Unix network I/O. Builds fd_sets for all active sockets plus the listening socket, then blocks for up to 50ms waiting for any socket to become readable or writable. Avoids spinning and keeps CPU usage low while watching many connections simultaneously."
+
+  - line: 541
+    type: margin
+    text: "Accept inbound connections: when the listening socket fires in the read set, accept() pulls the pending connection off the kernel queue, creates a CNode marked fFromMe=true (inbound), and adds it to vNodes. Inbound nodes are treated identically to outbound ones."
+
+  - line: 577
+    type: margin
+    text: "Receive path: reads up to 64 KB from the socket into pnode->vRecv in one syscall. A zero return means the remote end closed the connection gracefully; negative means a socket error. Data accumulates in vRecv until ThreadMessageHandler processes complete messages."
+
+  - line: 613
+    type: margin
+    text: "Send path: flushes as much of vSend as the kernel will accept in one send() call, then erases the bytes sent. vSend is a deque so partial sends are handled correctly. Only marked writable (fdsetSend) if vSend is non-empty."
 
   - line: 673
     type: margin
-    text: "ThreadOpenConnections - actively seeks new peers. Balances between maintaining connections and not overloading the network."
+    text: "<code>ThreadOpenConnections2</code> — proactively seeks new peers when below nMaxConnections (15). Selects from mapAddresses using the class-C diversity algorithm below. Once connected, sends our address and requests more addresses with \"getaddr\"."
 
-  - line: 798
+  - line: 693
     type: margin
-    text: "ThreadMessageHandler - processes incoming messages. Blocks, transactions, addresses, pings flow through here. The protocol interpreter."
+    text: "Class-C diversity algorithm: groups known IPs by /24 subnet. When choosing a peer, first picks a random /24, then a random IP within it. This means an attacker flooding with 255 IPs in one subnet gets the same share of attention as a single legitimate node in another subnet — Sybil resistance through IP diversity."
 
-  - line: 832
+  - line: 735
     type: margin
-    text: "ProcessMessages - deserializes and dispatches messages. Each message type (version, addr, inv, getdata, tx, block) has a handler."
+    text: "Exponential backoff for failed peers: nDelay doubles with each connection in vNodes — if you have 8 peers, nDelay = 30 min × 2^8 = 128 hours, capped at 8 hours. Adds randomization (nRandomizer) so retries are staggered, preventing thundering-herd reconnects."
 
-  - line: 981
+  - line: 816
     type: margin
-    text: "Thread startup - Bitcoin spawns multiple networking threads. OpenConnections finds peers, MessageHandler processes data, SocketHandler does I/O."
+    text: "<code>ThreadMessageHandler2</code> — protocol dispatch loop. Runs at THREAD_PRIORITY_BELOW_NORMAL to avoid starving the I/O thread. Every 100ms, iterates all peers: calls ProcessMessages to handle received data, then SendMessages to queue outbound protocol messages."
+
+  - line: 819
+    type: margin
+    text: "<code>THREAD_PRIORITY_BELOW_NORMAL</code> — the message handler runs at reduced priority deliberately. Network I/O (socket handler) must be responsive; protocol processing can lag slightly. This priority inversion ensures data is received before it is processed."
+
+  - line: 858
+    type: margin
+    text: "<code>BitcoinMiner</code> thread: proof-of-work mining runs in its own thread (index 3). The comment \"todo: start one thread per processor\" shows Satoshi was aware of multi-core mining from the start. This single-threaded miner was quickly replaced by multi-threaded and then GPU miners."
+
+  - line: 881
+    type: margin
+    text: "<code>StartNode</code> — the network bootstrap sequence. Initializes Winsock, resolves local hostname, creates and binds the TCP listen socket, sets it to non-blocking, discovers external IP, then spawns four threads: IRC seed, socket handler, connection opener, and message handler."
+
+  - line: 887
+    type: margin
+    text: "<code>WSAStartup</code> — Windows Sockets API initialization. MAKEWORD(2,2) requests Winsock version 2.2. This must be called before any socket operations on Windows. The equivalent on Linux/macOS would be nothing — POSIX sockets need no initialization."
+
+  - line: 926
+    type: margin
+    text: "Non-blocking sockets: FIONBIO with value 1 sets the socket to non-blocking mode via ioctlsocket(). All subsequent recv/send calls return immediately with WSAEWOULDBLOCK rather than blocking. The select() loop above handles the waiting."
+
+  - line: 961
+    type: margin
+    text: "<code>addrIncoming</code> — if a previous session discovered our external IP, it was saved to wallet.dat. We restore it here rather than hitting whatismyip.com every startup. GetMyExternalIP updates it if successful."
+
+  - line: 968
+    type: margin
+    text: "<code>ThreadIRCSeed</code> — connects to IRC chat server to bootstrap peer discovery. Early Bitcoin nodes joined #bitcoin on irc.lfnet.org and encoded their IP in their IRC nickname. Satoshi's elegant hack: use an existing global directory (IRC) as a decentralized peer discovery mechanism before the network was large enough to self-sustain."
+
+  - line: 974
+    type: margin
+    text: "Thread startup sequence: four threads created with _beginthread() (Windows CRT). Each has a wrapper (ThreadSocketHandler) that catches exceptions and restarts the inner function after a 5-second sleep, providing fault tolerance. Thread indices 0–3 map to the vfThreadRunning array."
+
+  - line: 998
+    type: margin
+    text: "<code>StopNode</code> — orderly shutdown. Sets fShutdown=true (all threads check CheckForShutdown() periodically), increments nTransactionsUpdated to wake waiting threads, then polls until all threads have exited. WSACleanup releases Winsock resources."
+
+  - line: 1012
+    type: margin
+    text: "<code>CheckForShutdown</code> — the cooperative shutdown mechanism. Every thread's inner loop calls this periodically. If fShutdown is set, the thread marks itself as not running and calls _endthread() to exit. No forced killing — threads exit at their next safe yield point."
 
 conclusion: |
   <p>
     The networking layer embodies Satoshi's trustless philosophy. Nodes don't trust
-    peers—they validate everything independently. A malicious peer can waste your
+    peers — they validate everything independently. A malicious peer can waste your
     bandwidth but can't steal your coins or corrupt your view of the blockchain.
   </p>
   <p>
     Message propagation uses "inv" (inventory) announcements: nodes advertise what
     they have, peers request what they need. This pull-based model prevents spam
     and lets nodes prioritize important data (blocks over transactions).
+  </p>
+  <p>
+    The design's elegance is in what it doesn't do: no authentication, no identity,
+    no trust hierarchy. Every node is equal. The consensus rules encoded in
+    <code>main.cpp</code> ensure that even a network of anonymous strangers
+    converges on the same truth.
   </p>

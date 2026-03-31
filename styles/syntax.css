@@ -20,7 +20,7 @@
   margin: 0;
   overflow: visible;
   break-inside: auto;
-  font-family: 'Red Hat Mono', 'Fira Code', monospace;
+  font-family: 'Basis Grotesque Mono Pro', monospace;
   font-size: 6pt;
   line-height: 1.4;
   background-color: #ffffff;
@@ -28,14 +28,14 @@
 
 .code-content {
   width: 100%;
-  background-color: #f3f3f3;
+  background-color: #ffffff;
 }
 
 /* Each line is a flex row */
 .code-line {
   display: flex;
   align-items: flex-start;
-  background-color: #f3f3f3;
+  background-color: #ffffff;
 }
 
 /* Line number - fixed width, doesn't wrap */
@@ -47,7 +47,7 @@
   padding-right: 1.5em;
   user-select: none;
   white-space: pre;
-  background-color: #f3f3f3;
+  background-color: #ffffff;
 }
 
 /* Code content - can wrap, line number stays fixed */
@@ -58,7 +58,7 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   min-width: 0;
-  background-color: #f3f3f3;
+  background-color: #ffffff;
 }
 
 /* Highlighted line */
@@ -72,7 +72,7 @@
 
 /* Lines with annotations */
 .code-line.has-annotation {
-  background-color: #f3f3f3;
+  background-color: #ffffff;
 }
 
 .code-line.has-annotation .line-num {
@@ -84,10 +84,9 @@
 .annotation-block {
   background-color: #ffffff;
   border: 1px solid #dddddd;
-  border-bottom: 1px solid #949494;
   border-radius: 0;
   margin: 1em 0;
-  padding: 0.5em 0px 2em 0;
+  padding: 0.75em 0 1.5em 0;
   box-shadow: none;
   border-left: none;
   border-right: none;
@@ -103,11 +102,8 @@
 
 /* Inline code in annotations - matches syntax highlighting */
 .annotation-content code {
-  font-family: 'Red Hat Mono', monospace;
+  font-family: 'Basis Grotesque Mono Pro', monospace;
   font-size: 7pt;
-  background-color: #f5f5f5;
-  padding: 0.1em 0.3em;
-  border-radius: 2px;
 }
 
 .annotation-content code.keyword { color: #d73a49; font-weight: 500; }
@@ -299,6 +295,12 @@
   border-left: 3px solid #d2a8ff;
 }
 
+/* Consensus-imperative — rules that define Bitcoin's consensus layer */
+.code-line.consensus-imperative {
+  background-color: rgba(220, 53, 69, 0.07);
+  border-left: 1px solid #dc3545;
+}
+
 /* ============================================
    INLINE CODE (in annotations)
    ============================================ */
@@ -306,7 +308,7 @@
 code.inline {
   background-color: #2d2d35;
   color: #e0e0e0;
-  font-family: 'Red Hat Mono', monospace;
+  font-family: 'Basis Grotesque Mono Pro', monospace;
   font-size: 0.9em;
   padding: 0.15em 0.4em;
   border-radius: 3px;
@@ -317,6 +319,21 @@ code.inline {
    DENSE CHAPTER LAYOUT (for uiproject.fbp)
    Smaller font, 2-column layout to save pages
    ============================================ */
+
+/* Compact chapters: smaller code for less-critical UI files */
+.chapter-compact .code-container {
+  font-size: 5pt;
+  line-height: 1.35;
+}
+
+.chapter-compact .line-num {
+  width: 2.8em;
+  padding-right: 1.2em;
+}
+
+.chapter-compact .annotation-block {
+  font-size: 7.5pt;
+}
 
 .chapter-dense .code-container {
   font-size: 4.5pt;

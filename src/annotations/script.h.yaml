@@ -40,43 +40,47 @@ introduction: |
 annotations:
   - line: 17
     type: margin
-    text: "opcodetype enum - the complete instruction set. 256 possible opcodes, though many are disabled or reserved. Each is one byte."
+    text: "<code>opcodetype</code> enum - the complete instruction set. 256 possible opcodes, though many are disabled or reserved. Each is one byte."
 
   - line: 55
     type: margin
-    text: "OP_RETURN in v0.1 simply jumps to the end of the script—it does NOT fail. No data size limits existed. Later (2014), OP_RETURN was changed to immediately fail, making outputs provably unspendable—a 'clean' way to embed data without bloating the UTXO set. A 40-byte limit (later 80 bytes) was added as policy, not consensus. This limit reflects an unresolved tension in Bitcoin's identity: is it purely a monetary system, or also a data layer? Attempts to remove or raise these limits periodically reignite debate. The question isn't technical but philosophical—what should Bitcoin be? Satoshi left no guidance; he included OP_RETURN without restriction."
+    text: "<code>OP_RETURN</code> in v0.1 simply jumps to the end of the script—it does NOT fail. No data size limits existed. Later (2014), OP_RETURN was changed to immediately fail, making outputs provably unspendable—a 'clean' way to embed data without bloating the UTXO set. A 40-byte limit (later 80 bytes) was added as policy, not consensus. This limit reflects an unresolved tension in Bitcoin's identity: is it purely a monetary system, or also a data layer? Attempts to remove or raise these limits periodically reignite debate. The question isn't technical but philosophical—what should Bitcoin be? Satoshi left no guidance; he included OP_RETURN without restriction."
 
   - line: 69
     type: margin
-    text: "OP_DUP - duplicate top stack item. Combined with OP_HASH160 and OP_EQUALVERIFY, forms P2PKH (Pay to Public Key Hash), Bitcoin's standard script."
+    text: "<code>OP_DUP</code> - duplicate top stack item. Combined with OP_HASH160 and OP_EQUALVERIFY, forms P2PKH (Pay to Public Key Hash), Bitcoin's standard script."
 
   - line: 131
     type: margin
-    text: "OP_HASH160 - RIPEMD160(SHA256(x)). Creates the 20-byte hash used in Bitcoin addresses. Double hashing adds security margin."
+    text: "<code>OP_HASH160</code> - RIPEMD160(SHA256(x)). Creates the 20-byte hash used in Bitcoin addresses. Double hashing adds security margin."
 
   - line: 132
     type: margin
-    text: "OP_HASH256 - SHA256(SHA256(x)). Double SHA256 used for block hashes and txids. Defense against length extension attacks."
+    text: "<code>OP_HASH256</code> - SHA256(SHA256(x)). Double SHA256 used for block hashes and txids. Defense against length extension attacks."
 
   - line: 134
     type: margin
-    text: "OP_CHECKSIG - the signature verification opcode. This single instruction is why Bitcoin works: proves private key ownership."
+    text: "<code>OP_CHECKSIG</code> - the signature verification opcode. This single instruction is why Bitcoin works: proves private key ownership."
 
   - line: 135
     type: margin
-    text: "OP_CHECKSIGVERIFY - CHECKSIG + VERIFY. Fails script immediately if signature invalid. Used in multi-sig scripts."
+    text: "<code>OP_CHECKSIGVERIFY</code> - CHECKSIG + VERIFY. Fails script immediately if signature invalid. Used in multi-sig scripts."
 
   - line: 136
     type: margin
-    text: "OP_CHECKMULTISIG - M-of-N multi-signature verification, present from day one. Requires M valid signatures from a set of N public keys. Enables shared custody: a company treasury might require 2-of-3 executives to sign, or an escrow might need 2-of-3 (buyer, seller, arbitrator). Satoshi mentioned 'multi-party signature' in his BitcoinTalk posts as a planned feature. The implementation (script.cpp:727) iterates through signatures and keys, matching each signature to a key in order. A subtle bug existed: an extra unused value was consumed from the stack, fixed years later in BIP 147."
+    text: "<code>OP_CHECKMULTISIG</code> - M-of-N multi-signature verification, present from day one. Requires M valid signatures from a set of N public keys. Enables shared custody: a company treasury might require 2-of-3 executives to sign, or an escrow might need 2-of-3 (buyer, seller, arbitrator). Satoshi mentioned 'multi-party signature' in his BitcoinTalk posts as a planned feature. The implementation (script.cpp:727) iterates through signatures and keys, matching each signature to a key in order. A subtle bug existed: an extra unused value was consumed from the stack, fixed years later in BIP 147."
 
   - line: 327
     type: margin
-    text: "CScript class - a Bitcoin script as bytes. Inherits from vector<unsigned char>. Scripts are data until evaluated."
+    text: "<code>CScript</code> class - a Bitcoin script as bytes. Inherits from vector<unsigned char>. Scripts are data until evaluated."
 
   - line: 17
     type: margin
     text: "IMPORTANT: In August 2010, Satoshi disabled 15 opcodes including OP_CAT, OP_MUL, OP_DIV due to DoS vulnerabilities. These remain 'ghost opcodes.'"
+
+  - lines: [17, 151]
+    type: highlight
+    category: consensus-imperative
 
 conclusion: |
   <p>

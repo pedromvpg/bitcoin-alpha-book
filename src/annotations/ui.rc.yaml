@@ -1,30 +1,90 @@
-# Annotation for ui.rc - Windows Resources
+# Annotation for ui.rc - Windows Resource Definitions
 file: "ui.rc"
 
 title: "The Bitcoin Icon"
 
 introduction: |
   <p>
-    A Windows resource file that defines the application icon and other
-    Windows-specific resources. This is what gave the original Bitcoin
-    client its distinctive icon in the Windows taskbar.
+    Fifteen lines that gave Bitcoin its first visual identity. This Windows
+    resource script (<code>.rc</code> file) tells the Microsoft resource compiler
+    which icons and bitmaps to embed into the <code>bitcoin.exe</code> executable.
+    When a user double-clicked the Bitcoin application on their Windows desktop in
+    January 2009, these were the graphics they saw: the application icon in the
+    taskbar, the toolbar buttons for sending coins and managing the address book,
+    and the small checkmark that appeared next to confirmed transactions.
+  </p>
+  <p>
+    The resource file format dates back to Windows 3.0 (1990) and remains essentially
+    unchanged. Each line declares a symbolic name, a resource type (<code>ICON</code>
+    or <code>BITMAP</code>), and a path to the image file in the <code>rc/</code>
+    subdirectory. The resource compiler (<code>rc.exe</code> or
+    <code>windres</code> on MinGW) converts these into a binary blob linked into the
+    final executable. This is why the original Bitcoin client had no loose image files
+    alongside the <code>.exe</code> -- everything was embedded inside it.
+  </p>
+  <p>
+    The original Bitcoin icon referenced here was a gold coin with the letters "BC"
+    on it, designed by Satoshi himself. This early design would be replaced in
+    February 2010 when the community adopted the now-iconic orange circle with the
+    slanted "B" and two vertical strokes, designed by a user known as "bitboy" on
+    the BitcoinTalk forums. But for the first year of Bitcoin's existence, the icon
+    compiled into this resource script was the only symbol the cryptocurrency had.
+  </p>
+  <p>
+    The inclusion of <code>wx/msw/wx.rc</code> (line 3) pulls in standard wxWidgets
+    resources -- cursors, default dialog icons, and other Windows UI elements that
+    the framework expects. Without this include, wxWidgets dialog boxes would render
+    with missing icons and broken visual elements. This single line ties Bitcoin's
+    custom resources into the broader wxWidgets resource chain.
   </p>
 
 annotations:
   - line: 1
     type: margin
-    text: "bitcoin.ico - the original Bitcoin application icon"
+    text: "<code>bitcoin ICON \"rc/bitcoin.ico\"</code> -- the application icon. This is the image Windows displays in the taskbar, the Alt-Tab switcher, the desktop shortcut, and the title bar. The symbolic name <code>bitcoin</code> is referenced in the wxWidgets application initialization code to set the window icon. The <code>.ico</code> format supports multiple resolutions (16x16, 32x32, 48x48) in a single file, so Windows can select the appropriate size for each context. Satoshi's original icon was a gold coin with 'BC' embossed on it."
+
+  - line: 3
+    type: margin
+    text: "<code>#include \"wx/msw/wx.rc\"</code> -- pulls in the standard wxWidgets Windows resource definitions. This includes default cursors, system dialog icons, and other visual elements the framework needs. The <code>msw</code> path component stands for 'Microsoft Windows' -- wxWidgets uses platform-specific resource files since each OS has different resource formats. On Linux and macOS, resources are handled differently (XPM images, application bundles), so this include is Windows-only."
 
   - line: 5
     type: margin
-    text: "check.ico - checkmark icon for confirmed transactions"
+    text: "<code>check ICON \"rc/check.ico\"</code> -- the confirmation checkmark. Displayed next to transactions in the main list once they have received enough confirmations. In v0.01, a single confirmation was enough to show the check. The visual feedback was important psychologically: users needed to see that their transaction had been accepted by the network. This tiny icon provided that reassurance."
 
   - line: 6
     type: margin
-    text: "send16 - toolbar icons for send functionality"
+    text: "<code>send16</code> and <code>send16mask</code> -- the 16x16 pixel 'Send' toolbar button and its transparency mask. In early Windows bitmap rendering, transparency was achieved with a separate mask bitmap: white pixels in the mask were transparent, black pixels were opaque. The mask was AND-blitted first to cut a hole, then the icon was OR-blitted on top. This two-bitmap transparency technique predates the PNG alpha channel and was standard practice for Windows toolbar icons in the late 1990s and early 2000s."
+
+  - line: 8
+    type: margin
+    text: "<code>send16masknoshadow</code> -- a variant of the send button mask without a drop shadow effect. The existence of both shadow and no-shadow versions suggests Satoshi experimented with visual styles before settling on the final look. Having multiple mask variants for a single 16-pixel icon reveals the level of attention paid to visual details even in this earliest release."
+
+  - line: 9
+    type: margin
+    text: "<code>send20</code> and <code>send20mask</code> -- the 20x20 pixel version of the send button, used in larger toolbar configurations or higher-DPI contexts. Providing both 16px and 20px variants was a common practice to handle different Windows display settings (small icons vs. large icons in the toolbar). The resource compiler embeds both sizes; the wxWidgets toolbar code selects the appropriate one at runtime."
+
+  - line: 11
+    type: margin
+    text: "<code>addressbook16</code> and <code>addressbook16mask</code> -- the address book toolbar icon and mask pair. The address book was a core feature of Bitcoin's UI -- Satoshi understood that users would need to manage contacts' addresses rather than typing 34-character Base58 strings by hand every time. The dedicated toolbar icon reflects this: address management was given equal visual prominence to sending coins."
+
+  - line: 13
+    type: margin
+    text: "<code>addressbook20</code> and <code>addressbook20mask</code> -- the larger address book icon pair. With the send and address-book icons at two sizes each, plus their masks, plus the application and check icons, this small resource file references 14 image files total. Every one is compiled into the executable, giving Bitcoin v0.01 a self-contained, professional-looking Windows application with no external dependencies besides the OpenSSL and MinGW runtime DLLs."
 
 conclusion: |
   <p>
-    These resources defined the visual identity of the first Bitcoin
-    client that users would see on their Windows desktops.
+    A resource script is not code in any meaningful sense -- it cannot fail, it has
+    no logic, it makes no decisions. But it is the first thing users see. When
+    Satoshi chose to create a custom application icon, toolbar bitmaps with
+    transparency masks, and a confirmation checkmark, he was making a statement:
+    Bitcoin was not a command-line experiment for cryptographers. It was a product
+    for ordinary people, and it needed to look like one.
+  </p>
+  <p>
+    The visual identity defined here lasted just over a year. The "BC" gold coin
+    was replaced by the community-designed orange B logo in February 2010, and the
+    wxWidgets GUI was replaced by Qt in 2011. But the design principle -- that
+    Bitcoin needs a polished, approachable visual identity -- originated in these
+    fifteen lines. Every wallet app, exchange interface, and cryptocurrency logo
+    that followed is a descendant of Satoshi's decision to ship an icon.
   </p>

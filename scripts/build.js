@@ -708,7 +708,7 @@ ${typographyCss}
       <p class="book-edition-banner">Annotated edition — ${EDITION}</p>
     </div>
     <div class="footer-content">
-      <p class="annotations-credit">Annotations by Claude Sonnet 4.6</p>
+      <p class="annotations-credit">Annotations by Claude Sonnet 4.6 (Revised Opus 4.6)</p>
       <p class="copyright">Copyright (c) 2009 Satoshi Nakamoto</p>
     </div>
   </section>
@@ -805,91 +805,100 @@ ${typographyCss}
     <h1 class="chapter-title">Introduction</h1>
 
     <p class="lead">
-      For decades before Bitcoin, cryptographers and computer scientists attempted
-      to create digital money. They all failed. DigiCash went bankrupt. e-gold was
-      shut down by the federal government. Liberty Reserve was seized. Each system
-      had the same fatal flaw: a central point of control that could be pressured,
-      raided, or simply go out of business.
+      For three decades before Bitcoin, cryptographers tried to build digital money.
+      Every attempt failed. DigiCash went bankrupt. e-gold was seized by the federal
+      government. Liberty Reserve was shut down. Hashcash never became currency.
+      b-money and Bit Gold were never implemented. The problem was always the same:
+      someone had to be in charge, and whoever was in charge could be pressured,
+      arrested, or simply lose interest.
     </p>
 
     <p>
-      Then, on October 31, 2008, an unknown person using the name Satoshi Nakamoto
-      posted a paper to a cryptography mailing list. The paper described "a purely
-      peer-to-peer version of electronic cash" that required no trusted third party.
-      Two months later, on January 3, 2009, Nakamoto launched the software.
+      On October 31, 2008, a pseudonymous figure calling themselves Satoshi Nakamoto
+      posted a nine-page paper to the Cryptography Mailing List. The paper described
+      "a purely peer-to-peer version of electronic cash" requiring no trusted third
+      party. Two months later, on January 3, 2009, Nakamoto released the software
+      and mined the first block.
     </p>
 
     <p>
-      Embedded in the first block was a message: "The Times 03/Jan/2009 Chancellor
-      on brink of second bailout for banks." This headline from a British newspaper
-      served two purposes. First, it proved the block could not have been created
-      before that date. Second, it signaled the motivation behind the project—a
-      response to a financial system that had just brought the global economy to
-      its knees.
+      Embedded in that block was a message: "The Times 03/Jan/2009 Chancellor on
+      brink of second bailout for banks." The headline from a British newspaper
+      served as both a timestamp proof—the block could not have been created before
+      that date—and a declaration of intent. The 2008 financial crisis, the bank
+      bailouts, the revelation that the global economy depended on institutions that
+      had been gambling with depositors' money: these were the conditions that made
+      Bitcoin necessary.
     </p>
 
     <p>
-      This book contains the complete source code of Bitcoin version 0.01, the
-      first public release. These 15,000 lines of C++ represent the solution to
-      a problem that had defeated every previous attempt: how to prevent
-      double-spending in a digital currency without relying on a central authority.
+      This book contains the complete source code of Bitcoin version 0.01 Alpha, the
+      first public release. Roughly 16,000 lines of C++ that solved a problem widely
+      considered unsolvable: how to prevent double-spending in a digital currency
+      without a central authority. The code has been running continuously since
+      that January day—producing a block approximately every ten minutes, without
+      a single hour of downtime, for over seventeen years.
     </p>
 
     <h2>Why This Code Matters</h2>
     <p>
-      Previous digital currencies required you to trust a company or organization.
-      You had to trust that they wouldn't create money out of thin air, that they
-      wouldn't freeze your account, that they wouldn't disappear with your funds.
-      When that trust was violated—or when governments decided to shut them down—the
-      money vanished.
+      Every previous digital currency required trust. Trust that the operator
+      wouldn't inflate the supply. Trust that they wouldn't freeze accounts. Trust
+      that they wouldn't disappear. When trust was violated—or when governments
+      decided the experiment had gone far enough—the money ceased to exist.
     </p>
     <p>
-      Bitcoin eliminated the need for trust by replacing it with verification. Every
-      node on the network independently validates every transaction against the same
-      rules encoded in this source code. No single entity controls the network. No
-      company can be shut down to stop it. The rules are enforced by mathematics
-      and the collective agreement of thousands of participants worldwide.
+      Bitcoin replaced trust with verification. Every node independently validates
+      every transaction against the same rules encoded in this source code. No
+      company operates the network. No server can be raided to halt it. The rules
+      are enforced by mathematics and by the economic self-interest of thousands of
+      participants who have no reason to trust each other and don't need to.
     </p>
     <p>
-      Satoshi Nakamoto's identity remains unknown. But the code is public, and it
+      Satoshi Nakamoto's identity remains unknown. The code is public, and it
       speaks for itself.
     </p>
 
     <h2>How Bitcoin Works</h2>
     <p>
-      The system operates through a few interlocking mechanisms:
+      The system rests on five interlocking mechanisms:
     </p>
     <ul>
-      <li><strong>Transactions</strong> transfer value from one address to another,
-          authorized by digital signatures that prove ownership without revealing
-          private keys.</li>
-      <li><strong>Blocks</strong> bundle transactions together, each block referencing
-          the hash of the previous block, forming a chain.</li>
-      <li><strong>Proof-of-work</strong> requires miners to expend computational
-          resources to add blocks, making it economically impractical to rewrite
-          history.</li>
-      <li><strong>P2P network</strong> connects nodes directly without central servers.
-          Transactions and blocks propagate through gossip—each node relays what it
-          receives to its peers, reaching the entire network in seconds.</li>
-      <li><strong>Consensus</strong> emerges as nodes accept the longest valid chain,
-          creating agreement without coordination.</li>
+      <li><strong>Transactions</strong> transfer value between addresses, authorized
+          by digital signatures that prove ownership of private keys without
+          revealing them.</li>
+      <li><strong>Blocks</strong> bundle transactions into ordered batches. Each
+          block includes the hash of the previous block, forming an append-only
+          chain that cannot be altered without redoing the work of every
+          subsequent block.</li>
+      <li><strong>Proof-of-work</strong> requires miners to find a hash below a
+          target value—a process that demands real energy expenditure. This makes
+          rewriting history prohibitively expensive.</li>
+      <li><strong>Peer-to-peer network</strong> connects nodes directly, with no
+          central server. Transactions and blocks propagate through gossip: each
+          node relays what it receives to its neighbors, reaching the entire
+          network in seconds.</li>
+      <li><strong>Consensus</strong> emerges from a simple rule: the chain with the
+          most cumulative proof-of-work wins. No voting, no coordinator, no
+          authority—just thermodynamics.</li>
     </ul>
     <p>
       The key files that implement this system are:
     </p>
     <ul>
-      <li><strong>main.cpp</strong> — Block validation, mining, and consensus rules</li>
-      <li><strong>script.cpp</strong> — The scripting language for spending conditions</li>
-      <li><strong>net.cpp</strong> — Peer-to-peer networking and message propagation</li>
-      <li><strong>key.h</strong> — Elliptic curve cryptography for digital signatures</li>
-      <li><strong>sha.cpp</strong> — The SHA-256 hash function securing the chain</li>
+      <li><strong>main.cpp</strong> — Block validation, mining, consensus rules, and the genesis block</li>
+      <li><strong>script.cpp</strong> — A stack-based virtual machine for programmable spending conditions</li>
+      <li><strong>net.cpp</strong> — Peer-to-peer networking, message relay, and node discovery</li>
+      <li><strong>key.h</strong> — Elliptic curve cryptography on secp256k1 for digital signatures</li>
+      <li><strong>sha.cpp</strong> — The SHA-256 hash function that secures every block and transaction</li>
     </ul>
 
     <h2>Reading the Code</h2>
     <p>
-      You do not need to be a programmer to read this book. Each file begins with
-      an introduction explaining its purpose, and annotations throughout highlight
-      significant passages. The syntax highlighting makes the structure visible:
+      You do not need to be a programmer to read this book. Each source file begins
+      with an introduction explaining its role in the system, and margin annotations
+      throughout highlight what matters and why. The syntax highlighting makes the
+      structure of the code visible at a glance:
     </p>
 
     <table class="color-key">
@@ -939,21 +948,24 @@ ${typographyCss}
       This book is organized to build understanding progressively:
     </p>
     <ul>
-      <li><strong>The Road to Bitcoin</strong> traces the ideas and failed projects
-          that preceded Bitcoin, from public key cryptography to the cypherpunk
-          movement.</li>
+      <li><strong>The Road to Bitcoin</strong> traces the cryptographic ideas and
+          failed projects that preceded Satoshi's synthesis—from Diffie-Hellman
+          to DigiCash to Hal Finney's RPOW.</li>
       <li><strong>Computer Concepts</strong> and <strong>Cryptography Basics</strong>
-          provide the technical foundation needed to understand the code.</li>
-      <li><strong>C++ Primer</strong> explains the programming language and file
-          structure of the project.</li>
-      <li><strong>The Source Code</strong> presents every file from Bitcoin v0.01,
-          annotated with explanations of what the code does and why it matters.</li>
+          provide the technical foundation needed to follow the code: binary
+          arithmetic, hash functions, elliptic curves, digital signatures.</li>
+      <li><strong>C++ Primer</strong> explains the programming language, file
+          structure, and idioms you will encounter.</li>
+      <li><strong>The Source Code</strong> presents every file from Bitcoin v0.01
+          Alpha, annotated line by line with explanations of what the code does,
+          why Satoshi designed it that way, and what happened to it afterward.</li>
     </ul>
     <p>
-      Version 0.01 is remarkably complete. The fundamental architecture—UTXO model,
-      proof-of-work consensus, scripting system, peer-to-peer networking—remains
-      essentially unchanged after fifteen years and trillions of dollars in value
-      secured. Understanding this code means understanding Bitcoin at its foundation.
+      Version 0.01 is remarkably complete. The fundamental architecture—the UTXO
+      model, proof-of-work consensus, the scripting system, peer-to-peer gossip,
+      the halving schedule—remains essentially unchanged after seventeen years and
+      over a trillion dollars in value secured. Understanding this code means
+      understanding Bitcoin at its deepest level: not what it does, but how and why.
     </p>
   </section>
 
@@ -962,22 +974,27 @@ ${typographyCss}
     <h1 class="chapter-title">The Road to Bitcoin</h1>
 
     <p class="lead">
-      Bitcoin didn't emerge from a vacuum. It stands on the shoulders of decades
-      of cryptographic research and failed attempts at digital cash. Understanding
-      these predecessors illuminates what made Satoshi's synthesis revolutionary.
+      Bitcoin did not emerge from nothing. It stands on three decades of
+      cryptographic research and a graveyard of failed digital currencies.
+      Each predecessor solved part of the puzzle and failed on the rest.
+      Understanding what came before reveals what made Satoshi's synthesis
+      different from everything that preceded it.
     </p>
 
     <h2>The Cypherpunk Dream</h2>
     <p>
-      In the early 1990s, a group of cryptographers, hackers, and privacy advocates
-      formed a mailing list dedicated to using cryptography to create a free society.
-      They called themselves the <strong>cypherpunks</strong>. Their manifesto declared:
-      "Privacy is necessary for an open society in the electronic age."
+      In 1992, a group of cryptographers, programmers, and privacy advocates began
+      meeting in San Francisco and communicating over an unmoderated mailing list.
+      They called themselves the <strong>cypherpunks</strong>—a portmanteau of
+      "cipher" and "cyberpunk." Eric Hughes wrote in the founding manifesto:
+      "Privacy is necessary for an open society in the electronic age…
+      Cypherpunks write code."
     </p>
     <p>
-      Among their goals: anonymous digital cash—money that couldn't be traced,
-      seized, or censored. For two decades, brilliant minds tried and failed to
-      create this. Their failures became Bitcoin's foundation.
+      Among their goals was anonymous digital cash—money that couldn't be traced,
+      frozen, or confiscated. For two decades the list's members designed, debated,
+      and sometimes built systems to achieve this. They all failed. But their
+      failures mapped the problem space that Satoshi would eventually solve.
     </p>
 
     <h2>Public Key Cryptography (1976)</h2>
@@ -1198,7 +1215,8 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       </tbody>
     </table>
     <p>
-      Satoshi's genius was combining these pieces with a novel insight:
+      Satoshi's breakthrough was not any single invention but a synthesis—combining
+      these existing pieces with one novel insight:
     </p>
     <pre class="example">
                         PRIOR INNOVATIONS
@@ -1251,8 +1269,9 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
     <h1 class="chapter-title">Computer Concepts</h1>
 
     <p class="lead">
-      Before diving into the code, let's cover some fundamental concepts
-      that appear throughout Bitcoin's implementation.
+      Before diving into the code, it helps to understand the fundamental concepts
+      that appear throughout Bitcoin's implementation. None of this is difficult,
+      but the code will make much more sense with these building blocks in place.
     </p>
 
     <h2>Bits and Bytes</h2>
@@ -1410,9 +1429,11 @@ SHA256("bitcoin") =  (just lowercase 'b')
     <h1 class="chapter-title">Cryptography Basics</h1>
     
     <p class="lead">
-      Bitcoin's security rests on mathematical foundations developed over 
-      decades of cryptographic research. Understanding these concepts reveals 
-      why Bitcoin works and why it's secure.
+      Bitcoin's security rests on mathematical foundations developed over decades
+      of cryptographic research. The two pillars—digital signatures and hash
+      functions—are not merely implementation details but the reason Bitcoin works
+      at all. Understanding them reveals why the system is secure and what would
+      have to break for it to fail.
     </p>
     
     <h2>Two Pillars of Bitcoin Cryptography</h2>
@@ -1823,9 +1844,12 @@ Miner tries:
     <h1 class="chapter-title">C++ Primer</h1>
 
     <p class="lead">
-      Bitcoin is written in C++, a powerful but complex language. This primer
-      covers the syntax, patterns, and file organization you'll encounter in
-      the source code.
+      Bitcoin is written in C++, a language that gives the programmer direct control
+      over memory, performance, and system resources—at the cost of considerable
+      complexity. This primer covers the syntax, patterns, and file organization
+      you will encounter in the source code. You do not need to understand every
+      line to follow the annotations, but knowing these basics will make the
+      architecture visible.
     </p>
 
     <h2>File and Directory Structure</h2>
@@ -2862,7 +2886,8 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     <p>
       <strong>Credits.</strong>
-      Annotations are credited on the title page. Publisher mark: <strong>PirateHash</strong>.
+      Annotations were initially generated by Claude Sonnet 4.6 and revised by Claude Opus 4.6.
+      Publisher mark: <strong>PirateHash</strong>.
     </p>
 
     <p>

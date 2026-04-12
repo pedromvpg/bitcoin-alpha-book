@@ -208,9 +208,12 @@ conclusion: |
   </p>
   <p>
     Much of this vision was shed as Bitcoin evolved. IP-to-IP payments were
-    removed in 2012. The marketplace features (products, orders) were never
-    shipped. What survived is the simple, elegant core: a transaction list,
-    a balance, an address to receive, a button to send. That minimal interface
-    — connecting a cryptographic engine to a human being — proved to be
-    exactly the right abstraction for a global monetary network.
+    removed in 2012 (privacy and NAT problems proved insurmountable). The
+    marketplace features—products, orders, reviews—were never completed.
+    What survived is the simple, elegant core: a transaction list, a balance,
+    an address to receive, a button to send. That minimal interface—connecting
+    a cryptographic engine to a human being—proved to be exactly the right
+    abstraction for a global monetary network. Every Bitcoin wallet built
+    since, from Electrum to hardware wallets, follows the template Satoshi
+    established in this file.
   </p>

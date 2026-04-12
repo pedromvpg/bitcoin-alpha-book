@@ -1,30 +1,120 @@
-# Annotation for headers.h - Common Headers
+# Annotation for headers.h - The Precompiled Header
 file: "headers.h"
 
 title: "The Gathering of Includes"
 
 introduction: |
   <p>
-    A convenience header that includes all the commonly needed system
-    headers and Bitcoin headers in one place. Most source files include
-    this rather than listing dozens of individual includes.
+    Every C++ source file in Bitcoin v0.01 begins the same way: <code>#include "headers.h"</code>.
+    This single file pulls in the entire dependency graph — the operating system, the cryptographic
+    library, the GUI framework, the standard library, and every Bitcoin-specific header — in one
+    carefully ordered block. It is the table of contents for everything Bitcoin needs to exist.
+  </p>
+  <p>
+    The technique is called a <strong>precompiled header</strong> (PCH). In 2009, compiling C++ was
+    painfully slow — template-heavy libraries like Boost and wxWidgets could take minutes to parse
+    on each compilation unit. By gathering all includes into a single file and compiling it once
+    into a binary blob (<code>headers.h.gch</code> in the makefile), subsequent compilations skip
+    re-parsing thousands of lines of library code. On Satoshi's machine, this likely cut build
+    times from minutes to seconds. The <code>#pragma hdrstop</code> on line 52 marks the boundary
+    for MSVC's precompiled header mechanism.
+  </p>
+  <p>
+    The include order is not arbitrary. It reveals Bitcoin's dependency layers from bottom to top:
+    first the compiler workarounds and OS primitives, then the cryptographic foundation (OpenSSL),
+    then the GUI (wxWidgets), then C standard libraries and C++ STL containers, then Boost utilities,
+    and finally — after all external dependencies are established — Bitcoin's own headers in
+    dependency order. Reading this file top to bottom is reading the architectural blueprint of
+    the system.
+  </p>
+  <p>
+    This file also reveals that Bitcoin v0.01 was a <em>Windows-only</em> application. The
+    <code>windows.h</code>, <code>winsock2.h</code>, and <code>mswsock.h</code> includes are
+    unconditional — there is no <code>#ifdef _WIN32</code> guard offering a Linux alternative.
+    Satoshi developed and released Bitcoin exclusively for Windows. The Linux port came later,
+    contributed by community developers. The entire network, for its first weeks of existence,
+    ran on Windows machines.
   </p>
 
 annotations:
-  - line: 18
+  - line: 1
     type: margin
-    text: "OpenSSL includes - cryptographic functions"
+    text: "The copyright line appears in every source file. Satoshi Nakamoto — a pseudonym never definitively linked to any real person — is the sole credited author. The MIT/X11 license reference points to <code>license.txt</code> in the same directory."
 
-  - line: 23
+  - line: 5
     type: margin
-    text: "Windows networking headers for sockets"
+    text: "MSVC pragma directives to suppress specific warnings. <code>4786</code> silences 'identifier truncated to 255 characters in debug info' — a notorious MSVC annoyance when using STL with long template names. <code>4804</code> suppresses 'unsafe use of type bool in operation'. <code>4717</code> suppresses 'recursive on all control paths, function will cause runtime stack overflow' — likely triggered by template metaprogramming in Boost. These pragmas reveal Satoshi was actively compiling with MSVC and dealing with its quirks."
+
+  - line: 10
+    type: margin
+    text: "The <code class=\"variable\">_WIN32_WINNT</code> macro is first undefined then set to <code>0x0400</code>, which corresponds to Windows NT 4.0 / Windows 98. This sets the minimum Windows API version — Satoshi wanted Bitcoin to run on older Windows systems, not just the then-current Vista/XP. <code class=\"variable\">WIN32_LEAN_AND_MEAN</code> excludes rarely-used Windows headers (Cryptography, DDE, RPC, Shell, Winsock 1.x) to speed up compilation."
 
   - line: 15
     type: margin
-    text: "wxWidgets - the GUI framework used by Bitcoin"
+    text: "<strong>wxWidgets</strong> — the cross-platform GUI framework. <code>wx/wx.h</code> is the master include pulling in windows, dialogs, buttons, and text controls. <code>wx/clipbrd.h</code> adds clipboard support (for copying Bitcoin addresses). <code>wx/snglinst.h</code> provides single-instance checking to prevent running two Bitcoin nodes simultaneously on the same machine, which would corrupt the database."
+
+  - line: 18
+    type: margin
+    text: "<strong>OpenSSL</strong> — the cryptographic foundation. Five headers, five capabilities: <code>ecdsa.h</code> for elliptic curve signatures (transaction signing/verification), <code>evp.h</code> for the high-level digest interface, <code>rand.h</code> for cryptographically secure random number generation (key creation), <code>sha.h</code> for SHA-256 (block hashing, transaction IDs), and <code>ripemd.h</code> for RIPEMD-160 (Bitcoin address generation). These five algorithms are the entire cryptographic surface area of Bitcoin."
+
+  - line: 23
+    type: margin
+    text: "Windows-specific system headers. <code>windows.h</code> is the Win32 API master include. <code>winsock2.h</code> provides the Berkeley sockets API on Windows — every peer-to-peer network connection uses this. <code>mswsock.h</code> adds Microsoft socket extensions like <code class=\"function\">TransmitFile</code> and <code class=\"function\">ConnectEx</code>. The unconditional inclusion of these Windows headers — with no <code>#ifdef</code> for Unix alternatives — confirms this code was Windows-only."
+
+  - line: 26
+    type: margin
+    text: "C standard library headers. A mix of I/O (<code>stdio.h</code>, <code>io.h</code>), memory management (<code>stdlib.h</code>, <code>malloc.h</code>), mathematics (<code>math.h</code>, <code>float.h</code>, <code>limits.h</code>), debugging (<code>assert.h</code>), and process management (<code>process.h</code> — Windows-specific, provides <code class=\"function\">_beginthread</code>). Satoshi used C headers rather than their C++ equivalents (<code>cstdio</code>, <code>cstdlib</code>) — a common practice in 2009-era C++ before modern style guides."
+
+  - line: 36
+    type: margin
+    text: "<code class=\"variable\">BOUNDSCHECK</code> set to 1 enables runtime bounds checking in Bitcoin's custom vector-like types (defined in <code>serialize.h</code>). This trades performance for safety — out-of-bounds access will throw rather than silently corrupt memory. In a financial system, silent corruption is far worse than a crash."
+
+  - line: 37
+    type: margin
+    text: "C++ Standard Library containers and algorithms. The STL provides the data structures Bitcoin is built on: <code class=\"type\">map</code> for the block index and UTXO lookups, <code class=\"type\">vector</code> for transaction inputs/outputs, <code class=\"type\">set</code> for unique peer addresses, <code class=\"type\">deque</code> for message queues, <code class=\"type\">string</code> and <code class=\"type\">sstream</code> for serialization. These nine includes are the backbone of every data structure in the system."
+
+  - line: 46
+    type: margin
+    text: "<strong>Boost</strong> — the 'standard library extension' of C++. <code>BOOST_FOREACH</code> provides range-based for loops (years before C++11's range-for). <code class=\"function\">lexical_cast</code> converts between strings and numbers. <code class=\"type\">tuple</code> bundles multiple return values. <code class=\"type\">array</code> provides fixed-size arrays with bounds checking. Satoshi used Boost heavily — it was the idiomatic C++ choice in 2009, before C++11 absorbed many of its features into the standard."
+
+  - line: 52
+    type: margin
+    text: "<code>#pragma hdrstop</code> — 'header stop'. This MSVC directive marks the end of the precompiled header region. Everything above this line is compiled once and cached; everything below is compiled fresh each time. GCC uses a different mechanism — it precompiles the entire <code>headers.h</code> into <code>headers.h.gch</code> (see the makefile). Either way, the result is the same: parse the expensive includes once, reuse the result across all compilation units."
+
+  - line: 53
+    type: margin
+    text: "<code>using namespace std</code> and <code>using namespace boost</code> — these directives import everything from both namespaces into global scope. Modern C++ style guides strongly discourage this (name collisions, ambiguous overloads), but in 2009 it was common practice. Every Bitcoin source file inherits these via the precompiled header, which means <code class=\"type\">vector</code>, <code class=\"type\">map</code>, <code class=\"type\">string</code> etc. are used without the <code>std::</code> prefix throughout the codebase."
+
+  - line: 58
+    type: margin
+    text: "Bitcoin's own headers, included in strict dependency order. <code>serialize.h</code> first (binary serialization, needed by everything), then <code>uint256.h</code> (256-bit integers for hashes), <code>util.h</code> (logging, random numbers, time), <code>key.h</code> (ECDSA cryptography), <code>bignum.h</code> (arbitrary-precision arithmetic for scripts), <code>base58.h</code> (human-readable addresses), <code>script.h</code> (Bitcoin Script interpreter), <code>db.h</code> (Berkeley DB persistence), <code>net.h</code> (P2P networking), <code>irc.h</code> (IRC-based peer discovery), <code>main.h</code> (consensus logic), <code>market.h</code> (unused marketplace feature), and finally <code>uibase.h</code> / <code>ui.h</code> (GUI). This ordering is the dependency graph of the entire system."
+
+  - line: 69
+    type: margin
+    text: "<code>market.h</code> — a curious inclusion. This header declares an experimental peer-to-peer marketplace that Satoshi included but never completed. It allowed users to post buy/sell offers directly within the Bitcoin client. The feature was removed in later versions, but its presence here hints at Satoshi's broader vision: Bitcoin not just as money, but as a platform for decentralized commerce."
 
 conclusion: |
   <p>
-    This was a common C++ pattern in 2009 to simplify compilation and
-    ensure consistent include ordering across the project.
+    The precompiled header is a lens into Bitcoin's architecture. Four external dependencies —
+    wxWidgets for the GUI, OpenSSL for cryptography, Berkeley DB for persistence, and Boost
+    for C++ utilities — plus the Windows API form the foundation. On top of these, fourteen
+    Bitcoin-specific headers implement everything from 256-bit arithmetic to peer-to-peer
+    networking to the consensus rules themselves.
+  </p>
+  <p>
+    The Windows-only nature of this file is historically significant. When Satoshi released
+    Bitcoin on January 9, 2009, it could only be compiled and run on Windows. The Linux port
+    required community effort — replacing <code>windows.h</code> with POSIX equivalents,
+    <code>winsock2.h</code> with <code>sys/socket.h</code>, and <code>process.h</code> with
+    <code>pthread.h</code>. The fact that Satoshi chose Windows as the initial platform
+    reflects a pragmatic decision: most desktop users in 2009 ran Windows, and Satoshi
+    wanted Bitcoin to be accessible to as many people as possible.
+  </p>
+  <p>
+    Today, Bitcoin Core has replaced every dependency listed here. wxWidgets gave way to Qt.
+    Berkeley DB was replaced by LevelDB. The custom SHA-256 implementation was optimized with
+    hardware intrinsics. Even the precompiled header pattern itself was eventually abandoned
+    in favor of modern build systems. But the layered architecture visible in this include
+    ordering — serialization, cryptography, scripting, storage, networking, consensus, UI —
+    remains the fundamental structure of Bitcoin to this day.
   </p>

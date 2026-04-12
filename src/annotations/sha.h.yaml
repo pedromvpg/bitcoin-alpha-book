@@ -93,5 +93,5 @@ conclusion: |
     Satoshi's choice of double-SHA256 (hashing twice) adds a safety margin.
     SHA-256's theoretical weakness to length-extension attacks doesn't apply
     when the result is hashed again. Whether Satoshi knew this or just chose
-    defense-in-depth, the double-hash has proven robust for 15+ years.
+    defense-in-depth, the double-hash has proven robust for over seventeen years.
   </p>

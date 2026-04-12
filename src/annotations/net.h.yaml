@@ -152,12 +152,13 @@ conclusion: |
     single point of failure can bring down the system.
   </p>
   <p>
-    Satoshi's protocol design shows deep understanding of distributed systems.
-    The pull-based model (inv/getdata) prevents spam. The peer address gossip
-    enables organic network growth. The version handshake allows protocol
-    evolution. These patterns have proven robust: Bitcoin's peer-to-peer
-    layer has operated continuously since January 2009, surviving attacks,
-    bugs, and massive growth.
+    Satoshi's protocol design reveals deep understanding of distributed systems.
+    The pull-based model (inv/getdata) prevents bandwidth abuse. Peer address
+    gossip enables organic network growth without any central directory. The
+    version handshake allows protocol evolution without flag days. These patterns
+    have proven extraordinarily robust: Bitcoin's peer-to-peer layer has operated
+    continuously since January 2009, surviving attacks, bugs, and growth from a
+    handful of nodes to tens of thousands worldwide.
   </p>
   <p>
     The unused marketplace code (MSG_PRODUCT, MSG_REVIEW, pub/sub) reveals

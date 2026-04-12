@@ -128,9 +128,11 @@ conclusion: |
     Satoshi consistently chose conservative security margins.
   </p>
   <p>
-    The hash160 construction (RIPEMD160(SHA256(pubkey))) deserves note: using
-    two different hash functions provides defense in depth. If SHA256 were
-    broken, RIPEMD160 still protects addresses. If RIPEMD160 were broken,
-    SHA256 still protects. This belt-and-suspenders approach reflects
-    Satoshi's security-conscious engineering throughout Bitcoin.
+    The hash160 construction—RIPEMD160(SHA256(pubkey))—deserves attention.
+    Using two different hash functions from two different design families
+    provides defense in depth. If SHA-256 were broken, RIPEMD-160 still
+    protects addresses from key recovery. If RIPEMD-160 were broken, SHA-256
+    still stands. This belt-and-suspenders approach is characteristic of
+    Satoshi's security philosophy throughout Bitcoin: never depend on a
+    single cryptographic assumption when you can depend on two.
   </p>

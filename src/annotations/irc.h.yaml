@@ -58,9 +58,11 @@ conclusion: |
     any IRC library supports.
   </p>
   <p>
-    This approach had downsides: IRC servers could censor Bitcoin by
-    banning the channel, and the centralization risk of depending on
-    specific IRC networks. These concerns led to its eventual removal.
-    But in 2009, it was the pragmatic choice that got Bitcoin running
-    quickly without requiring custom bootstrapping infrastructure.
+    The approach had real downsides: IRC servers could censor Bitcoin by
+    banning the channel, and depending on specific IRC networks introduced
+    centralization risk into an otherwise decentralized system. These
+    concerns—along with LFNet's eventual shutdown—led to IRC bootstrap's
+    removal. But in 2009, it was the pragmatic choice that got the network
+    running quickly without custom infrastructure. Satoshi knew it was
+    temporary, and he was right.
   </p>

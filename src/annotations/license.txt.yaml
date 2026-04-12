@@ -1,31 +1,98 @@
-# Annotation for license.txt - MIT License
+# Annotation for license.txt - The MIT License
 file: "license.txt"
 
 title: "Freedom in Code"
 
 introduction: |
   <p>
-    Bitcoin is released under the MIT License—one of the most permissive
-    open source licenses. This means anyone can use, modify, and
-    distribute the code for any purpose, including commercial use.
+    Twenty lines of legal text that shaped the future of money. Satoshi Nakamoto released
+    Bitcoin under the <strong>MIT License</strong> — also known as the X11 License — one
+    of the most permissive open-source licenses ever written. This was not an accident.
+    It was a deliberate architectural decision as important as any line of C++ in the system.
+  </p>
+  <p>
+    The MIT License grants virtually unlimited rights: anyone can use, copy, modify, merge,
+    publish, distribute, sublicense, and sell copies of the software. The only requirement
+    is preserving the copyright notice and license text. There is no copyleft obligation —
+    unlike the GPL, derivative works can be made proprietary. This means companies can build
+    closed-source products on top of Bitcoin without releasing their code. Exchanges like
+    Coinbase, hardware wallet manufacturers like Ledger, and countless other businesses exist
+    because this license allows it.
+  </p>
+  <p>
+    Satoshi could have chosen the GPL, which would have required all derivative works to also
+    be open source. This might have slowed commercial adoption. He could have chosen no license
+    at all, which would have made the legal status ambiguous and discouraged institutional use.
+    Instead, the MIT License struck the ideal balance for a protocol that needed to be adopted
+    as widely as possible, by as many types of actors as possible — individuals, corporations,
+    governments — without legal friction. As Satoshi wrote on the BitcoinTalk forum: "The nature
+    of Bitcoin is such that once version 0.1 was released, the core design was set in stone for
+    the rest of its lifetime." The MIT License ensured that even if Satoshi disappeared — as
+    he eventually did — no one could revoke the right to use, study, or modify the software.
+  </p>
+  <p>
+    The copyright is assigned to "Satoshi Nakamoto" — a pseudonym. This raises an interesting
+    legal question: can a pseudonymous entity hold copyright? In most jurisdictions, copyright
+    vests in the creator regardless of the name used. But the practical effect of using a
+    pseudonym is that no one can enforce the copyright. Combined with the MIT License's
+    permissiveness, Bitcoin is effectively in the public domain in all but name.
   </p>
 
 annotations:
   - line: 1
     type: margin
-    text: "Copyright 2009 - Satoshi Nakamoto's name on the license"
+    text: "<code>Copyright (c) 2009 Satoshi Nakamoto</code> — the only attribution line. No company, no foundation, no institution. A single pseudonymous individual claiming authorship of a system that would grow to secure hundreds of billions of dollars. Under the Berne Convention, copyright exists automatically upon creation — no registration is required. The '(c)' is legally redundant but conventionally included."
 
   - line: 3
     type: margin
-    text: "Permission granted - the core of MIT license permissiveness"
+    text: "The grant clause — the heart of the MIT License. Seven verbs define what you may do: <em>use, copy, modify, merge, publish, distribute, sublicense</em>, and <em>sell</em>. The phrase 'without restriction' and 'without limitation' make this as broad as legally possible. 'Persons' includes corporations and other legal entities. 'Free of charge' means no royalties, no licensing fees, ever — the code is given away unconditionally."
+
+  - line: 6
+    type: margin
+    text: "The right to <em>sublicense</em> is particularly important. It means you can take Bitcoin's code, modify it, and release it under a different license entirely. This is how Litecoin, Dogecoin, and hundreds of other altcoins were legally created — they forked Bitcoin's MIT-licensed code and released it under their own terms. The GPL would not have permitted this without also requiring the GPL."
+
+  - line: 8
+    type: margin
+    text: "'Subject to the following conditions' — there is exactly one condition in the MIT License, stated in the next paragraph: include the copyright notice and permission notice in all copies. That is it. No requirement to share modifications. No requirement to credit the author visibly. No restriction on commercial use. This single, minimal condition is what separates the MIT License from a pure public domain dedication."
+
+  - line: 10
+    type: margin
+    text: "The attribution requirement. 'All copies or substantial portions' means you must include this license text if you redistribute the code or significant parts of it. In practice, most Bitcoin-derived projects include a <code>COPYING</code> or <code>LICENSE</code> file. This requirement is so lightweight that it is almost never a barrier to adoption — which is precisely why Satoshi chose it."
 
   - line: 13
     type: margin
-    text: "No warranty - software provided as-is"
+    text: "The warranty disclaimer — in ALL CAPS as required by the Uniform Commercial Code (UCC) in U.S. contract law. Conspicuous text is necessary for disclaimers to be legally enforceable. 'AS IS' means the software comes with no promises that it works correctly, is secure, or is fit for any particular purpose. Given that Bitcoin handles real money, this is a significant disclaimer. If a bug in the code causes you to lose your coins, you have no legal claim against the author."
+
+  - line: 15
+    type: margin
+    text: "'FITNESS FOR A PARTICULAR PURPOSE' — a legal term of art from the UCC. It means the author makes no promise that the software is suitable for any specific use case, including as a monetary system. 'NONINFRINGEMENT' disclaims liability if the code turns out to violate someone else's patents or copyrights. These are standard boilerplate, but their presence in the license of a financial system carries particular weight."
+
+  - line: 17
+    type: margin
+    text: "The liability limitation. 'IN NO EVENT SHALL THE AUTHORS... BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY' — this is a complete waiver of liability. Whether the theory is contract, tort, or otherwise, the author cannot be sued for damages arising from the software. Combined with the pseudonymous authorship, this creates a system where there is literally no one to sue if something goes wrong — a feature, not a bug, for a decentralized monetary system."
 
 conclusion: |
   <p>
-    This licensing choice was crucial to Bitcoin's adoption. It allowed
-    exchanges, wallets, and other businesses to build on Bitcoin without
-    legal concerns.
+    The MIT License is often overlooked in discussions of Bitcoin's design, but it is as
+    fundamental as proof-of-work or the UTXO model. By choosing the most permissive widely-used
+    license, Satoshi ensured that Bitcoin could be freely adopted, forked, embedded, and
+    commercialized by anyone. The entire cryptocurrency ecosystem — thousands of altcoins,
+    hundreds of exchanges, countless wallets and tools — exists within the legal space
+    created by these twenty lines.
+  </p>
+  <p>
+    The combination of pseudonymous authorship and a permissive license created something
+    unprecedented: software with no effective owner. No one can revoke the license. No one
+    can demand royalties. No one can sue for copyright infringement in any meaningful way.
+    Bitcoin's code belongs to everyone and no one — much like the protocol itself. This
+    legal structure mirrors the technical architecture: just as no single node controls the
+    network, no single entity controls the right to use the software.
+  </p>
+  <p>
+    It is worth noting what this license does <em>not</em> cover: the Bitcoin protocol itself.
+    The license governs the code — this particular implementation. The protocol — the rules
+    for valid blocks, transactions, and signatures — is an abstract specification that anyone
+    can reimplement from scratch without any license at all. Multiple independent implementations
+    (btcd in Go, bcoin in JavaScript, libbitcoin in C++) exist precisely because the protocol
+    is unencumbered. Satoshi open-sourced not just the code, but the idea.
   </p>

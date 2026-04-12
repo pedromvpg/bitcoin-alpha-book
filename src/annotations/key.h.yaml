@@ -114,23 +114,28 @@ annotations:
 
 conclusion: |
   <p>
-    The CKey class is Satoshi's entire cryptographic interface — 113 lines that
-    abstract away elliptic curve group law, DER encoding, OpenSSL internals,
-    and ECDSA arithmetic. The design principle throughout is delegation: don't
-    implement cryptography yourself, use audited libraries and correct abstractions.
+    The CKey class is Satoshi's entire cryptographic interface—ninety-one lines
+    that abstract away elliptic curve group law, DER encoding, OpenSSL internals,
+    and ECDSA arithmetic. The design principle is consistent delegation: do not
+    implement cryptography yourself; use audited libraries and correct abstractions.
+    This discipline—resisting the temptation to write clever code when a proven
+    library exists—is arguably Satoshi's most important engineering decision.
   </p>
   <p>
-    The choice of secp256k1 has proven historically significant. The curve's
-    verifiably non-random constants, combined with the post-Snowden distrust of
-    NIST algorithms, meant that secp256k1 eventually became the most widely
-    deployed elliptic curve on Earth — used by Ethereum, Litecoin, and hundreds
-    of other cryptocurrencies, all following Satoshi's original choice.
+    The choice of secp256k1 has proven historically significant. Its verifiably
+    non-random constants, combined with the post-Snowden distrust of NIST-blessed
+    algorithms, meant that secp256k1 eventually became the most widely deployed
+    elliptic curve on Earth—used by Ethereum, Litecoin, and hundreds of other
+    cryptocurrencies, all following Satoshi's original selection. A curve nobody
+    cared about in 2009 now protects more value than any other.
   </p>
   <p>
     The one meaningful weakness in this implementation is the absence of
-    deterministic nonce generation (RFC 6979). Random k values require high-quality
-    entropy on every signing operation. Deterministic ECDSA removes that dependency
-    by deriving k from the private key and message hash, making signatures
-    reproducible and eliminating the catastrophic nonce-reuse failure mode. This
-    was added to Bitcoin Core years after v0.01.
+    deterministic nonce generation (RFC 6979, published in 2013). Each signature
+    requires a fresh random <em>k</em> value, and reusing <em>k</em> across two
+    signatures leaks the private key algebraically. Deterministic ECDSA removes
+    this dependency by deriving <em>k</em> from the private key and message hash,
+    making signatures reproducible and eliminating the catastrophic nonce-reuse
+    failure mode entirely. This was added to Bitcoin Core years after v0.01—one
+    of the few genuine security improvements to the cryptographic layer.
   </p>

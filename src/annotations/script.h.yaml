@@ -5,11 +5,11 @@ title: "Programmable Money"
 
 introduction: |
   <p>
-    Bitcoin isn't just a ledger—it includes a complete programming language.
+    Bitcoin is not merely a ledger—it includes a complete programming language.
     This header defines that language: Script, a Forth-like stack-based system
-    for expressing spending conditions. When Satoshi created this, he invented
-    what we now call "programmable money" or "smart contracts"—years before
-    Ethereum popularized the term.
+    for expressing arbitrary spending conditions. When Satoshi designed this, he
+    invented what we now call "programmable money"—years before Ethereum
+    popularized the term "smart contracts."
   </p>
   <p>
     Satoshi explained on BitcoinTalk: "The design supports a tremendous variety

@@ -27,9 +27,11 @@ introduction: |
   </p>
   <p>
     This serialization format is now a de facto standard. Every Bitcoin
-    implementation—in C++, Rust, Go, Python, JavaScript—must match it exactly.
-    A single byte difference causes consensus failure. The format hasn't changed
-    since v0.1—testament to Satoshi's foresight in designing for permanence.
+    implementation—whether written in C++, Rust, Go, Python, or JavaScript—must
+    reproduce it byte for byte. A single-byte divergence causes a consensus fork.
+    The core format has not changed since v0.01, making it one of the most stable
+    binary protocols in computing history—a testament to Satoshi's foresight in
+    designing for permanence over convenience.
   </p>
 
 annotations:

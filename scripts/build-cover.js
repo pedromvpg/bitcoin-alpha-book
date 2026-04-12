@@ -951,7 +951,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       ${buildCoverTocHtml(part2SourceToc)}
     </div>
     <div class="front-footer">
-      <p class="annotations-credit">Annotations by Claude Sonnet 4.6</p>
+      <p class="annotations-credit">Annotations by Claude Sonnet 4.6 (Revised Opus 4.6)</p>
       <div class="front-logo-wrap" role="presentation">
         ${logoDataUri ? `<img class="front-logo-img" src="${logoDataUri}" width="768" height="157" alt="PirateHash">` : ''}
       </div>

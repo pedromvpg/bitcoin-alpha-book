@@ -11,11 +11,12 @@ introduction: |
     the proof-of-work consensus algorithm, and the rules that every node must follow.
   </p>
   <p>
-    Satoshi Nakamoto spent nearly two years developing this code in isolation before
+    Satoshi Nakamoto spent roughly two years developing this code in secrecy before
     the January 2009 release. In an email to Hal Finney, he explained: "I had to write
     all the code before I could convince myself that I could solve every problem, then
-    I wrote the paper." Every design choice in this file reflects deep thinking about
-    game theory, cryptography, and distributed systems.
+    I wrote the paper." Every design choice in this file reflects sustained thinking about
+    game theory, cryptography, and distributed systems—the work of someone who understood
+    that a single flaw would be fatal.
   </p>
   <p>
     The file solves what cryptographers called the "Byzantine Generals Problem"—how
@@ -27,10 +28,11 @@ introduction: |
     anyone."
   </p>
   <p>
-    What you're reading is essentially unchanged from Satoshi's original vision. While
-    later developers optimized performance and fixed bugs, the fundamental architecture—
-    UTXO model, 10-minute blocks, difficulty adjustment, halving schedule—remains exactly
-    as designed in this first release. This is the DNA of all cryptocurrencies that followed.
+    What you are reading is essentially unchanged from Satoshi's original design. Later
+    developers optimized performance and patched vulnerabilities, but the fundamental
+    architecture—UTXO model, ten-minute blocks, difficulty adjustment, halving schedule,
+    longest-chain consensus—remains exactly as conceived in this first release. More than
+    seventeen years later, this is still the DNA of every block that gets mined.
   </p>
 
 annotations:
@@ -333,28 +335,31 @@ annotations:
 
 conclusion: |
   <p>
-    This file embodies Satoshi's breakthrough: using proof-of-work not just for
-    rate-limiting (like Adam Back's Hashcash) but as the foundation of distributed
-    consensus. Previous attempts at digital cash—DigiCash, b-money, bit gold—failed
-    because they required trusted parties or couldn't prevent double-spending without
-    a central authority. Satoshi solved both problems simultaneously.
+    This file embodies Satoshi's central insight: proof-of-work is not merely a
+    rate-limiter (as in Adam Back's Hashcash) but the foundation of distributed
+    consensus itself. Every predecessor—DigiCash, b-money, Bit Gold, RPOW—stumbled
+    on the same problem: how to prevent double-spending without a trusted third party.
+    Satoshi solved it by making dishonesty more expensive than honesty.
   </p>
   <p>
-    The elegance lies in the alignment of incentives. Miners profit by following rules
-    and extending the longest chain. Attempting to rewrite history requires outspending
-    all honest miners—an attack that becomes exponentially harder with each confirmation.
-    Satoshi calculated that an attacker with 10% of network hashrate has only a 0.0006%
-    chance of catching up after 6 blocks (see the whitepaper's "Calculations" section).
+    The elegance is in the alignment of incentives. Miners profit by following the
+    rules and extending the longest chain. Rewriting history requires outspending
+    all honest miners combined—an attack that becomes exponentially harder with each
+    confirmation. Satoshi calculated in the whitepaper that an attacker controlling
+    10% of network hashrate has only a 0.0006% chance of catching up after six blocks.
+    This is why "six confirmations" became the industry standard for settlement finality.
   </p>
   <p>
-    This code has been stress-tested by the most adversarial conditions imaginable:
-    nation-state attackers, billions of dollars at stake, and constant scrutiny from
-    security researchers. That it continues to function—producing a block every 10
-    minutes without fail since January 3, 2009—is testament to Satoshi's engineering.
+    This code has been stress-tested under the most adversarial conditions imaginable:
+    nation-state pressure, hundreds of billions of dollars at stake, and relentless
+    scrutiny from security researchers worldwide. That it continues to function—
+    producing a block approximately every ten minutes without interruption since
+    January 3, 2009—is a testament to the depth of Satoshi's engineering.
   </p>
   <p>
-    Satoshi's final words before disappearing (April 2011): "I've moved on to other
-    things. It's in good hands with Gavin and everyone." This 2,300-line file launched
-    a monetary revolution—a trustless system for transferring value that has operated
-    continuously since January 3, 2009, securing hundreds of billions in value.
+    Satoshi's final public message before vanishing (April 2011): "I've moved on to
+    other things. It's in good hands with Gavin and everyone." These 2,300 lines of
+    C++ launched a monetary system that has operated continuously for over seventeen
+    years, securing over a trillion dollars in value, without a CEO, a board of
+    directors, or a single hour of planned downtime.
   </p>

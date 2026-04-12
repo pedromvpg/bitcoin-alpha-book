@@ -6,16 +6,19 @@ title: "Finding Friends in the Dark"
 introduction: |
   <p>
     How does a new Bitcoin node find other nodes to connect to? This is the
-    "bootstrap problem"—a chicken-and-egg dilemma that every peer-to-peer network
+    "bootstrap problem" — a chicken-and-egg dilemma that every peer-to-peer network
     faces. Satoshi's clever solution: use IRC (Internet Relay Chat), a protocol
     from 1988 that was already running on well-known, stable servers worldwide.
+    New nodes would connect to an IRC channel, announce themselves, and discover
+    peers — all without any Bitcoin-specific infrastructure.
   </p>
   <p>
     The mechanism is elegant in its simplicity: Bitcoin nodes connect to
-    irc.lfnet.org, join channel <code>#bitcoin</code>, and encode their IP
-    address in their IRC nickname. By requesting the WHO list, any node can
-    discover peers. No central Bitcoin server needed—just parasitic use of
-    existing infrastructure.
+    <code>chat.freenode.net</code>, join channel <code>#bitcoin</code>, and encode
+    their IP address and port in their IRC nickname using Base58Check encoding.
+    By requesting the WHO list, any node can instantly discover every other online
+    node. No central Bitcoin server needed — just parasitic use of existing
+    infrastructure. The entire bootstrap protocol is 265 lines of C++.
   </p>
   <p>
     Satoshi on this design (BitcoinTalk, 2010): "We only needed IRC because nobody
@@ -30,47 +33,124 @@ introduction: |
     he leveraged what already existed. IRC servers were free, reliable, and firewall-
     friendly (port 6667 was commonly allowed). The temporary solution worked perfectly
     for Bitcoin's first four years until the network was large enough that addr
-    propagation alone sufficed for peer discovery.
+    propagation alone sufficed for peer discovery. The IRC bootstrap was deprecated
+    in v0.6.x and removed entirely in v0.8.2 (February 2013).
   </p>
 
 annotations:
+  - line: 10
+    type: margin
+    text: "<code class=\"variable\">#pragma pack(1)</code> and <code class=\"type\">struct ircaddr</code> — a tightly packed 6-byte structure holding an IP address (4 bytes) and port (2 bytes). The <code class=\"variable\">#pragma pack(1)</code> directive eliminates padding between the <code class=\"type\">int</code> and <code class=\"type\">short</code> fields, ensuring the struct is exactly 6 bytes for binary serialization. Without packing, the compiler might insert 2 bytes of padding after <code class=\"variable\">port</code>, corrupting the Base58 encoding."
+
+  - line: 17
+    type: margin
+    text: "<code class=\"function\">EncodeAddress()</code> — converts a <code class=\"type\">CAddress</code> (Bitcoin's internal address representation) into an IRC-safe nickname. The IP and port are packed into the 6-byte <code class=\"type\">ircaddr</code> struct, then encoded with <code class=\"function\">EncodeBase58Check()</code> — the same encoding used for Bitcoin addresses. The result is prefixed with <code>'u'</code> to mark it as a valid node address. A typical encoded nickname might look like <code>u6R7EfdL3qP</code>. The 'u' prefix distinguishes real nodes from non-routable nodes (which get random 'x' prefixes)."
+
+  - line: 27
+    type: margin
+    text: "<code class=\"function\">DecodeAddress()</code> — the reverse operation. Strips the leading character, Base58Check-decodes the remainder, validates the length matches <code class=\"type\">ircaddr</code>, and reconstructs a <code class=\"type\">CAddress</code>. The <code class=\"function\">DecodeBase58Check()</code> call includes checksum validation — if someone joins <code>#bitcoin</code> with a malformed nickname, the decode fails gracefully and the node is ignored. This prevents corrupted addresses from entering the peer database."
+
+  - line: 47
+    type: margin
+    text: "<code class=\"function\">Send()</code> — raw IRC protocol sender. Writes a complete IRC command to the socket in a loop, handling partial sends (where <code class=\"function\">send()</code> may transmit fewer bytes than requested). The PONG filter on line 49 suppresses debug output for keepalive responses — without this, the log would be flooded with PING/PONG every 30 seconds. Note the absence of any encryption: all IRC traffic is plaintext. An eavesdropper on the network path could observe which IP addresses were running Bitcoin nodes."
+
+  - line: 63
+    type: margin
+    text: "<code class=\"function\">RecvLine()</code> — reads one line from the IRC socket, character by character. IRC uses <code>\\r\\n</code> line endings; this function returns on <code>\\r</code> and skips <code>\\n</code>. Reading one byte at a time with <code class=\"function\">recv()</code> is inefficient but simple — adequate for the low-bandwidth IRC protocol where messages arrive at human-conversation speed. The <code class=\"variable\">WSAGetLastError()</code> call on line 89 reveals this was written for Windows first (Winsock API)."
+
   - line: 99
     type: margin
-    text: "RecvLineIRC - reads one line from IRC socket. Handles the text-based IRC protocol. Simple but effective for bootstrap purposes."
+    text: "<code class=\"function\">RecvLineIRC()</code> — IRC-aware line reader that automatically handles PING/PONG keepalive. When the IRC server sends <code>PING :server</code>, this function changes the 'I' to 'O' (line 112: <code>strLine[1] = 'O'</code>) and sends back <code>PONG :server</code>. This is the IRC keepalive protocol — if a client doesn't respond to PING within a timeout, the server disconnects it. The character substitution trick (<code>PING</code> to <code>PONG</code>) is a clever hack that avoids parsing the full PING message."
+
+  - line: 122
+    type: margin
+    text: "<code class=\"function\">RecvUntil()</code> — waits for one of up to three target strings to appear in any IRC response line. Used during the connection handshake to wait for specific server responses. The <code class=\"function\">strLine.find()</code> comparison against <code>-1</code> (line 130) is technically comparing against <code>string::npos</code>, which is <code>(size_t)-1</code> — it works but is a style that modern C++ linters would flag."
+
+  - line: 142
+    type: margin
+    text: "<code class=\"variable\">fRestartIRCSeed</code> — a global boolean flag used to signal the IRC thread to reconnect. When the Bitcoin node detects it needs fresh peers (perhaps after losing connections), it sets this flag to <code>true</code>, causing the inner <code>while</code> loop at line 182 to exit and the outer <code>loop</code> to restart the entire IRC connection sequence."
 
   - line: 144
     type: margin
-    text: "ThreadIRCSeed - the IRC discovery thread. Runs continuously in background, maintaining connection to IRC server for peer discovery."
+    text: "<code class=\"function\">ThreadIRCSeed()</code> — the main IRC bootstrap thread, running in a continuous outer loop. This is the entire peer discovery engine for Bitcoin v0.01. The function connects to <code>chat.freenode.net</code> on port 6667, authenticates with an encoded nickname, joins <code>#bitcoin</code>, requests the user list, and then monitors for new joins — all in a single 95-line function."
 
-  - line: 154
+  - line: 148
     type: margin
-    text: "'IRC connect failed' - fallback triggers. If IRC unreachable, node uses hardcoded seed nodes instead. Satoshi's redundancy design."
+    text: "<code class=\"function\">gethostbyname(\"chat.freenode.net\")</code> — DNS resolution of the IRC server. In the v0.01 source code this reads <code>chat.freenode.net</code>, though other early versions used <code>irc.lfnet.org</code>. Port 6667 is the standard IRC port — typically allowed through firewalls because IRC was widely used in 2009. Satoshi chose a well-known public IRC network rather than running a private server, avoiding any single point of failure under his control."
+
+  - line: 152
+    type: margin
+    text: "<code class=\"function\">ConnectSocket()</code> — attempts a TCP connection to the IRC server. If this fails, the function simply prints <code>'IRC connect failed'</code> and returns — no retry, no fallback. This is the only error path where the outer loop does <em>not</em> restart. If IRC is completely unreachable, the node falls back to other discovery mechanisms: hardcoded seed nodes in <code>net.cpp</code> and the addr message protocol for propagating peer addresses."
+
+  - line: 164
+    type: margin
+    text: "<code class=\"function\">EncodeAddress(addrLocalHost)</code> — encodes this node's own IP address into an IRC nickname. Line 166 checks <code class=\"function\">IsRoutable()</code>: if the node is behind NAT or has a private IP (10.x.x.x, 192.168.x.x), it cannot be reached by other nodes. In that case, line 167 generates a random nickname like <code>x749382561</code> — the 'x' prefix signals to other nodes that this address is not usable for incoming connections. The node can still <em>discover</em> peers via IRC even if it cannot be discovered itself."
+
+  - line: 169
+    type: margin
+    text: "IRC authentication: <code>NICK</code> sets the nickname (the Base58-encoded address) and <code>USER</code> registers the connection. The USER command's <code>8</code> parameter sets the 'invisible' mode flag, reducing the node's visibility in global IRC queries. Satoshi was polite about IRC usage — minimizing the footprint on shared infrastructure."
+
+  - line: 172
+    type: margin
+    text: "<code class=\"function\">RecvUntil(hSocket, \" 004 \")</code> — waits for IRC numeric reply 004 (<code>RPL_MYINFO</code>), which signals successful registration. IRC servers send a sequence of welcome messages (001-004) after a successful NICK/USER handshake. Waiting for 004 ensures the connection is fully established before proceeding. The <code class=\"function\">Sleep(500)</code> on line 177 adds a half-second delay — likely to avoid triggering IRC server flood protection that might disconnect clients sending commands too rapidly."
 
   - line: 179
     type: margin
-    text: "JOIN #bitcoin - the magic channel. Every v0.1 node joined here. Channel names #bitcoin00-#bitcoin99 spread load across multiple channels."
+    text: "<code>JOIN #bitcoin</code> and <code>WHO #bitcoin</code> — the two commands that make the bootstrap work. <code>JOIN</code> subscribes to the channel (and announces this node's presence to everyone already there), while <code>WHO</code> requests the complete user list. Every user in the channel whose nickname starts with <code>'u'</code> is a Bitcoin node advertising its IP address. In the early days of Bitcoin, the entire network — sometimes fewer than a dozen nodes — was visible in this single IRC channel."
 
-  - line: 180
+  - line: 182
     type: margin
-    text: "WHO #bitcoin - requests user list. Each 'user' is actually a Bitcoin node with IP encoded in nickname. Clever protocol reuse."
+    text: "The main receive loop: continuously reads IRC messages while the node is running. The loop exits on shutdown (<code class=\"variable\">fShutdown</code>), socket error, or restart signal (<code class=\"variable\">fRestartIRCSeed</code>). Lines beginning with <code>':'</code> are server or user messages; others are filtered out. The <code class=\"function\">ParseString()</code> call splits each line into words for command parsing."
 
-  - line: 212
+  - line: 202
     type: margin
-    text: "Parsing JOIN messages - extracts IP from encoded nicknames. Format: 'u' + base58(IP:port). Satoshi reused Base58 encoding here."
+    text: "WHO response parsing — IRC numeric reply 352 (<code>RPL_WHOREPLY</code>). The username is at index 7 in the response fields. The comment notes that this field is limited to 16 characters by IRC protocol — long enough for Base58-encoded IPv4 addresses (typically 10-12 characters) but potentially truncating IPv6. Satoshi chose index 7 over index 10 (which could hold the full-length name) for consistency with JOIN messages."
+
+  - line: 210
+    type: margin
+    text: "JOIN message parsing — when a new node joins <code>#bitcoin</code>, its nickname is extracted from the IRC hostmask format <code>:username!username@host</code>. The <code class=\"function\">strchr()</code> call finds the <code>'!'</code> delimiter and truncates there to isolate the pure nickname. Every new JOIN is a real-time notification that a new Bitcoin node has come online."
+
+  - line: 219
+    type: margin
+    text: "Address decoding and storage. If the nickname starts with <code>'u'</code> (a routable node), <code class=\"function\">DecodeAddress()</code> extracts the IP and port, then <code class=\"function\">AddAddress()</code> stores it in the persistent address database via <code class=\"type\">CAddrDB</code>. The <code>'new'</code> debug message distinguishes previously unknown peers from ones already in the database. Once stored, the address persists across restarts — the node only needs IRC for initial bootstrapping; subsequent runs can connect to remembered peers directly."
 
   - line: 236
     type: margin
-    text: "fRestartIRCSeed - reconnection flag. If IRC connection drops, thread restarts. Resilience against network instability."
+    text: "<code>fRestartIRCSeed = false</code> — resets the restart flag before closing the socket and looping back to the top of <code class=\"function\">ThreadIRCSeed()</code>. The outer <code>loop</code> keyword (Satoshi's macro for <code>for(;;)</code>) ensures the IRC connection is re-established automatically. This provides resilience against IRC server disconnections, network interruptions, and deliberate restarts triggered by the peer management code."
+
+  - line: 250
+    type: margin
+    text: "<code>#ifdef TEST</code> — a standalone test harness that initializes Winsock and calls <code class=\"function\">ThreadIRCSeed()</code> directly. This reveals Satoshi's testing methodology: he could compile <code>irc.cpp</code> as an independent program to debug the IRC bootstrap without running the full Bitcoin client. The <code class=\"function\">WSAStartup()</code> / <code class=\"function\">WSACleanup()</code> pair is the standard Windows socket initialization — further evidence of the Windows-first development approach."
 
 conclusion: |
   <p>
-    The IRC bootstrap was deprecated in v0.6.x and removed entirely in v0.8.2.
-    When LFNet (the IRC server) shut down, it temporarily broke peer discovery
-    for old clients—validating Satoshi's foresight in building redundant systems.
+    The IRC bootstrap was deprecated in v0.6.x and removed entirely in v0.8.2
+    (February 2013). When LFNet (one of the IRC servers used) eventually shut down,
+    it temporarily broke peer discovery for old clients — validating Satoshi's
+    foresight in building redundant discovery systems. The addr message protocol,
+    which propagates peer addresses through the P2P network itself, proved to be
+    the lasting solution. Modern Bitcoin Core uses DNS seeds (hardcoded domain
+    names that resolve to known node IPs) as the primary bootstrap mechanism,
+    with addr propagation for ongoing peer discovery.
   </p>
   <p>
-    Forensic insight: Satoshi's choice of IRC shows pragmatism over elegance.
-    IRC was well-understood, firewall-friendly (port 6667), and provided free
-    infrastructure. When asked about alternatives, he noted: "I really like
-    the complementary redundant attributes of the two different systems."
+    Satoshi's choice of IRC reveals both pragmatism and humility. Rather than
+    building a custom discovery protocol or running dedicated seed servers, he
+    piggybacked on infrastructure that predated Bitcoin by two decades. The
+    code is deliberately minimal — no IRC channel registration, no bot commands,
+    no flood protection beyond the basic PING/PONG handler. When asked about
+    alternatives on BitcoinTalk, Satoshi noted: "I really like the complementary
+    redundant attributes of the two different systems" — referring to IRC discovery
+    and addr propagation working together.
+  </p>
+  <p>
+    The security implications are worth noting. IRC traffic was unencrypted,
+    meaning any network observer could identify Bitcoin node IP addresses simply
+    by monitoring <code>#bitcoin</code> on Freenode. The Base58 encoding of
+    nicknames was obfuscation, not encryption — anyone who understood the format
+    could decode every address. This was acceptable in 2009 when Bitcoin had no
+    monetary value and node operators had no reason to hide. As Bitcoin grew
+    in value and attracted adversarial attention, the plaintext discovery
+    mechanism became a liability — one of several reasons it was eventually
+    removed.
   </p>

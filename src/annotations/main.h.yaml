@@ -124,10 +124,11 @@ annotations:
 
 conclusion: |
   <p>
-    These data structures implement what Satoshi called "a purely peer-to-peer
-    version of electronic cash." The design decisions made here have proven
-    remarkably durable—15+ years later, the core structures remain essentially
-    unchanged despite handling trillions of dollars in value.
+    These data structures implement what Satoshi described in the whitepaper's
+    opening line as "a purely peer-to-peer version of electronic cash." The design
+    decisions encoded here have proven remarkably durable—over seventeen years later,
+    the core structures remain essentially unchanged despite securing trillions of
+    dollars in cumulative value transfer.
   </p>
   <p>
     The UTXO model that Satoshi invented (tracking individual coin outputs rather

@@ -117,8 +117,10 @@ conclusion: |
   </p>
   <p>
     The compact difficulty format (SetCompact/GetCompact) deserves special
-    note. By encoding 256-bit targets as 4 bytes, block headers stay small
-    (80 bytes total), making lightweight clients practical. A phone can verify
-    proof-of-work by checking just the header, without downloading full blocks.
-    This compression was essential for Bitcoin's scalability vision.
+    recognition. By encoding 256-bit targets as 4 bytes, block headers stay
+    fixed at 80 bytes, making lightweight clients practical. A phone can
+    verify proof-of-work by checking just the header, without downloading
+    the full block data. This compression was essential for Bitcoin's
+    scalability vision—and for the SPV (Simplified Payment Verification)
+    protocol Satoshi described in Section 8 of the whitepaper.
   </p>

@@ -29,15 +29,17 @@ introduction: |
     environment lifecycle.
   </p>
   <p>
-    BDB served Bitcoin well until v0.8 (2013), when an obscure configuration limit
-    became a consensus bug. BDB has a default ceiling on concurrent "database locks."
-    A large but valid block exceeded this ceiling on BDB nodes but not on the new
-    LevelDB nodes—causing a chain split documented as <strong>BIP 50</strong>. The
-    resolution required miners to intentionally orphan the longer chain. The incident
-    proved that consensus rules extend beyond Bitcoin's code to include the database
-    engine, its configuration, the OS, and even hardware. After BIP 50, the blockchain
-    index migrated to LevelDB; the wallet still uses BDB today for backward compatibility
-    with existing <code>wallet.dat</code> files.
+    BDB served Bitcoin well until v0.8 (February 2013), when an obscure configuration
+    limit became a consensus bug. BDB imposes a ceiling on concurrent "database locks."
+    Block 225,430—a large but perfectly valid block—exceeded that ceiling on BDB-backed
+    nodes but not on the new LevelDB-backed ones, causing an unintentional chain split
+    documented as <strong>BIP 50</strong>. Resolution required miners to deliberately
+    orphan the longer (LevelDB) chain and revert to the shorter (BDB-compatible) one—
+    a coordinated rollback that cost one pool operator over 24 BTC in reversed coinbases.
+    The incident proved that consensus rules extend beyond Bitcoin's source code to
+    encompass the database engine, its configuration, and even the operating system.
+    After BIP 50, the blockchain index migrated to LevelDB; the wallet retains BDB
+    to this day for backward compatibility with existing <code>wallet.dat</code> files.
   </p>
 
 annotations:

@@ -119,8 +119,11 @@ conclusion: |
     conservative estimates, rejection sampling—has prevented similar disasters.
   </p>
   <p>
-    The time synchronization elegantly solves a distributed systems problem:
-    agreeing on time without trusting any party. By taking medians with bounds,
-    Bitcoin achieves rough consensus sufficient for block timestamps without
+    The time synchronization code elegantly solves one of distributed systems'
+    oldest problems: agreeing on the time without trusting any single authority.
+    By taking medians of peer clocks with bounded offsets, Bitcoin achieves
+    rough time consensus sufficient for block timestamp validation without
     introducing centralization through NTP servers or trusted time sources.
+    The approach is both robust and conservative—exactly what you want for
+    infrastructure that must run without human intervention for decades.
   </p>

@@ -1,30 +1,125 @@
-# Annotation for makefile - Build Configuration (Unix)
+# Annotation for makefile - Build Configuration (MinGW/GCC)
 file: "makefile"
 
-title: "Assembly Required (Unix)"
+title: "Assembly Required (MinGW)"
 
 introduction: |
   <p>
-    The makefile tells the compiler how to build Bitcoin on Unix-like
-    systems. It lists all source files, compiler flags, and library
-    dependencies needed to produce the bitcoin executable.
+    This is the makefile for building Bitcoin v0.01 with MinGW GCC on Windows. In 84 lines,
+    it defines the entire build process: compiler flags, include paths, library dependencies,
+    compilation rules for each source file, and the final link step that produces
+    <code>bitcoin.exe</code>. Reading a makefile is reading the architect's blueprint — it
+    reveals every component of the system and how they connect.
+  </p>
+  <p>
+    Satoshi chose <strong>GNU Make</strong> with <strong>MinGW GCC 3.4.5</strong> as the
+    primary build system. MinGW (Minimalist GNU for Windows) provides a port of GCC that
+    produces native Windows executables without requiring a Unix compatibility layer like
+    Cygwin. This was a pragmatic choice: GCC was free, well-understood, and produced
+    efficient code, while MSVC 6.0 (the alternative, see <code>makefile.vc</code>) was
+    a commercial product with known C++ compliance issues.
+  </p>
+  <p>
+    The makefile reveals Bitcoin's complete dependency graph. Four external libraries are
+    linked: Berkeley DB for persistent storage, OpenSSL (as <code>libeay32</code>) for
+    cryptography, wxWidgets for the GUI, and twelve Windows system libraries for networking,
+    graphics, and COM. Eleven source files are compiled into object files, each with
+    explicitly declared header dependencies. A precompiled header (<code>headers.h.gch</code>)
+    accelerates compilation. The entire project compiles into a single Windows GUI executable.
+  </p>
+  <p>
+    Several details in this makefile betray the era and the developer's priorities.
+    Optimization is set to <code>-O0</code> (no optimization) even in release mode — Satoshi
+    prioritized debuggability over performance. Warnings are suppressed with <code>-w</code>
+    rather than fixed. The SHA-256 implementation gets special treatment with <code>-O3</code>,
+    because proof-of-work hashing is the one place where performance directly matters. And
+    the link step begins with <code>kill /f bitcoin.exe</code> — a Windows command to force-
+    terminate any running instance before overwriting the binary, a habit of a developer who
+    tested by running the program directly from the build directory.
   </p>
 
 annotations:
+  - line: 1
+    type: margin
+    text: "The standard copyright and license header. Every file in Bitcoin v0.01 carries this three-line attribution to Satoshi Nakamoto under the MIT/X11 license."
+
   - line: 6
     type: margin
-    text: "Build mode selection - debug or release"
+    text: "Build mode selection using GNU Make conditionals. If <code class=\"variable\">BUILD</code> is not set to 'debug' or 'release' on the command line, it defaults to 'debug'. The <code class=\"variable\">D</code> variable is set to 'd' in debug mode, which is appended to wxWidgets library names (e.g., <code>wxmsw28d_core</code> vs <code>wxmsw28_core</code>) to link against the debug-instrumented versions. This is a wxWidgets convention — debug libraries include assertion checks and memory leak detection."
+
+  - line: 14
+    type: margin
+    text: "The commented-out profiling flags (<code>-pg</code>) reveal that Satoshi experimented with GCC's gprof profiling but found it didn't work with GCC 3.x — likely due to MinGW's limited support for profiling instrumentation on Windows. The active debug flags are <code>-g</code> (generate debug symbols for GDB) and <code>-D__WXDEBUG__</code> (enable wxWidgets debug assertions). No optimization flags — the code compiles unoptimized for easier debugging."
 
   - line: 20
     type: margin
-    text: "Include paths - Boost, Berkeley DB, OpenSSL, wxWidgets"
+    text: "<strong>Include paths</strong> — five directories where the compiler searches for header files. The paths use absolute root-relative notation (<code>/boost</code>, <code>/DB/build_unix</code>, etc.), meaning each dependency is installed at the root of a drive. Note <code>/DB/build_unix</code> — Satoshi built Berkeley DB using the Unix-style build system under MSYS, even though the target is Windows. The wxWidgets path <code>vc_lib/mswd</code> references the MSVC debug build of wxWidgets, suggesting Satoshi cross-used wxWidgets libraries built with MSVC from the GCC build."
 
   - line: 22
     type: margin
-    text: "Library dependencies - all external libraries linked"
+    text: "<strong>Library dependencies</strong> — the complete list of everything Bitcoin links against. Three layers: (1) <code class=\"variable\">db_cxx</code> and <code class=\"variable\">eay32</code> — Berkeley DB C++ bindings and OpenSSL's crypto library. (2) Ten wxWidgets libraries — richtext, HTML, core, base, plus image format support (TIFF, JPEG, PNG) and utilities (zlib, regex, expat). (3) Twelve Windows system libraries — kernel32 (OS fundamentals), user32/gdi32 (GUI), winspool/winmm/shell32 (printing, multimedia, shell), comctl32/ole32/oleaut32/uuid (COM and controls), rpcrt4 (RPC runtime), advapi32 (registry and security), ws2_32 (Winsock 2 networking)."
+
+  - line: 28
+    type: margin
+    text: "<strong>Compiler flags</strong>. <code>-mthreads</code> enables thread-safe exception handling on MinGW. <code>-O0</code> disables all optimization — unusual for production code, but Satoshi prioritized debuggability. <code>-w</code> suppresses <em>all</em> warnings, which modern practice would consider reckless, but was common in projects using template-heavy libraries that generated hundreds of harmless warnings. <code>-Wno-invalid-offsetof</code> suppresses a specific C++ warning about using <code>offsetof</code> on non-POD types — likely triggered by Bitcoin's serialization macros. <code>-Wformat</code> re-enables format string checking despite the blanket <code>-w</code> — format string bugs are too dangerous to ignore."
+
+  - line: 29
+    type: margin
+    text: "<code class=\"variable\">HEADERS</code> — the dependency list for the precompiled header. When any of these files change, <code>headers.h.gch</code> is rebuilt, which forces recompilation of every source file. This list matches the includes at the bottom of <code>headers.h</code> (minus <code>net.h</code>, <code>irc.h</code>, <code>market.h</code>, <code>uibase.h</code>, and <code>ui.h</code>, which are tracked separately in individual rules)."
+
+  - line: 36
+    type: margin
+    text: "<strong>Precompiled header rule</strong>. <code>headers.h.gch</code> is GCC's precompiled header format — a binary snapshot of all parsed declarations. The <code>-c</code> flag compiles without linking. The dependency list includes the core headers plus <code>net.h</code>, <code>irc.h</code>, <code>market.h</code>, <code>uibase.h</code>, and <code>ui.h</code> — every header in the project. When GCC finds <code>headers.h.gch</code> alongside <code>headers.h</code>, it uses the precompiled version automatically, dramatically speeding up compilation."
+
+  - line: 39
+    type: margin
+    text: "<strong>Compilation rules</strong> — eleven source files, each with its own rule and explicit dependency tracking. The pattern is consistent: <code>g++ -c $(CFLAGS) -o $@ $<</code> compiles the source (<code>$<</code>, the first prerequisite) into the object file (<code>$@</code>, the target). Dependencies after the source filename are header files — if any change, the object is rebuilt. Note that most files depend only on <code>$(HEADERS)</code> (the precompiled header set), while some add specific extras: <code>db.cpp</code> needs <code>market.h</code>, <code>main.cpp</code> needs <code>net.h</code>, <code>market.h</code>, and <code>sha.h</code>."
+
+  - line: 63
+    type: margin
+    text: "<code>sha.o</code> gets special treatment: <code>-O3</code> (maximum optimization) instead of the project-wide <code>-O0</code>. SHA-256 is the inner loop of proof-of-work mining — the one function called millions of times per second when searching for a valid block hash. Optimizing it makes mining measurably faster. This is the only file in the project with optimization enabled, revealing Satoshi's understanding that mining performance was the one critical hot path."
+
+  - line: 69
+    type: margin
+    text: "<strong>Resource compilation</strong>. <code>windres</code> compiles <code>ui.rc</code> (a Windows resource script) into an object file containing the Bitcoin icon, checkbox icon, and toolbar button bitmaps. These are embedded directly in the executable — no external image files needed at runtime. The resource dependencies list every bitmap and icon file, ensuring the executable is rebuilt when any visual asset changes."
+
+  - line: 74
+    type: margin
+    text: "<code class=\"variable\">OBJS</code> — the complete list of eleven object files that constitute Bitcoin. This is the full bill of materials: <code>util.o</code> (utilities), <code>script.o</code> (Script interpreter), <code>db.o</code> (database), <code>net.o</code> (networking), <code>main.o</code> (consensus), <code>market.o</code> (unused marketplace), <code>ui.o</code> (GUI logic), <code>uibase.o</code> (GUI layout), <code>sha.o</code> (hashing), <code>irc.o</code> (peer discovery), and <code>ui_res.o</code> (icons/bitmaps)."
+
+  - line: 78
+    type: margin
+    text: "<code>kill /f bitcoin.exe</code> — a Windows command to force-terminate any running Bitcoin process before the linker overwrites the executable. The leading <code>-</code> (Make's error-suppression prefix) ensures the build continues even if no process is running. This tells us Satoshi's workflow: edit code, run <code>make</code>, and the build automatically kills the running instance, relinks, and produces a fresh binary. The developer was testing in-place from the build directory."
+
+  - line: 79
+    type: margin
+    text: "The link step. <code>-mwindows</code> and <code>-Wl,--subsystem,windows</code> produce a Windows GUI application (no console window). The linker combines all eleven object files with the external libraries to produce the final <code>bitcoin.exe</code>. The order matters: <code>$(LIBPATHS)</code> before <code>$(OBJS)</code> before <code>$(LIBS)</code> ensures the linker searches library directories, processes object files, and resolves external symbols in the correct order."
+
+  - line: 81
+    type: margin
+    text: "<code>clean</code> target — deletes all compiled object files and the precompiled header, forcing a full rebuild on the next <code>make</code>. Uses <code>del /Q</code> (Windows quiet delete) rather than Unix <code>rm -f</code>, confirming this makefile targets the Windows command shell despite using GNU Make. The leading <code>-</code> suppresses errors if the files don't exist."
 
 conclusion: |
   <p>
-    Bitcoin v0.01 depended on wxWidgets (for the GUI), OpenSSL (for
-    cryptography), and Berkeley DB (for data storage).
+    This makefile compiles eleven C++ source files and one resource file into a single
+    Windows executable — the entirety of Bitcoin v0.01. The build has no configure step,
+    no autotools, no CMake. Dependencies are assumed to be installed at hardcoded paths.
+    The developer runs <code>make</code> and either gets a binary or an error. This simplicity
+    reflects a solo developer's workflow — Satoshi was the only person building this code,
+    and he knew where everything was on his machine.
+  </p>
+  <p>
+    The performance choices are revealing. Everything compiles at <code>-O0</code> except
+    <code>sha.cpp</code>, which gets <code>-O3</code>. This tells us Satoshi understood
+    the performance profile of his system: only SHA-256 hashing is computationally intensive,
+    and only during mining. The rest of the code — transaction validation, block processing,
+    network communication, GUI rendering — runs infrequently enough that optimization is
+    irrelevant compared to the debugging convenience of unoptimized builds.
+  </p>
+  <p>
+    Bitcoin Core's modern build system uses autotools, has a <code>./configure</code> script
+    with hundreds of options, supports dozens of platforms, and produces optimized binaries
+    with link-time optimization and hardware-accelerated SHA-256. But it still compiles
+    roughly the same logical components — consensus, networking, storage, scripting, and
+    a user interface — that Satoshi laid out in these 84 lines.
   </p>

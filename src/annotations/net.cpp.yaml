@@ -19,11 +19,11 @@ introduction: |
     a mesh of equal peers, each running the same rules.
   </p>
   <p>
-    The network is resilient by design. Nodes can join and leave freely. Messages
+    The network is resilient by design. Nodes join and leave freely. Messages
     propagate via gossip—each node tells its neighbors, who tell theirs. If half
-    the network disappears tomorrow, the other half continues operating. This
-    architecture has survived government crackdowns, DDoS attacks, and internet
-    outages for over 15 years without a single hour of downtime.
+    the network vanished tomorrow, the other half would continue producing blocks
+    on schedule. This architecture has survived government crackdowns, DDoS attacks,
+    and internet outages across seventeen years without a single hour of downtime.
   </p>
   <p>
     The protocol uses a simple message format: 4-byte magic number (to identify
@@ -181,18 +181,22 @@ annotations:
 
 conclusion: |
   <p>
-    The networking layer embodies Satoshi's trustless philosophy. Nodes don't trust
-    peers — they validate everything independently. A malicious peer can waste your
-    bandwidth but can't steal your coins or corrupt your view of the blockchain.
+    The networking layer embodies Satoshi's trustless philosophy. Nodes do not trust
+    their peers—they validate everything independently. A malicious peer can waste
+    your bandwidth but cannot steal your coins or corrupt your view of the blockchain.
+    The protocol assumes the worst about every connection and is correct to do so.
   </p>
   <p>
     Message propagation uses "inv" (inventory) announcements: nodes advertise what
-    they have, peers request what they need. This pull-based model prevents spam
-    and lets nodes prioritize important data (blocks over transactions).
+    they have, peers request what they need. This pull-based model prevents spam,
+    lets nodes prioritize important data (blocks over transactions), and ensures
+    that no node can force another to download unwanted data.
   </p>
   <p>
-    The design's elegance is in what it doesn't do: no authentication, no identity,
-    no trust hierarchy. Every node is equal. The consensus rules encoded in
-    <code>main.cpp</code> ensure that even a network of anonymous strangers
-    converges on the same truth.
+    The design's elegance is in what it omits: no authentication, no identity, no
+    trust hierarchy, no permissions. Every node is equal. The consensus rules
+    encoded in <code>main.cpp</code> ensure that even a network of anonymous
+    strangers—some of whom are actively trying to cheat—converges on the same
+    truth. This is the property that makes Bitcoin censorship-resistant: there is
+    no privileged node to coerce.
   </p>

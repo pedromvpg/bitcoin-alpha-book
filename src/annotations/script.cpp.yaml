@@ -195,9 +195,10 @@ conclusion: |
     <li>OP_CHECKSIG: Verify the signature proves ownership of that public key</li>
   </ol>
   <p>
-    This elegance — proving ownership in four operations — is why Satoshi's
-    scripting design has survived 15+ years of attacks, $1 trillion in value
+    This elegance—proving ownership in four operations—is why Satoshi's scripting
+    design has survived seventeen years of attacks, over a trillion dollars in value
     secured, and multiple generations of protocol upgrades without replacement.
-    Every complex Bitcoin feature built since — multisig, Lightning, Taproot —
-    is ultimately an extension of these same opcodes on this same stack.
+    Every complex Bitcoin feature built since—multisig wallets, payment channels,
+    Lightning Network, Taproot—is ultimately an extension of these same opcodes
+    operating on this same stack machine.
   </p>

@@ -1,30 +1,115 @@
-# Annotation for market.h - Market Definitions
+# Annotation for market.h - Marketplace Data Structures
 file: "market.h"
 
 title: "Satoshi's Unfinished Dream"
 
 introduction: |
   <p>
-    Header file for Satoshi's unfinished eBay-style marketplace. Defines
-    data structures for products and reviews that would have powered
-    peer-to-peer commerce directly within the Bitcoin client.
+    This header defines the data structures for Satoshi's abandoned built-in
+    marketplace: users with reputation atoms, cryptographically signed reviews,
+    and product listings with order forms. Together with <code>market.cpp</code>,
+    these 183 lines describe a complete peer-to-peer commerce system that was
+    prototyped, partially wired into the UI, and then quietly shelved before
+    Bitcoin's public release.
+  </p>
+  <p>
+    The three classes here -- <code class="type">CUser</code>,
+    <code class="type">CReview</code>, and <code class="type">CProduct</code> --
+    mirror the architecture of Bitcoin's transaction system. Products are signed
+    like transactions. Reviews are verified with ECDSA like spending scripts.
+    Users accumulate reputation through a novel "atom" propagation algorithm
+    instead of a centralized rating database. Satoshi applied the same trust
+    model everywhere: mathematics replaces authority.
+  </p>
+  <p>
+    The header also reveals Satoshi's approach to serialization. Every marketplace
+    class uses the same <code>IMPLEMENT_SERIALIZE</code> macro found in
+    <code>main.h</code> for transactions and blocks. The conditional
+    serialization flags -- <code>SER_GETHASH</code>, <code>SER_DISK</code>,
+    <code>SER_SKIPSIG</code> -- ensure that signature fields are excluded when
+    computing hashes (preventing circular dependencies) and that disk-only fields
+    like atom counts are not sent over the network. This layered serialization
+    design, used consistently across all Bitcoin data structures, was one of
+    Satoshi's most practical engineering decisions.
+  </p>
+  <p>
+    Services like OpenBazaar (2014), Particl (2017), and Bisq (2019) would
+    later attempt to build exactly what Satoshi sketched here -- decentralized
+    marketplaces with integrated reputation systems. None of them knew this
+    prototype existed in Bitcoin's first release.
   </p>
 
 annotations:
+  - line: 5
+    type: margin
+    text: "Forward declarations for the three marketplace types. C++ requires these because the classes reference each other: <code class=\"type\">CProduct</code> uses <code class=\"type\">CUser</code> to look up atom counts, and <code class=\"type\">CReview</code> creates links between <code class=\"type\">CUser</code> objects. The forward declarations break the circular dependency without requiring separate header files."
+
+  - line: 9
+    type: margin
+    text: "<code class=\"variable\">nFlowthroughRate</code> = 2 -- the threshold controlling how quickly reputation propagates through the social graph. When a user accumulates 2 new atoms in <code class=\"variable\">vAtomsNew</code>, one is randomly selected to flow through to <code class=\"variable\">vAtomsOut</code> and propagate to downstream users. A lower value means reputation spreads faster but is more easily gamed; a higher value means slower propagation but more resistance to Sybil attacks. Satoshi chose 2 as a balance -- every second atom received generates one outgoing atom, a 50% propagation rate."
+
+  - line: 25
+    type: margin
+    text: "<code class=\"type\">CUser</code> -- a node in the reputation graph. Each user maintains three atom vectors: <code class=\"variable\">vAtomsIn</code> (all atoms received, kept sorted for binary search), <code class=\"variable\">vAtomsNew</code> (atoms pending propagation), and <code class=\"variable\">vAtomsOut</code> (atoms forwarded to downstream users). <code class=\"variable\">vLinksOut</code> stores the hashes of users this person has reviewed, forming the directed edges of the trust graph. The design is essentially a weighted directed graph where edge weights are atom counts."
+
+  - line: 37
+    type: margin
+    text: "<code>IMPLEMENT_SERIALIZE</code> -- the same serialization macro used for <code class=\"type\">CTransaction</code> and <code class=\"type\">CBlock</code>. The <code>SER_GETHASH</code> flag check on line 39 ensures that the version number is excluded when computing the user's hash -- preventing the hash from changing when the serialization format is upgraded. All four vectors are serialized: the complete atom state and social graph links are persisted to BDB via <code class=\"type\">CReviewDB</code>."
+
+  - line: 58
+    type: margin
+    text: "<code class=\"function\">GetAtomCount()</code> returns the total number of atoms a user has accumulated: both fully processed atoms (<code class=\"variable\">vAtomsIn</code>) and atoms still pending propagation (<code class=\"variable\">vAtomsNew</code>). This count becomes a product's reputation score in <code class=\"function\">CProduct::CheckProduct()</code> -- a seller's trustworthiness is literally measured by how many reputation atoms have flowed to them through the review graph."
+
   - line: 72
     type: margin
-    text: "CReview class - user reviews for marketplace items"
+    text: "<code class=\"type\">CReview</code> -- a cryptographically signed review. <code class=\"variable\">hashTo</code> identifies the recipient (a product or user being reviewed). <code class=\"variable\">mapValue</code> stores arbitrary key-value pairs -- the review text, rating, title, etc. <code class=\"variable\">vchPubKeyFrom</code> is the reviewer's public key, and <code class=\"variable\">vchSig</code> is the ECDSA signature over the review's hash. The <code class=\"variable\">nTime</code> and <code class=\"variable\">nAtoms</code> fields are memory-only (not serialized to disk), computed fresh each time."
+
+  - line: 94
+    type: margin
+    text: "Review serialization is carefully layered. <code class=\"variable\">hashTo</code> is excluded when serializing for disk (<code>SER_DISK</code> check, line 98) because on disk, reviews are stored in a list keyed by the recipient hash -- writing <code class=\"variable\">hashTo</code> inside each review would be redundant. The signature is excluded from the hash computation (<code>SER_GETHASH</code> check, line 102) to avoid the bootstrap problem: you cannot sign a hash that includes the signature itself."
+
+  - line: 106
+    type: margin
+    text: "Three hash functions on a single class: <code class=\"function\">GetHash()</code> for unique identification, <code class=\"function\">GetSigHash()</code> for the bytes that get signed (excluding the signature itself via <code>SER_SKIPSIG</code>), and <code class=\"function\">GetUserHash()</code> which hashes the public key to derive a user identity. This triple-hash pattern reappears in <code class=\"type\">CProduct</code> below -- Satoshi reused the same authentication architecture across all marketplace objects."
 
   - line: 120
     type: margin
-    text: "CProduct class - items listed for sale"
+    text: "<code class=\"type\">CProduct</code> -- a marketplace listing. <code class=\"variable\">addr</code> is the seller's network address for direct IP-to-IP transactions. <code class=\"variable\">mapValue</code> holds summary fields (title, price, category). <code class=\"variable\">mapDetails</code> holds extended product information fetched on demand. <code class=\"variable\">vOrderForm</code> defines the order form fields a buyer must fill out (name-value pairs like 'shipping address', 'quantity'). <code class=\"variable\">nSequence</code> is a version counter -- higher values replace older listings."
 
-  - line: 6
+  - line: 132
     type: margin
-    text: "Forward declarations for marketplace types"
+    text: "<code class=\"variable\">nAtoms</code> is marked 'disk only' -- the seller's reputation score is stored alongside the product on disk but not transmitted over the network. Each node independently computes the atom count by querying its own review database (<code class=\"function\">CheckProduct()</code>, line 254 of market.cpp). This prevents sellers from lying about their reputation; every node verifies it independently, the same trust model as transaction validation."
+
+  - line: 145
+    type: margin
+    text: "Product serialization separates summary data from detail data. <code class=\"variable\">mapDetails</code>, <code class=\"variable\">vOrderForm</code>, and <code class=\"variable\">nSequence</code> are excluded from the hash (<code>SER_GETHASH</code> check, line 151). This means a product's identity hash is determined solely by its address, summary values, and public key -- the details can be updated without changing the product's hash. A practical optimization: search results show summaries, and full details are fetched only when a buyer clicks through."
+
+  - line: 180
+    type: margin
+    text: "Global state declarations: <code class=\"variable\">mapProducts</code> is the in-memory product catalogue (equivalent to the mempool for transactions), <code class=\"variable\">cs_mapProducts</code> is its mutex guard, and <code class=\"variable\">mapMyProducts</code> holds your own listings. The <code>extern</code> keyword means these are defined in <code>market.cpp</code> and shared across all translation units that include this header -- the same global-state pattern used for <code class=\"variable\">mapTransactions</code> and <code class=\"variable\">mapBlockIndex</code> in <code>main.cpp</code>."
 
 conclusion: |
   <p>
-    This early marketplace concept predated services like OpenBazaar
-    by years, showing Satoshi's broad vision for Bitcoin.
+    The marketplace header reveals a carefully thought-out architecture. Satoshi
+    did not simply bolt e-commerce onto a payment system -- he designed the marketplace
+    classes to use exactly the same patterns as the rest of Bitcoin: ECDSA signatures
+    for authentication, layered serialization for efficiency, hash-based identity for
+    deduplication, and mutex-protected global maps for concurrent access. The
+    marketplace was a first-class citizen of the protocol.
+  </p>
+  <p>
+    The atom-based reputation system is particularly notable. Rather than a simple
+    star rating (trivially gamed by Sybil accounts), Satoshi designed a trust
+    propagation network where reputation must flow through real social connections.
+    The stochastic forwarding (randomly selecting which atoms propagate) provides
+    natural resistance to reputation inflation. It is a genuinely original design
+    that anticipated later work on decentralized reputation by several years.
+  </p>
+  <p>
+    That Satoshi abandoned this feature speaks to his engineering discipline.
+    Rather than shipping a half-working marketplace that could undermine trust in
+    the core payment system, he cut it loose and focused on the consensus layer.
+    The marketplace classes remain in v0.01 as compiled-but-unused code -- a
+    fascinating glimpse of the larger system Satoshi imagined but chose not to
+    build.
   </p>

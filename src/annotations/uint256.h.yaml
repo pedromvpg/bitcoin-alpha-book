@@ -129,11 +129,12 @@ annotations:
 conclusion: |
   <p>
     The uint256 type is Bitcoin's cryptographic primitive. It represents numbers
-    in a space so vast that randomly generated values will never collide—the
-    probability of two random uint256s being equal is about 1 in 10^77, far less
-    than the chance of any conceivable event. This is why Bitcoin can use hashes
-    as unique identifiers without a central registry: cryptographic randomness
-    guarantees uniqueness.
+    in a space so vast that randomly generated values are guaranteed never to
+    collide in practice—the probability of two random uint256 values being
+    identical is approximately 1 in 10<sup>77</sup>, a number so small it defies
+    physical analogy. This is why Bitcoin can use hashes as globally unique
+    identifiers without any central registry: cryptographic randomness provides
+    uniqueness as a mathematical certainty.
   </p>
   <p>
     The implementation is straightforward but careful. Grade-school arithmetic

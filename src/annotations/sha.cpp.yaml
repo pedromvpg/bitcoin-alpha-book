@@ -152,9 +152,10 @@ conclusion: |
     are, wherever possible, publicly verifiable.
   </p>
   <p>
-    SHA-256 has held since 1999. No practical preimage, second-preimage, or
-    collision attack exists. The best known attacks reduce the round count from
-    64 to 31 — still 33 rounds of security margin. For Bitcoin, where a
-    SHA-256 collision would allow double-spend at the Merkle tree level, this
-    margin is the foundation of every unspent output in every wallet.
+    SHA-256 has held since its publication in 2001. No practical preimage,
+    second-preimage, or collision attack exists. The best known attacks reduce
+    the effective round count from 64 to roughly 31—still 33 rounds of security
+    margin. For Bitcoin, where a SHA-256 collision would enable double-spending
+    at the Merkle tree level, this margin is the mathematical bedrock beneath
+    every unspent output in every wallet on Earth.
   </p>

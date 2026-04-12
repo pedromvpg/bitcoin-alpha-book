@@ -1,30 +1,119 @@
-# Annotation for makefile.vc - Build Configuration (Windows)
+# Annotation for makefile.vc - Build Configuration (MSVC)
 file: "makefile.vc"
 
-title: "Assembly Required (Windows)"
+title: "Assembly Required (Visual C++)"
 
 introduction: |
   <p>
-    This makefile builds Bitcoin using Microsoft Visual C++. It's
-    functionally equivalent to the Unix makefile but uses Windows-specific
-    paths and compiler options.
+    This is the companion to the MinGW makefile — a build configuration for Microsoft Visual
+    C++ 6.0, the other compiler Satoshi officially supported. Where the MinGW makefile uses
+    GCC conventions (<code>-I</code>, <code>-L</code>, <code>-l</code>, <code>-o</code>),
+    this file speaks MSVC's dialect (<code>/I</code>, <code>/LIBPATH:</code>, <code>.lib</code>,
+    <code>/Fo</code>). The same eleven source files are compiled into the same
+    <code>bitcoin.exe</code>, but through Microsoft's toolchain instead of GNU's.
+  </p>
+  <p>
+    MSVC 6.0 was released in 1998 — over a decade before Bitcoin. By 2009, Microsoft had
+    shipped Visual Studio 2008 (MSVC 9.0), yet Satoshi chose to support the ancient 6.0
+    release. This was likely a compatibility decision: MSVC 6.0 was still widely installed,
+    its runtime library (<code>msvcrt.dll</code>) shipped with every copy of Windows, and
+    it produced smaller executables. Many open-source Windows projects of the era maintained
+    MSVC 6.0 compatibility for these reasons. The tradeoff was poor C++ standards compliance —
+    MSVC 6.0 predated the finalization of C++98 and had notorious template bugs.
+  </p>
+  <p>
+    Comparing this file with the MinGW makefile reveals subtle differences in how the two
+    toolchains handle the same project. MSVC uses a precompiled header via <code>/YX</code>
+    and <code>/Fp</code> flags rather than GCC's <code>.gch</code> file. Library names gain
+    <code>.lib</code> suffixes instead of <code>-l</code> prefixes. Berkeley DB is linked as
+    <code>libdb47s.lib</code> (static library, version 4.7) rather than <code>-l db_cxx</code>
+    (shared library). And the final link step uses <code>link.exe</code> with
+    <code>/SUBSYSTEM:WINDOWS</code> rather than <code>g++</code> with <code>-mwindows</code>.
+    The same program, two dialects.
+  </p>
+  <p>
+    The existence of two makefiles — one for GCC, one for MSVC — tells us something about
+    Satoshi's development process. He tested with both compilers, which is a form of
+    verification: if the code compiles and works correctly under two different C++ implementations,
+    it is less likely to depend on undefined behavior or compiler-specific quirks. Cross-compiler
+    testing is a surprisingly disciplined practice for a solo developer in 2009.
   </p>
 
 annotations:
-  - line: 9
+  - line: 1
     type: margin
-    text: "Debug configuration with symbols and WXDEBUG"
+    text: "The same copyright header as every other file — Satoshi Nakamoto, MIT/X11 license. The <code>.vc</code> suffix conventionally indicates a Visual C++ specific file, distinguishing it from the default <code>makefile</code> used by MinGW/GCC."
+
+  - line: 6
+    type: margin
+    text: "Build mode selection using NMAKE syntax. <code>!IF</code>, <code>!ENDIF</code> are NMAKE preprocessor directives — Microsoft's make utility uses a different conditional syntax than GNU Make's <code>ifeq</code>/<code>endif</code>. The logic is identical: default to debug mode if no <code class=\"variable\">BUILD</code> variable is set. Run with <code>nmake /f makefile.vc BUILD=release</code> for a release build."
+
+  - line: 11
+    type: margin
+    text: "MSVC debug flags. <code>/Zi</code> generates a full program database (<code>.pdb</code> file) for debugging — the MSVC equivalent of GCC's <code>-g</code>. <code>/Od</code> disables optimization (equivalent to <code>-O0</code>). <code>/D__WXDEBUG__</code> enables wxWidgets debug assertions. These produce a binary that can be single-stepped in Visual Studio's debugger with full variable inspection."
 
   - line: 16
     type: margin
-    text: "Windows include paths for dependencies"
+    text: "<strong>Include paths</strong> in MSVC syntax. <code>/I</code> is the include-directory flag (GCC uses <code>-I</code>). Note <code>/DB/build_windows</code> instead of the MinGW makefile's <code>/DB/build_unix</code> — Satoshi built Berkeley DB separately for each compiler, using the platform-native build system. The wxWidgets path still references <code>vc_lib/mswd</code>, the MSVC debug build."
 
-  - line: 29
+  - line: 18
     type: margin
-    text: "Build target - produces bitcoin.exe"
+    text: "<strong>Library dependencies</strong>. Key differences from the MinGW version: <code>libdb47s$(D).lib</code> is a statically linked Berkeley DB 4.7 (the 's' suffix means static), while MinGW links the shared <code>db_cxx</code>. The wxWidgets and Windows system libraries are identical in content but use <code>.lib</code> suffixes instead of <code>-l</code> prefixes. MSVC's linker resolves libraries by filename, not by name-mangling conventions."
+
+  - line: 24
+    type: margin
+    text: "<strong>MSVC compiler flags</strong> — a dense set of options. <code>/c</code> compiles without linking. <code>/nologo</code> suppresses the Microsoft copyright banner. <code>/Ob0</code> disables inline function expansion. <code>/MD$(D)</code> links against the multithreaded DLL runtime (<code>MSVCRT.DLL</code> for release, <code>MSVCRTD.DLL</code> for debug). <code>/EHsc</code> enables C++ exception handling with extern 'C' default nothrow. <code>/GR</code> enables runtime type information (RTTI). <code>/Zm300</code> triples the precompiled header memory limit — necessary for the large number of includes in <code>headers.h</code>. <code>/YX</code> enables automatic precompiled header usage, and <code>/Fpobj/headers.pch</code> specifies the PCH file location."
+
+  - line: 25
+    type: margin
+    text: "<code class=\"variable\">HEADERS</code> — the same dependency list as the MinGW makefile. Both build systems track the same set of core headers to determine when recompilation is needed. This consistency confirms that the two makefiles are intended to produce identical binaries from identical source code."
+
+  - line: 32
+    type: margin
+    text: "<strong>Compilation rules</strong>. Each rule invokes <code>cl</code> (the MSVC compiler) with <code>/Fo$@</code> to specify the output object file. The <code>%s</code> at the end is an NMAKE special macro that expands to the first dependency with the matching extension — effectively the source file. This is more concise than the MinGW makefile's <code>$<</code> but functionally equivalent. Object files use backslash paths (<code>obj\\util.obj</code>) and the <code>.obj</code> extension instead of GCC's <code>.o</code>."
+
+  - line: 56
+    type: margin
+    text: "<code>sha.obj</code> gets <code>/O2</code> (maximize speed) — MSVC's equivalent of GCC's <code>-O3</code>. The same logic applies: SHA-256 is the mining hot path, and this is the only file compiled with optimization. <code>/O2</code> enables inlining, loop unrolling, and instruction scheduling. The performance difference between <code>/Od</code> and <code>/O2</code> for tight computational loops like SHA-256 can easily be 5-10x."
+
+  - line: 62
+    type: margin
+    text: "<strong>Resource compilation</strong>. MSVC uses <code>rc</code> (the Resource Compiler) instead of MinGW's <code>windres</code>. The output is <code>obj\\ui.res</code> — a compiled resource file that the linker embeds in the final executable. The dependency list is identical: the same icons and bitmaps are compiled into the same resources regardless of which toolchain builds them."
+
+  - line: 70
+    type: margin
+    text: "<strong>Link step</strong>. <code>link /nologo /DEBUG /SUBSYSTEM:WINDOWS /OUT:$@</code> invokes the MSVC linker. <code>/DEBUG</code> generates the <code>.pdb</code> debug database (enabling post-mortem debugging with WinDbg or Visual Studio). <code>/SUBSYSTEM:WINDOWS</code> marks the executable as a GUI application (equivalent to GCC's <code>-mwindows</code>). The <code>$**</code> NMAKE macro expands to all dependencies — the object files listed in <code class=\"variable\">OBJS</code>."
+
+  - line: 71
+    type: margin
+    text: "<code>kill /f bitcoin.exe &amp; sleep 1</code> — same pattern as the MinGW makefile but with an added one-second delay. The <code>sleep 1</code> gives Windows time to release the file handle after killing the process — without it, the linker might fail with an 'access denied' error because Windows hasn't finished cleaning up the terminated process. The leading <code>-</code> suppresses errors if no Bitcoin process is running."
+
+  - line: 74
+    type: margin
+    text: "<code>clean</code> target — more thorough than the MinGW version. Besides deleting object files, it also removes <code>.ilk</code> (incremental linker state) and <code>.pdb</code> (program database / debug symbols) files. These are MSVC-specific artifacts that have no GCC equivalent. A clean build from this makefile removes all compiler and linker outputs."
 
 conclusion: |
   <p>
-    Satoshi initially developed Bitcoin on Windows, so Windows support
-    was a priority from the very first release.
+    The MSVC makefile is a near-mirror of the MinGW version, translated into Microsoft's
+    toolchain dialect. The same eleven source files compile into the same executable with
+    the same dependencies. The differences are syntactic (flag formats, path conventions,
+    file extensions) rather than semantic. This parallelism was intentional — Satoshi
+    maintained both build systems to ensure the code compiled correctly under two
+    independent C++ implementations.
+  </p>
+  <p>
+    The choice to support MSVC 6.0 — a compiler from 1998 — is characteristic of Satoshi's
+    conservative engineering. Rather than using the latest compiler features, he wrote code
+    that worked with the lowest common denominator. This made Bitcoin buildable on the widest
+    range of Windows development environments, lowering the barrier for other developers to
+    compile and audit the code. It also forced a disciplined coding style: no C++11 features,
+    limited template metaprogramming, and explicit workarounds for compiler-specific bugs.
+  </p>
+  <p>
+    Modern Bitcoin Core has long since dropped MSVC 6.0 support and no longer ships NMAKE
+    files. The build system migrated through autotools to CMake, supporting GCC, Clang, and
+    modern MSVC across Linux, macOS, Windows, and various BSDs. But the fundamental build
+    structure — compile source files with their dependencies, optimize the cryptographic
+    hot path, link against system and third-party libraries, produce a single executable —
+    remains unchanged from what Satoshi defined in these 78 lines.
   </p>

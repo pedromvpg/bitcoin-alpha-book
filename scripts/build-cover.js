@@ -25,7 +25,7 @@ import { writeFileSync, existsSync, readFileSync, unlinkSync, readdirSync } from
 import { execFileSync } from 'child_process';
 import { randomBytes } from 'crypto';
 import { tmpdir } from 'os';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 import sharp from 'sharp';
 import UPNG from 'upng-js';
@@ -33,7 +33,7 @@ import {
   SOURCE_FILE_ORDER,
   COVER_TOC_HIGHLIGHT,
 } from './source-file-order.mjs';
-import { EDITION } from './edition.mjs';
+import { EDITION, ANNOTATIONS_CREDIT } from './edition.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
@@ -229,7 +229,7 @@ function loadPart2SourceToc() {
   ];
 }
 
-function loadDonationCover() {
+function loadDonationCover({ previewDonation = false } = {}) {
   const outPath = join(OUTPUT_DIR, 'donation-cover.json');
   if (existsSync(outPath)) {
     try {
@@ -241,6 +241,7 @@ function loadDonationCover() {
   }
 
   const usePreviewFallback =
+    previewDonation ||
     process.argv.includes('--preview-donation') ||
     process.env.COVER_PREVIEW_DONATION === '1';
 
@@ -286,7 +287,15 @@ function buildCoverTocHtml(rows) {
 }
 
 // ── Page count resolution ─────────────────────────────────────────────────────
-function getPageCount() {
+function getPageCount(pagesOverride) {
+  if (pagesOverride != null) {
+    const n = parseInt(pagesOverride, 10);
+    if (Number.isFinite(n) && n > 0) {
+      console.log(`   Page count from options: ${n}`);
+      return n;
+    }
+  }
+
   const arg = process.argv.find(a => a.startsWith('--pages='));
   if (arg) {
     const n = parseInt(arg.split('=')[1], 10);
@@ -583,7 +592,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       top: 0;
       width: ${px(spine)}px;
       height: 100%;
-      background: #080808;
+      background: #000;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -599,9 +608,11 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       align-items: center;
       padding-bottom: ${px(BLEED + 0.78)}px;
       pointer-events: none;
+      overflow: visible;
     }
 
-    /* Horizontal wordmark: wide×thin box, rotated so thin side = spine thickness */
+    /* Horizontal wordmark: wide×thin box, rotated so thin side = spine thickness.
+       Glow matches .front-logo-img / .back-logo. */
     .spine-logo {
       width: ${px(spineLogoAlong)}px;
       height: ${px(spineLogoN)}px;
@@ -611,8 +622,10 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       background-size: contain;
       transform: rotate(-90deg) scale(1.5);
       transform-origin: center center;
-      filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.18))
-              drop-shadow(0 0 16px rgba(255, 255, 255, 0.08));
+      filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.34))
+              drop-shadow(0 0 48px rgba(255, 255, 255, 0.2))
+              drop-shadow(0 0 80px rgba(255, 255, 255, 0.11))
+              drop-shadow(0 0 120px rgba(255, 255, 255, 0.05));
     }
 
     /* Standard convention: text reads bottom-to-top on English book spines */
@@ -833,7 +846,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
 
     .annotations-credit {
       font-family: 'Inter', sans-serif;
-      font-size: 8.65pt;
+      font-size: 7pt;
       font-weight: 500;
       color: #c6c6c6;
       letter-spacing: 0.04em;
@@ -912,7 +925,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
   <div class="print-area">
 
     <!-- Back cover -->
-    <div class="cover-back">
+    <div class="cover-back" id="cover-back" data-cover-panel="back">
       <div class="back-copy">
         <p class="back-edition-lead"><strong>Annotated edition — ${EDITION}.</strong> The complete v0.01 Alpha source with commentary embedded in the listing — context anchored to the lines it explains, not siloed in a separate appendix.</p>
         <p class="back-description">On January 3, 2009, Satoshi Nakamoto launched Bitcoin with a single executable and these 2,300 lines of C++.<br><br>This volume walks that first public release file by file. Explanations appear inline: annotation blocks break the code flow where they belong, so you read the original source and the commentary as one continuous thread — data structures, algorithms, and design choices spelled out without leaving the program in front of you.</p>
@@ -927,7 +940,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
     </div>
 
     <!-- Spine -->
-    <div class="cover-spine">
+    <div class="cover-spine" id="cover-spine" data-cover-panel="spine">
       <div class="spine-inner">
         <span class="spine-title">Bitcoin</span>
         <span class="spine-subtitle">v0.01 Alpha</span>
@@ -940,7 +953,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
     </div>
 
     <!-- Front cover -->
-    <div class="cover-front">
+    <div class="cover-front" id="cover-front" data-cover-panel="front">
       <div class="front-main">
         <h1 class="book-title">BITCOIN</h1>
         <p class="book-subtitle">v0.01 Alpha</p>
@@ -950,8 +963,8 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       </div>
       ${buildCoverTocHtml(part2SourceToc)}
     </div>
-    <div class="front-footer">
-      <p class="annotations-credit">Annotations by Claude Sonnet 4.6 (Revised Opus 4.6)</p>
+    <div class="front-footer" id="cover-front-footer" data-cover-panel="front">
+      <p class="annotations-credit">${ANNOTATIONS_CREDIT}</p>
       <div class="front-logo-wrap" role="presentation">
         ${logoDataUri ? `<img class="front-logo-img" src="${logoDataUri}" width="768" height="157" alt="PirateHash">` : ''}
       </div>
@@ -993,25 +1006,30 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
 }
 
 // ── Main ──────────────────────────────────────────────────────────────────────
-async function main() {
-  console.log('🎨 Bitcoin Alpha Book — Cover Builder\n');
+/**
+ * Build cover.html (+ cover-meta.json) from current edition, meta, and donation data.
+ * @param {{ previewDonation?: boolean, pages?: number|string, quiet?: boolean }} [opts]
+ */
+export async function buildCover(opts = {}) {
+  const quiet = Boolean(opts.quiet);
+  if (!quiet) console.log('🎨 Bitcoin Alpha Book — Cover Builder\n');
 
-  const pageCount = getPageCount();
+  const pageCount = getPageCount(opts.pages);
   const spine     = Math.max(pageCount * PPI, 0.25);
 
   const logoSrc = join(ROOT_DIR, 'assets', 'piratehash-logo.png');
   const logoDataUri = await loadCoverLogoDataUri(logoSrc);
-  if (!logoDataUri) {
+  if (!logoDataUri && !quiet) {
     console.warn('⚠  assets/piratehash-logo.png missing — PirateHash marks will not render.\n');
   }
 
   const part2SourceToc = loadPart2SourceToc();
-  if (part2SourceToc.some(r => r.page == null || r.page === '')) {
+  if (!quiet && part2SourceToc.some(r => r.page == null || r.page === '')) {
     console.warn('⚠  Cover Part II TOC: some page numbers are missing. Run npm run pdf (after npm run build), then npm run cover.\n');
   }
 
-  const donationCover = loadDonationCover();
-  if (donationCover) {
+  const donationCover = loadDonationCover({ previewDonation: Boolean(opts.previewDonation) });
+  if (!quiet && donationCover) {
     if (donationCover.preview) {
       console.log('   Back cover: preview donation QR (BIP173 test address). Use BITCOIN_DONATION_XPUB + npm run donation:derive for production.\n');
     } else {
@@ -1033,12 +1051,31 @@ async function main() {
   const printH = TRIM_H + 2 * BLEED;
   const bleedOffsetPx = Math.round(markZone * DPI); // px to shift canvas so bleed zone is at origin
   const metaPath = join(OUTPUT_DIR, 'cover-meta.json');
-  writeFileSync(metaPath, JSON.stringify({ pageCount, spine, canvasW, canvasH, printW, printH, bleedOffsetPx }, null, 2), 'utf8');
+  writeFileSync(metaPath, JSON.stringify({
+    pageCount,
+    spine,
+    canvasW,
+    canvasH,
+    printW,
+    printH,
+    bleedOffsetPx,
+    edition: EDITION,
+    annotationsCredit: ANNOTATIONS_CREDIT,
+  }, null, 2), 'utf8');
 
-  console.log(`✅ Cover HTML  →  ${coverPath}`);
-  console.log(`   Pages: ${pageCount}  |  Spine: ${spine.toFixed(4)}"  |  Canvas: ${canvasW.toFixed(4)}" × ${canvasH.toFixed(4)}"`);
-  console.log(`\n   Preview: http://localhost:3000/cover.html`);
-  console.log(`   Export:  npm run cover:pdf\n`);
+  if (!quiet) {
+    console.log(`✅ Cover HTML  →  ${coverPath}`);
+    console.log(`   Pages: ${pageCount}  |  Spine: ${spine.toFixed(4)}"  |  Canvas: ${canvasW.toFixed(4)}" × ${canvasH.toFixed(4)}"`);
+    console.log(`\n   Preview: http://localhost:3000/cover`);
+    console.log(`   Export:  npm run cover:pdf\n`);
+  }
+
+  return { coverPath, metaPath, pageCount, spine, canvasW, canvasH };
 }
 
-await main();
+const isCli = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isCli) {
+  await buildCover({
+    previewDonation: process.argv.includes('--preview-donation'),
+  });
+}

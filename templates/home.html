@@ -6,7 +6,8 @@
   <title>Bitcoin v0.01 Alpha — Annotated Edition</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=JetBrains+Mono:wght@400;600&family=IBM+Plex+Mono:wght@400;600&family=Fira+Code:wght@400;600&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,400&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Red+Hat+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600;700&family=Fira+Code:wght@400;600;700&family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles/typeface.css" id="ds-typeface-css">
   <style>
     @font-face {
       font-family: 'Basis Grotesque Mono Pro';
@@ -112,6 +113,18 @@
     }
     .nav-cta:hover { background: #fff !important; }
 
+    .nav-cta-ghost {
+      background: transparent !important; color: var(--text-0) !important;
+      font-weight: 600 !important; margin-left: 8px;
+      border-left: 1px solid var(--border-3) !important;
+      transition: color 0.12s, background 0.12s !important;
+    }
+    .nav-cta-ghost:hover { background: var(--bg-2) !important; color: #fff !important; }
+
+    .review-cta-row {
+      display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px;
+    }
+
     /* ── HERO ─────────────────────────────────────────────────────── */
     .hero {
       min-height: 100vh;
@@ -179,8 +192,17 @@
     .hero-desc {
       font-size: 14px; font-weight: 300;
       color: var(--text-2); max-width: 520px; line-height: 1.75;
-      margin-bottom: 40px;
+      margin-bottom: 16px;
     }
+
+    .hero-meta {
+      display: flex; flex-direction: column; gap: 4px;
+      max-width: 520px; margin-bottom: 40px;
+      font-size: 11px; letter-spacing: 0.04em;
+      color: var(--text-3); line-height: 1.55;
+    }
+    .hero-meta .hero-edition { color: var(--text-1); font-weight: 500; }
+    .hero-meta .hero-credit { color: var(--text-2); }
 
     .hero-actions { display: flex; gap: 10px; margin-bottom: 56px; }
 
@@ -302,26 +324,29 @@
     }
 
     /* thumbnail strip */
-    .thumb-strip-wrap {
+    .thumb-strip {
+      position: relative;
       margin-top: 40px;
       border: 1px solid var(--border);
+    }
+    .thumb-strip-wrap {
       overflow-x: hidden;
       overflow-y: auto;
-      position: relative;
       max-height: 70vh;
       cursor: pointer;
     }
     .thumb-strip-wrap img {
       display: block; width: 100%;
     }
+    .thumb-strip-wrap a.thumb-link {
+      display: block;
+    }
     .thumb-strip-cap {
-      position: absolute; bottom: 10px; right: 12px;
+      position: absolute; bottom: 10px; right: 12px; z-index: 2;
       font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
       color: rgba(255,255,255,0.45); background: rgba(0,0,0,0.55);
       padding: 3px 9px;
-    }
-    .thumb-strip-wrap a.thumb-link {
-      position: absolute; inset: 0; display: block;
+      pointer-events: none;
     }
 
     /* ── CHAPTERS ─────────────────────────────────────────────────── */
@@ -358,18 +383,22 @@
     }
     .ch-card:hover { background: var(--bg-2); }
 
-    .ch-card[data-t="intro"]::before  { background: var(--red); }
-    .ch-card[data-t="header"]::before { background: var(--blue); }
-    .ch-card[data-t="source"]::before { background: var(--green); }
-    .ch-card[data-t="build"]::before  { background: var(--gold); }
-    .ch-card[data-t="back"]::before   { background: var(--text-3); }
+    .ch-card[data-t="front"]::before  { background: #4a4a4a; }
+    .ch-card[data-t="back"]::before   { background: #4a4a4a; }
+    .ch-card[data-t="intro"]::before  { background: #9a9a9a; }
+    .ch-card[data-id="what-came-after"]::before { background: #9a9a9a; }
+    .ch-card[data-t="header"]::before { background: #f0f0f0; }
+    .ch-card[data-t="source"]::before { background: #f0f0f0; }
+    .ch-card[data-t="build"]::before  { background: #f0f0f0; }
 
     .ch-badge { font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
-    [data-t="intro"]  .ch-badge { color: var(--red); }
-    [data-t="header"] .ch-badge { color: var(--blue); }
-    [data-t="source"] .ch-badge { color: var(--green); }
-    [data-t="build"]  .ch-badge { color: var(--gold); }
-    [data-t="back"]   .ch-badge { color: var(--text-3); }
+    [data-t="front"]  .ch-badge { color: #6a6a6a; }
+    [data-t="back"]   .ch-badge { color: #6a6a6a; }
+    [data-t="intro"]  .ch-badge { color: #a8a8a8; }
+    [data-id="what-came-after"] .ch-badge { color: #a8a8a8; }
+    [data-t="header"] .ch-badge { color: #d8d8d8; }
+    [data-t="source"] .ch-badge { color: #d8d8d8; }
+    [data-t="build"]  .ch-badge { color: #d8d8d8; }
 
     .ch-name { font-size: 13px; font-weight: 600; color: var(--text-0); line-height: 1.3; }
     .ch-desc { font-size: 10px; color: var(--text-2); line-height: 1.55; }
@@ -393,7 +422,7 @@
     .ds-page-tab:hover { color: var(--text-0); background: var(--bg-1); }
     .ds-page-tab.on { color: var(--text-0); background: var(--bg-2); border-color: var(--border-2); }
 
-    .ds-typeface-wrap { display: flex; align-items: center; gap: 10px; }
+    .ds-typeface-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .ds-typeface-label {
       font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em;
       text-transform: uppercase; color: var(--text-3); white-space: nowrap;
@@ -408,6 +437,20 @@
       background-repeat: no-repeat; background-position: right 10px center;
     }
     .ds-typeface-select option { background: #181818; }
+    .ds-apply-btn {
+      font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-0);
+      background: var(--bg-2); border: 1px solid var(--border-2);
+      padding: 7px 14px; cursor: pointer;
+    }
+    .ds-apply-btn:hover { background: var(--bg-3); }
+    .ds-apply-btn:disabled { opacity: 0.45; cursor: default; }
+    .ds-apply-status {
+      font-family: var(--mono); font-size: 9px; color: var(--text-2);
+      max-width: 220px; line-height: 1.4;
+    }
+    .ds-apply-status.ok { color: var(--green); }
+    .ds-apply-status.err { color: var(--red); }
 
     /* Pasteboard + mock carousel */
     .ds-pasteboard {
@@ -415,6 +458,10 @@
       margin-bottom: 36px; overflow-x: auto; overflow-y: hidden;
       display: flex; justify-content: center; gap: 32px;
       min-height: 520px; align-items: flex-start;
+      /* Book typeface tokens (from /styles/typeface.css) */
+      --mf-code: var(--font-code);
+      --mf-body: var(--font-body);
+      --mf-heading: var(--font-heading);
     }
     .ds-pasteboard.all-mode {
       justify-content: flex-start; gap: 48px;
@@ -424,7 +471,7 @@
     .ds-pasteboard.all-mode .mock-inner { transform: scale(0.327); } /* 220/672 */
     .ds-pasteboard.all-mode .mock-caption { font-size: 7px; }
 
-    /* Page mock shells */
+    /* Page mock shells — 7×10" at ~96dpi scaled into pasteboard */
     .mock-stack { display: none; flex-shrink: 0; }
     .mock-stack.on { display: flex; gap: 32px; }
     .mock-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
@@ -439,203 +486,221 @@
     }
     .mock-inner {
       position: absolute; top: 0; left: 0;
-      width: 672px; height: 960px;
+      width: 672px; height: 960px; /* 7×10" @ 96dpi */
       transform: scale(0.4613); transform-origin: top left; /* 310/672 */
-      background: #fff; color: #222;
+      background: #fff; color: #1a1a1f;
+      font-family: var(--mf-body);
+      box-sizing: border-box;
+      /* Mirror print.css margins (recto): top 0.85in, sides ~0.625–0.875in */
+      padding: 82px 60px 72px 84px;
     }
 
-    /* Mock internals — use CSS vars so typeface dropdown changes them */
-    .mock-inner { font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace); }
+    /* Running header / footer — mirrors @page :right / :left */
     .mock-hdr {
       display: flex; justify-content: space-between;
-      padding: 22px 60px 0;
-      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
-      font-size: 7pt; color: #999;
+      position: absolute; top: 36px; left: 84px; right: 60px;
+      font-family: var(--mf-code);
+      font-size: 7pt; color: #666;
       text-transform: uppercase; letter-spacing: 0.5px;
     }
-    .mock-body { padding: 14px 60px 0; }
-    .mcl { display: flex; font-size: 6pt; line-height: 1.5; }
-    .mln {
-      width: 3em; color: #ccc; text-align: right;
-      padding-right: 1.5em; flex-shrink: 0; font-size: 6pt;
-      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
+    .mock-hdr.verso { left: 60px; right: 84px; }
+    .mock-ftr {
+      position: absolute; bottom: 40px; left: 84px; right: 60px;
+      display: flex; justify-content: space-between;
+      font-family: var(--mf-code);
+      font-size: 8pt; color: #333;
     }
+    .mock-ftr.verso { left: 60px; right: 84px; }
+
+    /* Code page — mirrors syntax.css */
+    .mock-body { padding: 0; }
+    .mcl { display: flex; font-size: 6pt; line-height: 1.4; font-family: var(--mf-code); }
+    .mln {
+      width: 3em; color: #888; text-align: right;
+      padding-right: 1.5em; flex-shrink: 0; font-size: 6pt;
+      font-family: var(--mf-code); white-space: pre;
+    }
+    .mcl.has-ann .mln { color: #000; font-weight: 700; }
+    .mcl.hl-pow { background: rgba(88,166,255,0.08); border-left: 3px solid #58a6ff; }
+    .mcl.hl-crypto { background: rgba(210,168,255,0.08); border-left: 3px solid #d2a8ff; }
+    .mcl.hl-consensus { background: rgba(220,53,69,0.07); border-left: 1px solid #dc3545; }
     .mlc {
       color: #222; white-space: pre; font-size: 6pt;
-      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
+      font-family: var(--mf-code); min-width: 0;
     }
     .mann {
-      margin: 6px 0; padding: 8px 0 12px;
-      border-top: 1px solid #e0e0e0; border-bottom: 1px solid #ccc;
+      background: #fff;
+      border-top: 1px solid #ddd; border-bottom: 1px solid #ddd;
+      margin: 1em 0; padding: 0.75em 0 1.5em;
     }
     .mann-inner {
-      padding: 2px 0;
-      font-family: var(--mf-body, 'Inter', sans-serif);
-      font-size: 7.5pt; line-height: 1.5; color: #333;
+      padding: 0.3em 0.5em;
+      font-family: var(--mf-body);
+      font-size: 8pt; line-height: 1.4; color: #000;
     }
-    .mock-ftr {
-      position: absolute; bottom: 32px; left: 60px; right: 60px;
-      display: flex; justify-content: space-between;
-      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
-      font-size: 7pt; color: #888;
+    .mann-inner code {
+      font-family: var(--mf-code); font-size: 7pt;
     }
-    /* Annotation bar highlight */
-    .mann-red   { border-left: 3px solid #e63946; padding-left: 10px; }
-    .mann-blue  { border-left: 3px solid #0077b6; padding-left: 10px; }
-    .mann-green { border-left: 3px solid #2d6a4f; padding-left: 10px; }
 
-    /* Chapter opener mock */
-    .mock-chapter-body {
-      padding: 60px 60px 0;
-      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
-    }
-    .mc-num {
-      font-size: 120pt; font-weight: 700; color: #f0f0f0;
-      line-height: 1; letter-spacing: -0.02em;
-      margin-left: -4px;
-    }
+    /* Chapter opener — mirrors .chapter-header / .chapter-intro */
+    .mock-chapter-body { padding: 0; }
     .mc-file {
-      font-size: 28pt; font-weight: 600; color: #1a1a1a;
-      margin-top: -8px; letter-spacing: -0.01em;
+      font-family: var(--mf-heading);
+      font-size: 28pt; font-weight: 700; color: #1a1a1f;
+      line-height: 1.2; margin: 0 0 0.5em;
+      -webkit-text-stroke: 0.5px currentColor;
     }
-    .mc-subtitle {
-      font-size: 11pt; color: #888; margin-top: 4px;
-      letter-spacing: 0.08em; text-transform: uppercase;
+    .mc-file-info {
+      font-family: var(--mf-code);
+      font-size: 7pt; color: #555; margin-bottom: 0.75em;
     }
-    .mc-rule { border: none; border-top: 2px solid #1a1a1a; margin: 24px 0; }
+    .mc-file-info span { margin-right: 1.5em; }
+    .mc-intro-title {
+      font-family: var(--mf-heading);
+      font-size: 13pt; font-weight: 600; color: #1a1a1f;
+      margin: 0 0 0.5em;
+    }
     .mc-desc {
-      font-family: var(--mf-body, 'Inter', sans-serif);
-      font-size: 9pt; line-height: 1.65; color: #444; max-width: 480px;
+      font-family: var(--mf-body);
+      font-size: 10pt; line-height: 1.65; color: #1a1a1f;
     }
-    .mc-toc { margin-top: 24px; }
-    .mc-toc-title {
-      font-size: 7pt; letter-spacing: 0.2em; text-transform: uppercase;
-      color: #bbb; margin-bottom: 10px;
+    .mc-desc p + p { margin-top: 0.75em; }
+
+    /* Primer / prose — mirrors .introduction / .concepts */
+    .mock-primer-body { padding: 0; }
+    .mp-title {
+      font-family: var(--mf-heading);
+      font-size: 28pt; font-weight: 700; color: #1a1a1f;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      line-height: 1.2; margin: 0 0 0.75em;
     }
-    .mc-toc-item {
-      display: flex; justify-content: space-between;
-      font-family: var(--mf-body, 'Inter', sans-serif);
-      font-size: 8pt; color: #555; padding: 3px 0;
-      border-bottom: 1px dotted #e8e8e8;
+    .mp-h2 {
+      font-family: var(--mf-heading);
+      font-size: 13pt; font-weight: 600; color: #1a1a1f;
+      text-transform: uppercase; letter-spacing: 0.03em;
+      margin: 1.25em 0 0.5em;
+    }
+    .mp-body {
+      font-family: var(--mf-body);
+      font-size: 9pt; line-height: 1.65; color: #1a1a1f;
+    }
+    .mp-body p + p { margin-top: 0.75em; }
+    .mp-body code {
+      font-family: var(--mf-code); font-size: 0.9em;
+      padding: 0.1em 0.3em;
     }
 
-    /* Section intro mock */
-    .mock-section-body { padding: 80px 60px 0; }
-    .ms-eyebrow {
-      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
-      font-size: 7pt; letter-spacing: 0.25em; text-transform: uppercase;
-      color: #bbb; margin-bottom: 16px;
+    /* Part divider — mirrors .part-divider */
+    .mock-part {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; height: 100%;
+      padding: 0 40px; box-sizing: border-box;
     }
-    .ms-title {
-      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
-      font-size: 36pt; font-weight: 700; color: #1a1a1a;
-      line-height: 1.05; letter-spacing: -0.02em;
+    .mock-part .part-number {
+      font-family: var(--mf-heading);
+      font-size: 14pt; font-weight: 400;
+      letter-spacing: 0.2em; text-transform: uppercase;
+      color: #888; margin-bottom: 0.5em;
     }
-    .ms-rule { border: none; border-top: 1px solid #ddd; margin: 28px 0; }
-    .ms-body {
-      font-family: var(--mf-body, 'Inter', sans-serif);
-      font-size: 9pt; line-height: 1.7; color: #444; max-width: 500px;
+    .mock-part .part-title {
+      font-family: var(--mf-heading);
+      font-size: 32pt; font-weight: 700;
+      line-height: 1.1; color: #000;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      margin: 0;
     }
-    .ms-body p + p { margin-top: 10px; }
-    .ms-meta {
-      position: absolute; bottom: 60px; left: 60px; right: 60px;
-    }
-    .ms-meta-item {
-      display: flex; gap: 12px;
-      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
-      font-size: 6.5pt; color: #aaa; padding: 4px 0;
-      border-bottom: 1px solid #f0f0f0;
-    }
-    .ms-meta-key { color: #ccc; min-width: 80px; }
-
-    /* Text/annotation-heavy mock */
-    .mock-text-body { padding: 22px 60px 0; }
-    .mt-ann-block {
-      padding: 10px 14px; margin-bottom: 8px;
-      background: #f8f7f4;
-      border-left: 3px solid #ddd;
-    }
-    .mt-ann-block.red  { border-left-color: #e63946; }
-    .mt-ann-block.blue { border-left-color: #0077b6; }
-    .mt-ann-head {
-      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
-      font-size: 6pt; letter-spacing: 0.15em; text-transform: uppercase;
-      color: #bbb; margin-bottom: 4px;
-    }
-    .mt-ann-text {
-      font-family: var(--mf-body, 'Inter', sans-serif);
-      font-size: 7.5pt; line-height: 1.55; color: #333;
-    }
-    .mt-code-snippet {
-      margin: 6px 0; padding: 6px 10px;
-      background: #f0f0f0;
-      font-family: var(--mf-code, 'Basis Grotesque Mono Pro', monospace);
-      font-size: 6pt; color: #333; white-space: pre;
-    }
-    .mt-pull {
-      margin: 14px 0; padding: 10px 16px;
-      border-top: 2px solid #1a1a1a; border-bottom: 1px solid #ddd;
-      font-family: var(--mf-body, 'Inter', sans-serif);
-      font-size: 9pt; font-style: italic;
-      color: #444; line-height: 1.55;
+    .mock-part .part-subtitle {
+      font-family: var(--mf-body);
+      font-size: 11pt; color: #666;
+      margin-top: 1em; max-width: 4in; line-height: 1.5;
     }
 
-    /* Info panels below mocks */
+    /* Info panels below mocks — white print surface matching PDF styles */
     .ds-info-layout {
       display: grid; grid-template-columns: 1fr 1fr 1fr;
-      gap: 0; border: 1px solid var(--border);
+      gap: 0; border: 1px solid #ccc;
+      background: #ffffff; color: #1a1a1f;
+      /* Same tokens as the book PDF (styles/typeface.css + typography.css) */
+      font-family: var(--font-body, 'Inter', sans-serif);
+      --ds-print-text: #1a1a1f;
+      --ds-print-code: #222222;
+      --ds-print-muted: #666666;
+      --ds-print-page: #333333;
+      --ds-print-linen: #888888;
+      --ds-print-border: #dddddd;
     }
     .ds-info-panel {
-      padding: 24px 28px; border-right: 1px solid var(--border);
+      padding: 24px 28px; border-right: 1px solid #ddd;
     }
     .ds-info-panel:last-child { border-right: none; }
     .ds-info-title {
-      font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em;
-      text-transform: uppercase; color: var(--text-3); margin-bottom: 18px;
+      font-family: var(--font-code, var(--mono)); font-size: 9px; letter-spacing: 0.18em;
+      text-transform: uppercase; color: #888; margin-bottom: 18px;
     }
+    .ds-info-source {
+      margin-top: 16px; font-family: var(--font-code, var(--mono));
+      font-size: 8px; letter-spacing: 0.04em; color: #999; line-height: 1.5;
+    }
+    .ds-info-source code { color: #666; }
 
     /* Palette */
     .palette { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
     .sw { display: flex; flex-direction: column; gap: 6px; }
-    .sw-color { height: 36px; border: 1px solid rgba(255,255,255,0.04); }
-    .sw-name { font-size: 8px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-2); }
-    .sw-hex  { font-size: 9px; color: var(--text-3); }
-    .highlight-legend { }
+    .sw-color { height: 36px; border: 1px solid rgba(0,0,0,0.08); }
+    .sw-name { font-size: 8px; letter-spacing: 0.05em; text-transform: uppercase; color: #555; }
+    .sw-hex  { font-size: 9px; color: #888; font-family: var(--font-code, var(--mono)); }
     .legend-title {
       font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
-      color: var(--text-3); margin-bottom: 10px;
+      color: #888; margin-bottom: 10px;
     }
     .legend-items { display: flex; flex-direction: column; gap: 5px; }
-    .li { display: flex; align-items: center; gap: 8px; font-size: 10px; }
+    .li { display: flex; align-items: center; gap: 8px; font-size: 10px; color: #333; }
     .li-bar { width: 3px; height: 16px; flex-shrink: 0; }
+    .li-bar.thin { width: 1px; }
     .li-code {
-      background: rgba(255,255,255,0.04); padding: 2px 7px;
-      flex: 1; font-size: 9px; color: var(--text-1);
+      background: #f3f3f3; padding: 2px 7px;
+      flex: 1; font-size: 9px; color: #222;
+      font-family: var(--font-code, var(--mono));
     }
-    .li-desc { font-size: 9px; color: var(--text-3); white-space: nowrap; }
+    .li-desc { font-size: 9px; color: #888; white-space: nowrap; }
 
-    /* Type scale */
+    /* Type scale — samples use real print pt sizes from typography.css / print.css / syntax.css */
     .type-scale { display: flex; flex-direction: column; }
     .ts-row {
       display: flex; align-items: baseline; gap: 14px;
-      padding: 10px 0; border-bottom: 1px solid var(--border);
+      padding: 10px 0; border-bottom: 1px solid #e8e8e8;
     }
     .ts-row:last-child { border-bottom: none; }
-    .ts-meta { min-width: 95px; font-size: 9px; color: var(--text-3); line-height: 1.5; flex-shrink: 0; }
-    .ts-pre { color: var(--text-0); font-family: var(--mono); overflow: hidden; }
-    .ts-note { font-size: 9px; color: var(--text-3); margin-top: 14px; line-height: 1.65; }
+    .ts-meta {
+      min-width: 108px; font-size: 9px; color: #888; line-height: 1.5; flex-shrink: 0;
+      font-family: var(--font-code, var(--mono));
+    }
+    .ts-pre { color: var(--ds-print-text); overflow: hidden; max-width: 100%; }
+    .ts-note { font-size: 9px; color: #666; margin-top: 14px; line-height: 1.65; }
+    .ts-note strong { color: #1a1a1f; }
 
     /* Token list */
     .tokens { display: flex; flex-direction: column; gap: 5px; }
     .tk {
       display: flex; align-items: center; gap: 12px;
-      padding: 7px 10px; background: var(--bg-1);
+      padding: 7px 10px; background: #ffffff;
+      border: 1px solid #eee;
     }
     .tk-dot { width: 8px; height: 8px; flex-shrink: 0; border-radius: 50%; }
-    .tk-name { font-size: 9px; color: var(--text-2); min-width: 100px; }
-    .tk-ex { font-size: 10px; }
-    .tk-hex { font-size: 9px; color: var(--text-3); margin-left: auto; }
-    .tokens-note { margin-top: 16px; font-size: 9px; color: var(--text-3); line-height: 1.7; }
+    .tk-name {
+      font-size: 9px; color: #666; min-width: 100px;
+      font-family: var(--font-code, var(--mono));
+    }
+    .tk-ex {
+      font-size: 10px;
+      font-family: var(--font-code, var(--mono));
+    }
+    .tk-hex {
+      font-size: 9px; color: #888; margin-left: auto;
+      font-family: var(--font-code, var(--mono));
+    }
+    .tokens-note { margin-top: 16px; font-size: 9px; color: #666; line-height: 1.7; }
 
     /* ── ABOUT ────────────────────────────────────────────────────── */
     .about-layout {
@@ -858,12 +923,14 @@
 <nav>
   <span class="nav-logo">Bitcoin&nbsp;<em>Alpha</em>&nbsp;Book</span>
   <div class="nav-links">
+    <a href="#review">Review</a>
     <a href="#releases">Releases</a>
     <a href="#chapters">Chapters</a>
     <a href="#design">Design</a>
-    <a href="#commands">Commands</a>
     <a href="#cover">Cover</a>
     <a href="#about">About</a>
+    <a href="#commands">Commands</a>
+    <a href="/review" class="nav-cta-ghost">Review content</a>
     <a href="/book" class="nav-cta">Open Book →</a>
   </div>
 </nav>
@@ -878,8 +945,14 @@
       <span class="version">v0.01 ALPHA<span class="cursor"></span></span>
     </h1>
     <p class="hero-desc">The original Bitcoin source code — 32 C++ files, 31,000 lines — released by Satoshi Nakamoto on January 9, 2009. Annotated line by line for developers, historians, and the Bitcoin-curious.</p>
+    <p class="hero-meta">
+      <!-- Filled from scripts/edition.mjs by the preview server -->
+      <span class="hero-edition">Annotated edition — {{EDITION}}</span>
+      <span class="hero-credit">{{ANNOTATIONS_CREDIT}}</span>
+    </p>
     <div class="hero-actions">
-      <a href="/book" class="btn btn-primary">Open Book Preview →</a>
+      <a href="/review" class="btn btn-primary">Review content →</a>
+      <a href="/book" class="btn btn-ghost">Open Book Preview</a>
       <a href="#releases" class="btn btn-ghost">View Releases</a>
     </div>
     <div class="hero-stats">
@@ -903,10 +976,40 @@
   </div>
 </div>
 
+<!-- ── CONTENT REVIEW ─────────────────────────────────────────────── -->
+<section class="content-section reveal" id="review">
+  <div class="section-header">
+    <span class="section-num">01 /</span>
+    <h2 class="section-title">Content Review</h2>
+    <p class="section-hint">Continuous scroll of source + annotations. Edit YAML, hit Rebuild.</p>
+  </div>
+  <div class="about-layout">
+    <div class="about-main">
+      <h3>Read the manuscript without Paged.js</h3>
+      <p>Opens every annotated source file in one long HTML flow with a sticky table of contents. Line notes come straight from <code>src/annotations/*.yaml</code>. <strong>Rebuild</strong> runs <code>npm run build</code> so primers, front matter, and colophon stay current, then reloads the review.</p>
+      <p>Use this to proof commentary. Use <strong>Open Book</strong> when you need the paginated print preview.</p>
+      <div class="review-cta-row">
+        <a href="/review" class="btn btn-primary">Review content →</a>
+        <a href="/review#main-cpp" class="btn btn-ghost">Jump to main.cpp</a>
+      </div>
+    </div>
+    <div class="about-aside">
+      <div class="aside-card">
+        <h4>What you get</h4>
+        <div class="spec-row"><span class="spec-k">Layout</span><span class="spec-v">Continuous scroll</span></div>
+        <div class="spec-row"><span class="spec-k">TOC</span><span class="spec-v">Sidebar, live</span></div>
+        <div class="spec-row"><span class="spec-k">Annotations</span><span class="spec-v">Inline after lines</span></div>
+        <div class="spec-row"><span class="spec-k">Build step</span><span class="spec-v">None</span></div>
+        <div class="spec-row"><span class="spec-k">Route</span><span class="spec-v"><code>/review</code></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ── RELEASES ──────────────────────────────────────────────────── -->
 <section class="content-section reveal" id="releases">
   <div class="section-header">
-    <span class="section-num">01 /</span>
+    <span class="section-num">02 /</span>
     <h2 class="section-title">Releases</h2>
     <p class="section-hint">Each build is timestamped and archived. Run <code>npm run ship</code> to generate a release and start the preview server.</p>
   </div>
@@ -917,12 +1020,13 @@
 <!-- ── CHAPTERS ──────────────────────────────────────────────────── -->
 <section class="content-section reveal" id="chapters">
   <div class="section-header">
-    <span class="section-num">02 /</span>
+    <span class="section-num">03 /</span>
     <h2 class="section-title">Sections</h2>
-    <p class="section-hint">All 40 sections in book order. Click any card to open the book preview.</p>
+    <p class="section-hint">All 41 sections in book order. Click any card to preview just that section.</p>
   </div>
   <div class="filter-bar">
-    <button class="flt on"  data-f="all">All (40)</button>
+    <button class="flt on"  data-f="all">All (41)</button>
+    <button class="flt"     data-f="front">Front matter (1)</button>
     <button class="flt"     data-f="intro">Primers (6)</button>
     <button class="flt"     data-f="header">Header files (16)</button>
     <button class="flt"     data-f="source">Source files (10)</button>
@@ -935,37 +1039,39 @@
 <!-- ── DESIGN SYSTEM ────────────────────────────────────────────── -->
 <section class="content-section reveal" id="design">
   <div class="section-header">
-    <span class="section-num">03 /</span>
+    <span class="section-num">04 /</span>
     <h2 class="section-title">Design System</h2>
-    <p class="section-hint">Typography, colour, and layout — 7″ × 10″ print at 300 DPI on 60# uncoated.</p>
+    <p class="section-hint">Live preview of book typography &amp; layout — changes apply to <code>styles/typeface.css</code> and the next <code>npm run build</code>.</p>
   </div>
 
   <!-- Controls: page type + typeface -->
   <div class="ds-controls">
     <div class="ds-page-tabs">
-      <button class="ds-page-tab on" data-mock="code">Code page</button>
-      <button class="ds-page-tab" data-mock="chapter">Chapter opener</button>
-      <button class="ds-page-tab" data-mock="section">Section intro</button>
-      <button class="ds-page-tab" data-mock="text">Text / annotation</button>
       <button class="ds-page-tab" data-mock="all">All</button>
+      <button class="ds-page-tab" data-mock="part">Part divider</button>
+      <button class="ds-page-tab" data-mock="primer">Primer / prose</button>
+      <button class="ds-page-tab" data-mock="chapter">Chapter opener</button>
+      <button class="ds-page-tab on" data-mock="code">Code page</button>
     </div>
     <div class="ds-typeface-wrap">
       <span class="ds-typeface-label">Typeface</span>
       <select class="ds-typeface-select" id="ds-typeface">
-        <option value="redhat|inter">Red Hat Mono + Inter (old)</option>
+        <option value="basis|inter" selected>Basis Grotesque Mono Pro + Inter</option>
+        <option value="redhat|inter">Red Hat Mono + Inter</option>
         <option value="jetbrains|lora">JetBrains Mono + Lora</option>
         <option value="plex|sourceserif">IBM Plex Mono + Source Serif 4</option>
         <option value="firacode|crimson">Fira Code + Crimson Pro</option>
         <option value="jetbrains|merriweather">JetBrains Mono + Merriweather</option>
-        <option value="basis|inter" selected>Basis Grotesque Mono Pro + Inter</option>
       </select>
+      <button type="button" class="ds-apply-btn" id="ds-apply">Apply to book</button>
+      <span class="ds-apply-status" id="ds-apply-status"></span>
     </div>
   </div>
 
   <!-- Pasteboard -->
   <div class="ds-pasteboard" id="ds-pasteboard">
 
-    <!-- CODE PAGE -->
+    <!-- CODE PAGE — mirrors syntax.css code-line + annotation-block -->
     <div class="mock-stack on" id="mock-code">
       <div class="mock-wrap">
         <div class="mock-caption">Recto — code + annotations</div>
@@ -973,240 +1079,144 @@
           <div class="mock-inner">
             <div class="mock-hdr"><span>SCRIPT.CPP</span><span>BITCOIN v0.01 ALPHA</span></div>
             <div class="mock-body">
-              <div class="mcl"><span class="mln">215</span><span class="mlc"><span style="color:#986801">#include</span> <span style="color:#50a14f">"script.h"</span></span></div>
-              <div class="mcl"><span class="mln">216</span><span class="mlc"></span></div>
-              <div class="mcl"><span class="mln">217</span><span class="mlc"><span style="color:#0086b3">bool</span> <span style="color:#0086b3">EvalScript</span>(<span style="color:#0086b3">const</span> <span style="color:#0086b3">CScript</span>&amp; script,</span></div>
-              <div class="mcl"><span class="mln">218</span><span class="mlc">             <span style="color:#0086b3">const</span> <span style="color:#0086b3">CTransaction</span>&amp; txTo,</span></div>
-              <div class="mcl"><span class="mln">219</span><span class="mlc">             <span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">int</span> nIn, <span style="color:#0086b3">int</span> nHashType)</span></div>
-              <div class="mcl"><span class="mln">220</span><span class="mlc">{</span></div>
+              <div class="mcl"><span class="mln"> 215</span><span class="mlc"><span style="color:#986801">#include</span> <span style="color:#50a14f">"script.h"</span></span></div>
+              <div class="mcl"><span class="mln"> 216</span><span class="mlc"></span></div>
               <div class="mann">
-                <div class="mann-inner"><strong>Script evaluation engine.</strong> Bitcoin Script is a deliberately limited stack-based language — not Turing-complete by design. Each opcode pushes data onto the stack or transforms it. A transaction is valid only when execution leaves a non-zero value on top.</div>
+                <div class="mann-inner">Bitcoin Script is a deliberately limited stack-based language — not Turing-complete by design. Each opcode pushes data onto the stack or transforms it. A transaction is valid only when execution leaves a non-zero value on top.</div>
               </div>
-              <div class="mcl"><span class="mln">221</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt;&gt; stack;</span></div>
-              <div class="mcl"><span class="mln">222</span><span class="mlc">    <span style="color:#0086b3">CScript</span>::<span style="color:#0086b3">const_iterator</span> pc = script.begin();</span></div>
-              <div class="mcl"><span class="mln">223</span><span class="mlc">    <span style="color:#0086b3">CScript</span>::<span style="color:#0086b3">const_iterator</span> pend = script.end();</span></div>
-              <div class="mcl"><span class="mln">224</span><span class="mlc">    <span style="color:#d73a49">opcodetype</span> opcode;</span></div>
-              <div class="mcl"><span class="mln">225</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt; vchPushValue;</span></div>
-              <div class="mcl"><span class="mln">226</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">bool</span>&gt; vfExec;</span></div>
-              <div class="mcl"><span class="mln">227</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt;&gt; altstack;</span></div>
-              <div class="mann mann-blue">
-                <div class="mann-inner"><strong>Two stacks.</strong> The main stack holds data; the alt-stack is a secondary store via <code style="font-size:6.5pt;background:#f0f0f0;padding:0 2px">OP_TOALTSTACK</code>. This allows temporary storage without breaking linear execution.</div>
+              <div class="mcl has-ann"><span class="mln"> 217</span><span class="mlc"><span style="color:#0086b3">bool</span> <span style="color:#0086b3">EvalScript</span>(<span style="color:#0086b3">const</span> <span style="color:#0086b3">CScript</span>&amp; script,</span></div>
+              <div class="mcl"><span class="mln"> 218</span><span class="mlc">             <span style="color:#0086b3">const</span> <span style="color:#0086b3">CTransaction</span>&amp; txTo,</span></div>
+              <div class="mcl"><span class="mln"> 219</span><span class="mlc">             <span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">int</span> nIn, <span style="color:#0086b3">int</span> nHashType)</span></div>
+              <div class="mcl"><span class="mln"> 220</span><span class="mlc">{</span></div>
+              <div class="mcl"><span class="mln"> 221</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt;&gt; stack;</span></div>
+              <div class="mann">
+                <div class="mann-inner">The main stack holds data; the alt-stack is a secondary store via <code style="color:#0086b3">OP_TOALTSTACK</code>. This allows temporary storage without breaking linear execution.</div>
               </div>
-              <div class="mcl"><span class="mln">228</span><span class="mlc">    <span style="color:#0086b3">int</span> nOpCount = <span style="color:#50a14f">0</span>;</span></div>
-              <div class="mcl"><span class="mln">229</span><span class="mlc"></span></div>
-              <div class="mcl"><span class="mln">230</span><span class="mlc">    <span style="color:#d73a49">try</span></span></div>
-              <div class="mcl"><span class="mln">231</span><span class="mlc">    {</span></div>
-              <div class="mcl"><span class="mln">232</span><span class="mlc">        <span style="color:#d73a49">while</span> (pc &lt; pend)</span></div>
-              <div class="mcl"><span class="mln">233</span><span class="mlc">        {</span></div>
-              <div class="mcl"><span class="mln">234</span><span class="mlc">            <span style="color:#d73a49">if</span> (!<span style="color:#0086b3">GetOp</span>(pc, pend, opcode, vchPushValue))</span></div>
-              <div class="mcl"><span class="mln">235</span><span class="mlc">                <span style="color:#d73a49">return</span> <span style="color:#50a14f">false</span>;</span></div>
-              <div class="mann mann-red">
-                <div class="mann-inner"><strong>Consensus-critical.</strong> Any failure to parse an opcode aborts execution. This hard failure mode is intentional — malformed scripts are rejected, not silently skipped. Changing this would require a hard fork.</div>
-              </div>
-              <div class="mcl"><span class="mln">236</span><span class="mlc">            <span style="color:#d73a49">if</span> (opcode > <span style="color:#0086b3">OP_16</span> &amp;&amp; ++nOpCount > <span style="color:#50a14f">200</span>)</span></div>
-              <div class="mcl"><span class="mln">237</span><span class="mlc">                <span style="color:#d73a49">return</span> <span style="color:#50a14f">false</span>;</span></div>
+              <div class="mcl has-ann"><span class="mln"> 222</span><span class="mlc">    <span style="color:#0086b3">CScript</span>::<span style="color:#0086b3">const_iterator</span> pc = script.begin();</span></div>
+              <div class="mcl"><span class="mln"> 223</span><span class="mlc">    <span style="color:#0086b3">CScript</span>::<span style="color:#0086b3">const_iterator</span> pend = script.end();</span></div>
+              <div class="mcl"><span class="mln"> 224</span><span class="mlc">    <span style="color:#d73a49">opcodetype</span> opcode;</span></div>
+              <div class="mcl hl-consensus"><span class="mln"> 236</span><span class="mlc">            <span style="color:#d73a49">if</span> (opcode > <span style="color:#0086b3">OP_16</span> &amp;&amp; ++nOpCount > <span style="color:#50a14f">200</span>)</span></div>
+              <div class="mcl hl-consensus"><span class="mln"> 237</span><span class="mlc">                <span style="color:#d73a49">return</span> <span style="color:#50a14f">false</span>;</span></div>
             </div>
-            <div class="mock-ftr"><span>42</span><span></span></div>
+            <div class="mock-ftr"><span></span><span>42</span></div>
           </div>
         </div>
       </div>
       <div class="mock-wrap">
         <div class="mock-caption">Verso — dense code</div>
         <div class="mock-outer">
-          <div class="mock-inner">
-            <div class="mock-hdr"><span>BITCOIN v0.01 ALPHA</span><span>TRANSACTION VALIDATION</span></div>
+          <div class="mock-inner" style="padding-left:60px;padding-right:84px">
+            <div class="mock-hdr verso"><span>BITCOIN v0.01 ALPHA</span><span>MAIN.CPP</span></div>
             <div class="mock-body">
-              <div class="mcl"><span class="mln">180</span><span class="mlc"><span style="color:#0086b3">bool</span> <span style="color:#0086b3">CTransaction</span>::<span style="color:#0086b3">CheckTransaction</span>() <span style="color:#0086b3">const</span></span></div>
-              <div class="mcl"><span class="mln">181</span><span class="mlc">{</span></div>
-              <div class="mcl"><span class="mln">182</span><span class="mlc">    <span style="color:#d73a49">if</span> (vin.empty() || vout.empty())</span></div>
-              <div class="mcl"><span class="mln">183</span><span class="mlc">        <span style="color:#d73a49">return</span> <span style="color:#0086b3">error</span>(<span style="color:#50a14f">"CTransaction::CheckTransaction() : "</span></span></div>
-              <div class="mcl"><span class="mln">184</span><span class="mlc">                      <span style="color:#50a14f">"vin or vout empty"</span>);</span></div>
               <div class="mann">
-                <div class="mann-inner"><strong>Input and output validation.</strong> Every transaction must have at least one input and one output. A transaction with no outputs could destroy coins permanently — this guard prevents that.</div>
+                <div class="mann-inner"><strong>50 BTC genesis reward.</strong> <code>COIN</code> = 100,000,000 satoshis. The initial subsidy of 50 BTC per block, combined with the 10-minute target and 4-year halving schedule, was carefully back-calculated to reach the 21 million cap.</div>
               </div>
-              <div class="mcl"><span class="mln">185</span><span class="mlc">    <span style="color:#d73a49">if</span> (IsCoinBase())</span></div>
-              <div class="mcl"><span class="mln">186</span><span class="mlc">    {</span></div>
-              <div class="mcl"><span class="mln">187</span><span class="mlc">        <span style="color:#d73a49">if</span> (vin[<span style="color:#50a14f">0</span>].scriptSig.size() &lt; <span style="color:#50a14f">2</span> ||</span></div>
-              <div class="mcl"><span class="mln">188</span><span class="mlc">            vin[<span style="color:#50a14f">0</span>].scriptSig.size() > <span style="color:#50a14f">100</span>)</span></div>
-              <div class="mcl"><span class="mln">189</span><span class="mlc">            <span style="color:#d73a49">return</span> <span style="color:#0086b3">error</span>(<span style="color:#50a14f">"bad coinbase scriptsig size"</span>);</span></div>
-              <div class="mann mann-red">
-                <div class="mann-inner"><strong>Coinbase script size.</strong> The miner's coinbase field must be 2–100 bytes. The upper bound prevents data spam in the coinbase; the lower bound ensures there's always some data present. This range is consensus-critical.</div>
-              </div>
-              <div class="mcl"><span class="mln">190</span><span class="mlc">    }</span></div>
-              <div class="mcl"><span class="mln">191</span><span class="mlc">    <span style="color:#d73a49">else</span></span></div>
-              <div class="mcl"><span class="mln">192</span><span class="mlc">    {</span></div>
-              <div class="mcl"><span class="mln">193</span><span class="mlc">        <span style="color:#d73a49">for</span> (<span style="color:#d73a49">int</span> i = <span style="color:#50a14f">0</span>; i &lt; vin.size(); i++)</span></div>
-              <div class="mcl"><span class="mln">194</span><span class="mlc">            <span style="color:#d73a49">if</span> (vin[i].prevout.<span style="color:#0086b3">IsNull</span>())</span></div>
-              <div class="mcl"><span class="mln">195</span><span class="mlc">                <span style="color:#d73a49">return</span> <span style="color:#0086b3">error</span>(<span style="color:#50a14f">"prevout is null"</span>);</span></div>
-              <div class="mcl"><span class="mln">196</span><span class="mlc">    }</span></div>
-              <div class="mcl"><span class="mln">197</span><span class="mlc">    <span style="color:#d73a49">return</span> <span style="color:#50a14f">true</span>;</span></div>
-              <div class="mcl"><span class="mln">198</span><span class="mlc">}</span></div>
+              <div class="mcl has-ann"><span class="mln">1265</span><span class="mlc">    <span style="color:#0086b3">int64</span> nSubsidy = <span style="color:#50a14f">50</span> * <span style="color:#0086b3">COIN</span>;</span></div>
+              <div class="mcl hl-pow"><span class="mln">1266</span><span class="mlc">    nSubsidy >>= (nHeight / <span style="color:#50a14f">210000</span>);</span></div>
+              <div class="mcl"><span class="mln">1267</span><span class="mlc">    <span style="color:#d73a49">return</span> nSubsidy + nFees;</span></div>
+              <div class="mcl"><span class="mln">1268</span><span class="mlc">}</span></div>
             </div>
-            <div class="mock-ftr"><span></span><span>43</span></div>
+            <div class="mock-ftr verso"><span>43</span><span></span></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- CHAPTER OPENER -->
+    <!-- CHAPTER OPENER — mirrors chapter-header / chapter-intro -->
     <div class="mock-stack" id="mock-chapter">
       <div class="mock-wrap">
         <div class="mock-caption">Recto — chapter opener</div>
         <div class="mock-outer">
           <div class="mock-inner">
-            <div class="mock-chapter-body">
-              <div class="mc-num">03</div>
-              <div class="mc-file">script.cpp</div>
-              <div class="mc-subtitle">Script Interpreter · Lines 1–605</div>
-              <hr class="mc-rule">
-              <div class="mc-desc">The Script interpreter is Bitcoin's programmable transaction layer. Satoshi designed it as a deliberately constrained stack machine — powerful enough for multi-signature and time-lock conditions, limited enough to remain predictable and auditable.</div>
-              <div class="mc-toc">
-                <div class="mc-toc-title">Contents</div>
-                <div class="mc-toc-item"><span>Opcode definitions</span><span>1–48</span></div>
-                <div class="mc-toc-item"><span>CScript serialization</span><span>49–120</span></div>
-                <div class="mc-toc-item"><span>EvalScript — the engine</span><span>121–410</span></div>
-                <div class="mc-toc-item"><span>Signature verification</span><span>411–520</span></div>
-                <div class="mc-toc-item"><span>Standard script patterns</span><span>521–605</span></div>
-              </div>
-            </div>
-            <div class="mock-ftr"><span>68</span><span></span></div>
-          </div>
-        </div>
-      </div>
-      <div class="mock-wrap">
-        <div class="mock-caption">Verso — blank / part title</div>
-        <div class="mock-outer">
-          <div class="mock-inner" style="display:flex;align-items:center;justify-content:center;height:100%">
-            <div style="text-align:center;padding:0 80px">
-              <div style="font-size:7pt;letter-spacing:0.3em;text-transform:uppercase;color:#bbb;margin-bottom:20px">Part II</div>
-              <div class="mc-file" style="font-size:22pt;text-align:center">The Source</div>
-              <div style="font-size:8pt;color:#888;margin-top:16px;line-height:1.6;font-family:var(--mf-body,'Inter',sans-serif)">Six C++ files. 17,000 lines. The complete Bitcoin v0.01 codebase annotated line by line.</div>
-            </div>
-          </div>
-          <div class="mock-ftr"><span></span><span>67</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- SECTION INTRO -->
-    <div class="mock-stack" id="mock-section">
-      <div class="mock-wrap">
-        <div class="mock-caption">Recto — section opener</div>
-        <div class="mock-outer">
-          <div class="mock-inner">
             <div class="mock-hdr"><span>SCRIPT.CPP</span><span>BITCOIN v0.01 ALPHA</span></div>
-            <div class="mock-section-body">
-              <div class="ms-eyebrow">§ 3.4 · Opcode Execution</div>
-              <div class="ms-title">The<br>Stack<br>Machine</div>
-              <hr class="ms-rule">
-              <div class="ms-body">
-                <p>Bitcoin Script executes as a simple stack machine. Each opcode reads from the top of the stack, performs its operation, and pushes the result. No loops, no recursion — just a linear sequence of transformations.</p>
-                <p>This intentional simplicity makes Script auditable: any validator can trace execution step by step and verify the outcome deterministically.</p>
+            <div class="mock-chapter-body">
+              <h1 class="mc-file">script.cpp</h1>
+              <div class="mc-file-info">
+                <span>605 lines</span>
+                <span>CPP</span>
+              </div>
+              <h2 class="mc-intro-title">The Virtual Machine</h2>
+              <div class="mc-desc">
+                <p>This file implements Bitcoin's script interpreter — the virtual machine that determines who can spend coins. Every bitcoin ever transferred passed through this exact code.</p>
+                <p>The interpreter is deceptively simple: a stack of byte arrays, a program counter, and roughly 100 opcodes. Yet this simplicity is its strength.</p>
               </div>
             </div>
-            <div class="ms-meta">
-              <div class="ms-meta-item"><span class="ms-meta-key">Lines</span><span>217 – 410</span></div>
-              <div class="ms-meta-item"><span class="ms-meta-key">Opcodes</span><span>75 defined, 67 active</span></div>
-              <div class="ms-meta-item"><span class="ms-meta-key">Stack depth</span><span>max 1000 items</span></div>
-            </div>
-            <div class="mock-ftr"><span>86</span><span></span></div>
+            <div class="mock-ftr"><span></span><span>68</span></div>
           </div>
         </div>
       </div>
       <div class="mock-wrap">
-        <div class="mock-caption">Verso — first code of section</div>
+        <div class="mock-caption">Verso — blank (auto-inserted)</div>
+        <div class="mock-outer">
+          <div class="mock-inner" style="padding:0;background:#fff"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRIMER / PROSE — mirrors .introduction / .concepts -->
+    <div class="mock-stack" id="mock-primer">
+      <div class="mock-wrap">
+        <div class="mock-caption">Recto — primer section</div>
         <div class="mock-outer">
           <div class="mock-inner">
-            <div class="mock-hdr"><span>BITCOIN v0.01 ALPHA</span><span>THE STACK MACHINE</span></div>
-            <div class="mock-body">
-              <div class="mcl"><span class="mln">217</span><span class="mlc"><span style="color:#0086b3">bool</span> <span style="color:#0086b3">EvalScript</span>(<span style="color:#0086b3">const</span> <span style="color:#0086b3">CScript</span>&amp; script,</span></div>
-              <div class="mcl"><span class="mln">218</span><span class="mlc">             <span style="color:#0086b3">const</span> <span style="color:#0086b3">CTransaction</span>&amp; txTo,</span></div>
-              <div class="mcl"><span class="mln">219</span><span class="mlc">             <span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">int</span> nIn, <span style="color:#0086b3">int</span> nHashType)</span></div>
-              <div class="mcl"><span class="mln">220</span><span class="mlc">{</span></div>
-              <div class="mann">
-                <div class="mann-inner"><strong>Entry point.</strong> The script and transaction context are passed as const references — the evaluator reads them but never modifies them. nIn identifies which input is being validated; nHashType controls the signature hash algorithm.</div>
+            <div class="mock-hdr"><span>CRYPTOGRAPHY BASICS</span><span>BITCOIN v0.01 ALPHA</span></div>
+            <div class="mock-primer-body">
+              <h1 class="mp-title">Cryptography Basics</h1>
+              <div class="mp-body">
+                <p>Bitcoin rests on two cryptographic primitives: elliptic-curve signatures (ECDSA on secp256k1) and cryptographic hashes (SHA-256, RIPEMD-160). Understanding them is enough to read almost every line of the alpha source.</p>
               </div>
-              <div class="mcl"><span class="mln">221</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt;&gt; stack;</span></div>
-              <div class="mcl"><span class="mln">222</span><span class="mlc">    <span style="color:#0086b3">CScript</span>::<span style="color:#0086b3">const_iterator</span> pc = script.begin();</span></div>
-              <div class="mcl"><span class="mln">223</span><span class="mlc">    <span style="color:#0086b3">CScript</span>::<span style="color:#0086b3">const_iterator</span> pend = script.end();</span></div>
-              <div class="mcl"><span class="mln">224</span><span class="mlc">    <span style="color:#d73a49">opcodetype</span> opcode;</span></div>
-              <div class="mcl"><span class="mln">225</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt; vchPushValue;</span></div>
-              <div class="mcl"><span class="mln">226</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">bool</span>&gt; vfExec;</span></div>
-              <div class="mcl"><span class="mln">227</span><span class="mlc">    <span style="color:#d73a49">vector</span>&lt;<span style="color:#d73a49">vector</span>&lt;<span style="color:#0086b3">unsigned</span> <span style="color:#0086b3">char</span>&gt;&gt; altstack;</span></div>
-              <div class="mcl"><span class="mln">228</span><span class="mlc">    <span style="color:#0086b3">int</span> nOpCount = <span style="color:#50a14f">0</span>;</span></div>
+              <h2 class="mp-h2">Elliptic Curves</h2>
+              <div class="mp-body">
+                <p>An elliptic curve over a finite field is the set of points satisfying <code>y² = x³ + ax + b</code>. Secp256k1 uses <code>a = 0</code>, <code>b = 7</code>, and a 256-bit prime field. Private keys are scalars; public keys are curve points.</p>
+              </div>
             </div>
-            <div class="mock-ftr"><span></span><span>87</span></div>
+            <div class="mock-ftr"><span></span><span>24</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="mock-wrap">
+        <div class="mock-caption">Verso — continued prose</div>
+        <div class="mock-outer">
+          <div class="mock-inner" style="padding-left:60px;padding-right:84px">
+            <div class="mock-hdr verso"><span>BITCOIN v0.01 ALPHA</span><span>CRYPTOGRAPHY BASICS</span></div>
+            <div class="mock-primer-body">
+              <h2 class="mp-h2">Hash Functions</h2>
+              <div class="mp-body">
+                <p>SHA-256 maps arbitrary input to a 32-byte digest. Bitcoin double-hashes block headers and uses HASH160 (SHA-256 then RIPEMD-160) for addresses. Collision resistance and preimage resistance underwrite proof-of-work and address binding.</p>
+                <p>In the alpha codebase these live behind OpenSSL wrappers in <code>sha.cpp</code> and <code>key.h</code> — thin, but consensus-critical.</p>
+              </div>
+            </div>
+            <div class="mock-ftr verso"><span>25</span><span></span></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- TEXT / ANNOTATION HEAVY -->
-    <div class="mock-stack" id="mock-text">
+    <!-- PART DIVIDER -->
+    <div class="mock-stack" id="mock-part">
       <div class="mock-wrap">
-        <div class="mock-caption">Recto — annotation-heavy</div>
+        <div class="mock-caption">Recto — part divider</div>
         <div class="mock-outer">
-          <div class="mock-inner">
-            <div class="mock-hdr"><span>MAIN.CPP</span><span>BITCOIN v0.01 ALPHA</span></div>
-            <div class="mock-text-body">
-              <div class="mt-ann-block red">
-                <div class="mt-ann-head">Consensus · Line 1242</div>
-                <div class="mt-ann-text"><strong>The 21 million cap.</strong> <code style="font-size:6pt;background:#f0e0e0;padding:0 2px">nSubsidy</code> halves every 210,000 blocks. This arithmetic determines the absolute supply ceiling — one of the most consequential constants in the entire codebase. It cannot change without a hard fork of the entire network.</div>
-              </div>
-              <div class="mt-code-snippet">int64 nSubsidy = 50 * COIN;
-nSubsidy >>= (nHeight / 210000);</div>
-              <div class="mt-ann-block">
-                <div class="mt-ann-head">Design note · Line 1248</div>
-                <div class="mt-ann-text"><strong>Right-shift halving.</strong> Rather than dividing by 2 each halving epoch, Satoshi uses a bit-shift. At epoch 33 (year ~2140), the shift exceeds 64 bits and the subsidy rounds to zero — ending new issuance permanently.</div>
-              </div>
-              <div class="mt-pull">
-                "The root problem with conventional currency is all the trust that's required to make it work."
-              </div>
-              <div class="mt-ann-block blue">
-                <div class="mt-ann-head">Historical context</div>
-                <div class="mt-ann-text">The genesis block coinbase contains Satoshi's famous Times headline: <em>"Chancellor on brink of second bailout for banks."</em> This was not just a timestamp — it was a statement of intent embedded permanently in the chain's first block.</div>
-              </div>
-              <div class="mt-ann-block">
-                <div class="mt-ann-head">Line 1267 — GetBlockValue</div>
-                <div class="mt-ann-text">The block reward function is remarkably compact for something so consequential. Three lines of C++ encode the entire monetary policy of a global currency network.</div>
-              </div>
+          <div class="mock-inner" style="padding:0">
+            <div class="mock-part">
+              <div class="part-number">Part II</div>
+              <h1 class="part-title">The Source Code</h1>
+              <p class="part-subtitle">Six C++ files. Thousands of lines. The complete Bitcoin v0.01 codebase annotated line by line.</p>
             </div>
-            <div class="mock-ftr"><span>124</span><span></span></div>
           </div>
         </div>
       </div>
       <div class="mock-wrap">
-        <div class="mock-caption">Verso — mixed code + prose</div>
+        <div class="mock-caption">Verso — blank</div>
         <div class="mock-outer">
-          <div class="mock-inner">
-            <div class="mock-hdr"><span>BITCOIN v0.01 ALPHA</span><span>BLOCK REWARDS</span></div>
-            <div class="mock-body">
-              <div class="mcl"><span class="mln">1262</span><span class="mlc"><span style="color:#0086b3">int64</span> <span style="color:#0086b3">GetBlockValue</span>(<span style="color:#0086b3">int</span> nHeight,</span></div>
-              <div class="mcl"><span class="mln">1263</span><span class="mlc">                 <span style="color:#0086b3">int64</span> nFees)</span></div>
-              <div class="mcl"><span class="mln">1264</span><span class="mlc">{</span></div>
-              <div class="mcl"><span class="mln">1265</span><span class="mlc">    <span style="color:#0086b3">int64</span> nSubsidy = <span style="color:#50a14f">50</span> * <span style="color:#0086b3">COIN</span>;</span></div>
-              <div class="mann mann-red">
-                <div class="mann-inner"><strong>50 BTC genesis reward.</strong> COIN = 100,000,000 satoshis. The initial subsidy of 50 BTC per block, combined with the 10-minute target and 4-year halving schedule, was carefully back-calculated to reach the 21 million cap.</div>
-              </div>
-              <div class="mcl"><span class="mln">1266</span><span class="mlc">    nSubsidy >>= (nHeight / <span style="color:#50a14f">210000</span>);</span></div>
-              <div class="mann">
-                <div class="mann-inner">Each halving epoch spans 210,000 blocks ≈ 4 years. After 33 halvings (~year 2140), the shift produces zero and mining revenue becomes purely fee-based. Transaction fees become the sole security budget.</div>
-              </div>
-              <div class="mcl"><span class="mln">1267</span><span class="mlc">    <span style="color:#d73a49">return</span> nSubsidy + nFees;</span></div>
-              <div class="mcl"><span class="mln">1268</span><span class="mlc">}</span></div>
-              <div class="mann">
-                <div class="mann-inner"><strong>Fee aggregation.</strong> From day one, Satoshi anticipated a fee market. Transaction fees are explicitly added to the subsidy, establishing the economic model that will sustain the network after the final halving.</div>
-              </div>
-            </div>
-            <div class="mock-ftr"><span></span><span>125</span></div>
-          </div>
+          <div class="mock-inner" style="padding:0;background:#fff"></div>
         </div>
       </div>
     </div>
 
   </div><!-- /ds-pasteboard -->
 
-  <!-- Info panels -->
+  <!-- Info panels — values mirrored from styles/{syntax,typography,print}.css -->
   <div class="ds-info-layout">
     <div class="ds-info-panel">
       <div class="ds-info-title">Colour system</div>
@@ -1217,75 +1227,148 @@ nSubsidy >>= (nHeight / 210000);</div>
         <div class="sw"><div class="sw-color" style="background:#986801"></div><div class="sw-name">Preproc</div><div class="sw-hex">#986801</div></div>
         <div class="sw"><div class="sw-color" style="background:#8a8a8a"></div><div class="sw-name">Comment</div><div class="sw-hex">#8a8a8a</div></div>
         <div class="sw"><div class="sw-color" style="background:#444444"></div><div class="sw-name">Punct</div><div class="sw-hex">#444444</div></div>
-        <div class="sw"><div class="sw-color" style="background:#222222"></div><div class="sw-name">Default</div><div class="sw-hex">#222222</div></div>
+        <div class="sw"><div class="sw-color" style="background:#222222"></div><div class="sw-name">Code text</div><div class="sw-hex">#222222</div></div>
+        <div class="sw"><div class="sw-color" style="background:#1a1a1f"></div><div class="sw-name">Body text</div><div class="sw-hex">#1a1a1f</div></div>
+        <div class="sw"><div class="sw-color" style="background:#888888"></div><div class="sw-name">Line nums</div><div class="sw-hex">#888888</div></div>
         <div class="sw"><div class="sw-color" style="background:#fff;border:1px solid #ccc"></div><div class="sw-name">Page bg</div><div class="sw-hex">#ffffff</div></div>
+        <div class="sw"><div class="sw-color" style="background:#dddddd"></div><div class="sw-name">Ann. rule</div><div class="sw-hex">#dddddd</div></div>
+        <div class="sw"><div class="sw-color" style="background:#000000"></div><div class="sw-name">Annotation</div><div class="sw-hex">#000000</div></div>
       </div>
       <div class="highlight-legend">
-        <div class="legend-title">Annotation bar colours</div>
+        <div class="legend-title">Code-line highlight categories <span style="font-weight:400;letter-spacing:0">(syntax.css)</span></div>
         <div class="legend-items">
-          <div class="li"><div class="li-bar" style="background:#e63946"></div><div class="li-code">consensus-imperative</div><div class="li-desc">Hard fork required to change</div></div>
-          <div class="li"><div class="li-bar" style="background:#2d6a4f"></div><div class="li-code">proof-of-work</div><div class="li-desc">Mining + difficulty</div></div>
-          <div class="li"><div class="li-bar" style="background:#0077b6"></div><div class="li-code">crypto</div><div class="li-desc">ECDSA, SHA-256, hashes</div></div>
-          <div class="li"><div class="li-bar" style="background:#8338ec"></div><div class="li-code">transaction</div><div class="li-desc">UTXO creation + spending</div></div>
+          <div class="li"><div class="li-bar thin" style="background:#dc3545"></div><div class="li-code">consensus-imperative</div><div class="li-desc">1px · consensus</div></div>
+          <div class="li"><div class="li-bar" style="background:#58a6ff"></div><div class="li-code">proof-of-work</div><div class="li-desc">3px · mining</div></div>
+          <div class="li"><div class="li-bar" style="background:#d2a8ff"></div><div class="li-code">crypto</div><div class="li-desc">3px · ECDSA</div></div>
+          <div class="li"><div class="li-bar" style="background:#7ee787"></div><div class="li-code">transaction</div><div class="li-desc">3px · UTXO</div></div>
+          <div class="li"><div class="li-bar" style="background:#f7ba2f"></div><div class="li-code">genesis-block</div><div class="li-desc">3px · subsidy</div></div>
         </div>
       </div>
+      <p class="ds-info-source">Source: <code>styles/syntax.css</code> · <code>typography.css</code></p>
     </div>
 
     <div class="ds-info-panel">
       <div class="ds-info-title">Type scale</div>
       <div class="type-scale" id="ds-type-scale">
         <div class="ts-row">
-          <div class="ts-meta">42pt · 700<br>Chapter num</div>
-          <div class="ts-pre ds-heading" style="font-size:26px;font-weight:700;letter-spacing:-0.01em">03</div>
+          <div class="ts-meta">32pt · 700<br>Part title</div>
+          <div class="ts-pre ds-heading" style="font-size:32pt;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;line-height:1.1;color:#000">The Source</div>
         </div>
         <div class="ts-row">
-          <div class="ts-meta">28pt · 600<br>File title</div>
-          <div class="ts-pre ds-heading" style="font-size:20px;font-weight:600">main.cpp</div>
+          <div class="ts-meta">28pt · 700<br>Chapter title</div>
+          <div class="ts-pre ds-heading" style="font-size:28pt;font-weight:700;color:#1a1a1f;line-height:1.15">script.cpp</div>
         </div>
         <div class="ts-row">
-          <div class="ts-meta">11pt · 600<br>Section title</div>
-          <div class="ts-pre ds-heading" style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em">Block Rewards</div>
+          <div class="ts-meta">13pt · 700<br>Section / h2</div>
+          <div class="ts-pre ds-heading" style="font-size:13pt;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:#1a1a1f">The Virtual Machine</div>
+        </div>
+        <div class="ts-row">
+          <div class="ts-meta">9pt · 400<br>Body / primer</div>
+          <div class="ts-pre ds-body" style="font-size:10pt;font-weight:400;color:#1a1a1f;line-height:1.5">Bitcoin rests on ECDSA and cryptographic hashes.</div>
         </div>
         <div class="ts-row">
           <div class="ts-meta">8pt · 400<br>Annotation</div>
-          <div class="ts-pre ds-body" style="font-size:12px;color:var(--text-2)">Satoshi's 50 BTC genesis reward, combined with the 4-year halving, calculates precisely to 21 million.</div>
+          <div class="ts-pre ds-body" style="font-size:8pt;font-weight:400;color:#000;line-height:1.4">Script is a deliberately limited stack machine.</div>
         </div>
         <div class="ts-row">
           <div class="ts-meta">6pt · 400<br>Code</div>
-          <div class="ts-pre ds-code" style="font-size:11px;color:var(--text-1)">nSubsidy >>= (nHeight / 210000);</div>
+          <div class="ts-pre ds-code" style="font-size:6pt;font-weight:400;color:#222;line-height:1.4">nSubsidy >>= (nHeight / 210000);</div>
         </div>
         <div class="ts-row">
           <div class="ts-meta">7pt · 400<br>Running hdr</div>
-          <div class="ts-pre ds-code" style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-2)">MAIN.CPP</div>
+          <div class="ts-pre ds-code" style="font-size:7pt;font-weight:400;color:#666;text-transform:uppercase;letter-spacing:0.5px">SCRIPT.CPP</div>
         </div>
         <div class="ts-row">
-          <div class="ts-meta">7pt · 400<br>Page number</div>
-          <div class="ts-pre ds-code" style="font-size:10px;color:var(--text-2)">124</div>
+          <div class="ts-meta">8pt · 400<br>Page number</div>
+          <div class="ts-pre ds-code" style="font-size:8pt;font-weight:400;color:#333">68</div>
         </div>
       </div>
       <div class="ts-note" id="ds-type-note">Code: <strong>Basis Grotesque Mono Pro</strong> · Body: <strong>Inter</strong></div>
+      <p class="ds-info-source">Source: <code>styles/typography.css</code> · <code>print.css</code> · shown at true print pt</p>
     </div>
 
     <div class="ds-info-panel">
       <div class="ds-info-title">Code token colours</div>
       <div class="tokens">
-        <div class="tk"><div class="tk-dot" style="background:#d73a49"></div><div class="tk-name">keyword</div><div class="tk-ex" style="color:#d73a49">if · while · return</div><div class="tk-hex">#d73a49</div></div>
+        <div class="tk"><div class="tk-dot" style="background:#d73a49"></div><div class="tk-name">keyword</div><div class="tk-ex" style="color:#d73a49;font-weight:500">if · while · return</div><div class="tk-hex">#d73a49</div></div>
         <div class="tk"><div class="tk-dot" style="background:#0086b3"></div><div class="tk-name">type / function</div><div class="tk-ex" style="color:#0086b3">uint256 · GetHash</div><div class="tk-hex">#0086b3</div></div>
         <div class="tk"><div class="tk-dot" style="background:#50a14f"></div><div class="tk-name">string / literal</div><div class="tk-ex" style="color:#50a14f">"bitcoin" · true</div><div class="tk-hex">#50a14f</div></div>
         <div class="tk"><div class="tk-dot" style="background:#986801"></div><div class="tk-name">preprocessor</div><div class="tk-ex" style="color:#986801">#include · #define</div><div class="tk-hex">#986801</div></div>
         <div class="tk"><div class="tk-dot" style="background:#8a8a8a"></div><div class="tk-name">comment</div><div class="tk-ex" style="color:#8a8a8a;font-style:italic">// original comment</div><div class="tk-hex">#8a8a8a</div></div>
-        <div class="tk"><div class="tk-dot" style="background:#444"></div><div class="tk-name">punctuation</div><div class="tk-ex" style="color:#555">{ } ( ) ; &lt; &gt;</div><div class="tk-hex">#444444</div></div>
+        <div class="tk"><div class="tk-dot" style="background:#444"></div><div class="tk-name">punctuation</div><div class="tk-ex" style="color:#444">{ } ( ) ; &lt; &gt;</div><div class="tk-hex">#444444</div></div>
       </div>
-      <p class="tokens-note">Theme derived from One Light, recalibrated for CMYK and legibility at 6pt on 60# uncoated. Contrast verified against SWOP coated profiles.</p>
+      <p class="tokens-note">Prism tokens from <code>styles/syntax.css</code> — One Light, tuned for CMYK at 6pt on 60# uncoated. Annotation blocks use top/bottom <code>#dddddd</code> hairlines (no coloured side bars).</p>
+      <p class="ds-info-source">Source: <code>styles/syntax.css</code> · <code>.token.*</code></p>
     </div>
   </div>
+</section>
 
+<!-- ── COVER ─────────────────────────────────────────────────────── -->
+<section class="content-section reveal" id="cover">
+  <div class="section-header">
+    <span class="section-num">05 /</span>
+    <h2 class="section-title">Cover Design</h2>
+    <p class="section-hint">Full-spread print cover with bleed and crop marks. Spine width is derived from the live page count.</p>
+  </div>
+  <div class="cover-layout">
+    <div class="cover-preview-wrap" id="cover-preview-wrap">
+      <div class="cover-not-built">Cover not yet built.<br>Run <code>npm run cover</code> to generate it.</div>
+    </div>
+    <div id="cover-aside"></div>
+  </div>
+</section>
+
+<!-- ── ABOUT ─────────────────────────────────────────────────────── -->
+<section class="content-section reveal" id="about">
+  <div class="section-header">
+    <span class="section-num">06 /</span>
+    <h2 class="section-title">About the Book</h2>
+  </div>
+  <div class="about-layout">
+    <div class="about-main">
+      <h3>The Source Code Behind the Genesis Block</h3>
+      <p>On January 9, 2009, Satoshi Nakamoto announced Bitcoin v0.01 to the Cryptography Mailing List. It was complete, functional software — written in C++ with a wxWidgets GUI, BerkeleyDB storage, and a peer-to-peer network built on raw TCP sockets. <strong>This book is a complete, line-by-line reading of that code.</strong></p>
+      <p>Bitcoin v0.01 is 31,000 lines spread across 32 source files. In that space it implements proof-of-work mining, UTXO-based transactions, ECDSA digital signatures, a stack-based scripting language, P2P networking with IRC bootstrapping, wallet management, and a full desktop GUI. Everything Nakamoto needed to demonstrate the concept — written before any of it had a name.</p>
+
+      <div class="blockquote">
+        <p>"The root problem with conventional currency is all the trust that's required to make it work. The central bank must be trusted not to debase the currency, but the history of fiat currencies is full of breaches of that trust."</p>
+        <cite>Satoshi Nakamoto · P2P Foundation · February 11, 2009</cite>
+      </div>
+
+      <p>The annotations explain every significant function, data structure, and design choice — connecting code to its cryptographic foundations, to the history of digital cash that preceded it, and to the broader architectural decisions that made Bitcoin resilient enough to survive. <strong>Six primer chapters</strong> establish the necessary context: C++, cryptography, networking, and the cypherpunk movement.</p>
+      <p>This is an annotated edition in the tradition of <em>The Annotated Turing</em> and <em>Structure and Interpretation of Computer Programs</em> — a close reading of source code as both a technical document and a historical artifact.</p>
+    </div>
+
+    <div class="about-aside">
+      <div class="aside-card">
+        <h4>Publication Specs</h4>
+        <div class="spec-row"><span class="spec-k">Format</span><span class="spec-v">7″ × 10″ Perfect Bound</span></div>
+        <div class="spec-row"><span class="spec-k">Pages</span><span class="spec-v" id="about-pages">527</span></div>
+        <div class="spec-row"><span class="spec-k">Paper</span><span class="spec-v">60# White Uncoated</span></div>
+        <div class="spec-row"><span class="spec-k">Code font</span><span class="spec-v" data-spec="code-font">Basis Grotesque Mono Pro</span></div>
+        <div class="spec-row"><span class="spec-k">Body font</span><span class="spec-v" data-spec="body-font">Inter</span></div>
+        <div class="spec-row"><span class="spec-k">Code size</span><span class="spec-v">6pt / 1.4 leading</span></div>
+        <div class="spec-row"><span class="spec-k">Render engine</span><span class="spec-v">Paged.js + Puppeteer</span></div>
+      </div>
+      <div class="aside-card">
+        <h4>Source Repository</h4>
+        <div class="spec-row"><span class="spec-k">Version</span><span class="spec-v">Bitcoin v0.01</span></div>
+        <div class="spec-row"><span class="spec-k">Release date</span><span class="spec-v">January 9, 2009</span></div>
+        <div class="spec-row"><span class="spec-k">Files</span><span class="spec-v">32</span></div>
+        <div class="spec-row"><span class="spec-k">Lines of code</span><span class="spec-v">~31,000</span></div>
+        <div class="spec-row"><span class="spec-k">Language</span><span class="spec-v">C++ (GCC 3.4 era)</span></div>
+        <div class="spec-row"><span class="spec-k">GUI framework</span><span class="spec-v">wxWidgets 2.8</span></div>
+        <div class="spec-row"><span class="spec-k">Database</span><span class="spec-v">BerkeleyDB 4.x</span></div>
+        <div class="spec-row"><span class="spec-k">Crypto</span><span class="spec-v">OpenSSL (ECDSA)</span></div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ── COMMANDS ──────────────────────────────────────────────────── -->
 <section class="content-section reveal" id="commands">
   <div class="section-header">
-    <span class="section-num">04 /</span>
+    <span class="section-num">07 /</span>
     <h2 class="section-title">Commands</h2>
     <p class="section-hint">Run from the project root. Click any row to copy the command.</p>
   </div>
@@ -1413,72 +1496,11 @@ nSubsidy >>= (nHeight / 210000);</div>
   </div>
 </section>
 
-<!-- ── COVER ─────────────────────────────────────────────────────── -->
-<section class="content-section reveal" id="cover">
-  <div class="section-header">
-    <span class="section-num">05 /</span>
-    <h2 class="section-title">Cover Design</h2>
-    <p class="section-hint">Full-spread print cover with bleed and crop marks. Spine width is derived from the live page count.</p>
-  </div>
-  <div class="cover-layout">
-    <div class="cover-preview-wrap" id="cover-preview-wrap">
-      <div class="cover-not-built">Cover not yet built.<br>Run <code>npm run cover</code> to generate it.</div>
-    </div>
-    <div id="cover-aside"></div>
-  </div>
-</section>
-
-<!-- ── ABOUT ─────────────────────────────────────────────────────── -->
-<section class="content-section reveal" id="about">
-  <div class="section-header">
-    <span class="section-num">06 /</span>
-    <h2 class="section-title">About the Book</h2>
-  </div>
-  <div class="about-layout">
-    <div class="about-main">
-      <h3>The Source Code Behind the Genesis Block</h3>
-      <p>On January 9, 2009, Satoshi Nakamoto announced Bitcoin v0.01 to the Cryptography Mailing List. It was complete, functional software — written in C++ with a wxWidgets GUI, BerkeleyDB storage, and a peer-to-peer network built on raw TCP sockets. <strong>This book is a complete, line-by-line reading of that code.</strong></p>
-      <p>Bitcoin v0.01 is 31,000 lines spread across 32 source files. In that space it implements proof-of-work mining, UTXO-based transactions, ECDSA digital signatures, a stack-based scripting language, P2P networking with IRC bootstrapping, wallet management, and a full desktop GUI. Everything Nakamoto needed to demonstrate the concept — written before any of it had a name.</p>
-
-      <div class="blockquote">
-        <p>"The root problem with conventional currency is all the trust that's required to make it work. The central bank must be trusted not to debase the currency, but the history of fiat currencies is full of breaches of that trust."</p>
-        <cite>Satoshi Nakamoto · P2P Foundation · February 11, 2009</cite>
-      </div>
-
-      <p>The annotations explain every significant function, data structure, and design choice — connecting code to its cryptographic foundations, to the history of digital cash that preceded it, and to the broader architectural decisions that made Bitcoin resilient enough to survive. <strong>Six primer chapters</strong> establish the necessary context: C++, cryptography, networking, and the cypherpunk movement.</p>
-      <p>This is an annotated edition in the tradition of <em>The Annotated Turing</em> and <em>Structure and Interpretation of Computer Programs</em> — a close reading of source code as both a technical document and a historical artifact.</p>
-    </div>
-
-    <div class="about-aside">
-      <div class="aside-card">
-        <h4>Publication Specs</h4>
-        <div class="spec-row"><span class="spec-k">Format</span><span class="spec-v">7″ × 10″ Perfect Bound</span></div>
-        <div class="spec-row"><span class="spec-k">Pages</span><span class="spec-v" id="about-pages">527</span></div>
-        <div class="spec-row"><span class="spec-k">Paper</span><span class="spec-v">60# White Uncoated</span></div>
-        <div class="spec-row"><span class="spec-k">Code font</span><span class="spec-v">Basis Grotesque Mono Pro</span></div>
-        <div class="spec-row"><span class="spec-k">Body font</span><span class="spec-v">Inter</span></div>
-        <div class="spec-row"><span class="spec-k">Code size</span><span class="spec-v">6pt / 1.4 leading</span></div>
-        <div class="spec-row"><span class="spec-k">Render engine</span><span class="spec-v">Paged.js + Puppeteer</span></div>
-      </div>
-      <div class="aside-card">
-        <h4>Source Repository</h4>
-        <div class="spec-row"><span class="spec-k">Version</span><span class="spec-v">Bitcoin v0.01</span></div>
-        <div class="spec-row"><span class="spec-k">Release date</span><span class="spec-v">January 9, 2009</span></div>
-        <div class="spec-row"><span class="spec-k">Files</span><span class="spec-v">32</span></div>
-        <div class="spec-row"><span class="spec-k">Lines of code</span><span class="spec-v">~31,000</span></div>
-        <div class="spec-row"><span class="spec-k">Language</span><span class="spec-v">C++ (GCC 3.4 era)</span></div>
-        <div class="spec-row"><span class="spec-k">GUI framework</span><span class="spec-v">wxWidgets 2.8</span></div>
-        <div class="spec-row"><span class="spec-k">Database</span><span class="spec-v">BerkeleyDB 4.x</span></div>
-        <div class="spec-row"><span class="spec-k">Crypto</span><span class="spec-v">OpenSSL (ECDSA)</span></div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ── FOOTER ─────────────────────────────────────────────────────── -->
 <footer>
   <div class="footer-left">Bitcoin Alpha Book · Annotated Edition · 2026</div>
   <div class="footer-links">
+    <a href="/review">Review</a>
     <a href="/book">Preview</a>
     <a href="/cover">Cover</a>
     <a href="/thumbnails">Thumbnails</a>
@@ -1490,60 +1512,61 @@ nSubsidy >>= (nHeight / 210000);</div>
 <script>
 /* ── DATA ──────────────────────────────────────────────────────────── */
 const CHAPTERS = [
-  { t:'intro',  n:'Introduction',       d:'Why this book exists and how to read it' },
-  { t:'intro',  n:'The Road to Bitcoin',d:'Cypherpunks, e-cash, and the ideas that made Bitcoin possible' },
-  { t:'intro',  n:'Computer Concepts',  d:'Data structures, networks, and cryptographic primitives' },
-  { t:'intro',  n:'Cryptography Basics',d:'Hash functions, ECDSA, and public-key cryptography' },
-  { t:'intro',  n:'C++ Primer',         d:'C++ patterns used throughout Bitcoin v0.01' },
-  { t:'intro',  n:'rc/ Resources',      d:'UI resources, icons, and bitmap assets' },
+  { t:'front',  id:'front-matter',        n:'Front Matter',       d:'Title page, dedication, acknowledgments, and table of contents' },
+  { t:'intro',  id:'introduction',        n:'Introduction',       d:'Why this book exists and how to read it' },
+  { t:'intro',  id:'prehistory',          n:'The Road to Bitcoin',d:'Cypherpunks, e-cash, and the ideas that made Bitcoin possible' },
+  { t:'intro',  id:'computer-concepts',   n:'Computer Concepts',  d:'Data structures, networks, and cryptographic primitives' },
+  { t:'intro',  id:'cryptography-primer', n:'Cryptography Basics',d:'Hash functions, ECDSA, and public-key cryptography' },
+  { t:'intro',  id:'cpp-primer',          n:'C++ Primer',         d:'C++ patterns used throughout Bitcoin v0.01' },
+  { t:'intro',  id:'rc-resources',        n:'rc/ Resources',      d:'UI resources, icons, and bitmap assets' },
 
-  { t:'header', n:'base58.h',     d:'Base58 encoding for Bitcoin addresses' },
-  { t:'header', n:'bignum.h',     d:'Big-integer arithmetic via OpenSSL BIGNUM' },
-  { t:'header', n:'db.h',         d:'BerkeleyDB wrapper for wallet and blockchain storage' },
-  { t:'header', n:'headers.h',    d:'Master include — all dependencies in one file' },
-  { t:'header', n:'irc.h',        d:'IRC-based peer-discovery declarations' },
-  { t:'header', n:'key.h',        d:'Private/public key management using OpenSSL' },
-  { t:'header', n:'main.h',       d:'Core types: CBlock, CTransaction, CTxIn/Out' },
-  { t:'header', n:'market.h',     d:'Experimental marketplace declarations' },
-  { t:'header', n:'net.h',        d:'P2P networking layer declarations' },
-  { t:'header', n:'script.h',     d:'Bitcoin Script opcodes and evaluation engine' },
-  { t:'header', n:'serialize.h',  d:'Binary serialisation framework for all data types' },
-  { t:'header', n:'sha.h',        d:'SHA-256 and SHA-512 declarations' },
-  { t:'header', n:'ui.h',         d:'wxWidgets GUI declarations' },
-  { t:'header', n:'uibase.h',     d:'Auto-generated wxFormBuilder base classes' },
-  { t:'header', n:'uint256.h',    d:'256-bit integer type for block hashes and work' },
-  { t:'header', n:'util.h',       d:'Utilities, logging, and global settings' },
+  { t:'header', id:'base58-h',    n:'base58.h',     d:'Base58 encoding for Bitcoin addresses' },
+  { t:'header', id:'bignum-h',    n:'bignum.h',     d:'Big-integer arithmetic via OpenSSL BIGNUM' },
+  { t:'header', id:'db-h',        n:'db.h',         d:'BerkeleyDB wrapper for wallet and blockchain storage' },
+  { t:'header', id:'headers-h',   n:'headers.h',    d:'Master include — all dependencies in one file' },
+  { t:'header', id:'irc-h',       n:'irc.h',        d:'IRC-based peer-discovery declarations' },
+  { t:'header', id:'key-h',       n:'key.h',        d:'Private/public key management using OpenSSL' },
+  { t:'header', id:'main-h',      n:'main.h',       d:'Core types: CBlock, CTransaction, CTxIn/Out' },
+  { t:'header', id:'market-h',    n:'market.h',     d:'Experimental marketplace declarations' },
+  { t:'header', id:'net-h',       n:'net.h',        d:'P2P networking layer declarations' },
+  { t:'header', id:'script-h',    n:'script.h',     d:'Bitcoin Script opcodes and evaluation engine' },
+  { t:'header', id:'serialize-h', n:'serialize.h',  d:'Binary serialisation framework for all data types' },
+  { t:'header', id:'sha-h',       n:'sha.h',        d:'SHA-256 and SHA-512 declarations' },
+  { t:'header', id:'ui-h',        n:'ui.h',         d:'wxWidgets GUI declarations' },
+  { t:'header', id:'uibase-h',    n:'uibase.h',     d:'Auto-generated wxFormBuilder base classes' },
+  { t:'header', id:'uint256-h',   n:'uint256.h',    d:'256-bit integer type for block hashes and work' },
+  { t:'header', id:'util-h',      n:'util.h',       d:'Utilities, logging, and global settings' },
 
-  { t:'source', n:'db.cpp',       d:'Wallet and blockchain storage implementation' },
-  { t:'source', n:'irc.cpp',      d:'IRC peer bootstrapping — how early nodes found each other' },
-  { t:'source', n:'main.cpp',     d:'The core: proof-of-work, validation, block processing' },
-  { t:'source', n:'market.cpp',   d:'Experimental P2P marketplace (never shipped)' },
-  { t:'source', n:'net.cpp',      d:'TCP socket management and peer communication' },
-  { t:'source', n:'script.cpp',   d:'Bitcoin Script interpreter — programmable transaction locks' },
-  { t:'source', n:'sha.cpp',      d:'Pure-C SHA-256, independent of OpenSSL' },
-  { t:'source', n:'ui.cpp',       d:'wxWidgets GUI: send, receive, transaction history' },
-  { t:'source', n:'uibase.cpp',   d:'Auto-generated wxFormBuilder base implementation' },
-  { t:'source', n:'util.cpp',     d:'Global init, hex conversion, error handling' },
+  { t:'source', id:'db-cpp',      n:'db.cpp',       d:'Wallet and blockchain storage implementation' },
+  { t:'source', id:'irc-cpp',     n:'irc.cpp',      d:'IRC peer bootstrapping — how early nodes found each other' },
+  { t:'source', id:'main-cpp',    n:'main.cpp',     d:'The core: proof-of-work, validation, block processing' },
+  { t:'source', id:'market-cpp',  n:'market.cpp',   d:'Experimental P2P marketplace (never shipped)' },
+  { t:'source', id:'net-cpp',     n:'net.cpp',      d:'TCP socket management and peer communication' },
+  { t:'source', id:'script-cpp',  n:'script.cpp',   d:'Bitcoin Script interpreter — programmable transaction locks' },
+  { t:'source', id:'sha-cpp',     n:'sha.cpp',      d:'Pure-C SHA-256, independent of OpenSSL' },
+  { t:'source', id:'ui-cpp',      n:'ui.cpp',       d:'wxWidgets GUI: send, receive, transaction history' },
+  { t:'source', id:'uibase-cpp',  n:'uibase.cpp',   d:'Auto-generated wxFormBuilder base implementation' },
+  { t:'source', id:'util-cpp',    n:'util.cpp',     d:'Global init, hex conversion, error handling' },
 
-  { t:'build',  n:'makefile',         d:'Linux / macOS build configuration' },
-  { t:'build',  n:'makefile.vc',      d:'Visual C++ build configuration' },
-  { t:'build',  n:'ui.rc',            d:'Windows resource file — icons and dialogs' },
-  { t:'build',  n:'uiproject.fbp',    d:'wxFormBuilder project — all UI layouts defined here' },
-  { t:'build',  n:'license.txt',      d:'MIT License' },
-  { t:'build',  n:'readme.txt',       d:'Original README by Satoshi Nakamoto' },
+  { t:'build',  id:'makefile',       n:'makefile',         d:'Linux / macOS build configuration' },
+  { t:'build',  id:'makefile-vc',    n:'makefile.vc',      d:'Visual C++ build configuration' },
+  { t:'build',  id:'ui-rc',          n:'ui.rc',            d:'Windows resource file — icons and dialogs' },
+  { t:'build',  id:'uiproject-fbp',  n:'uiproject.fbp',    d:'wxFormBuilder project — all UI layouts defined here' },
+  { t:'build',  id:'license-txt',    n:'license.txt',      d:'MIT License' },
+  { t:'build',  id:'readme-txt',     n:'readme.txt',       d:'Original README by Satoshi Nakamoto' },
 
-  { t:'back',   n:'What Came After',  d:"Bitcoin's evolution after v0.01" },
-  { t:'back',   n:'Index',            d:'Comprehensive term index with page references' },
+  { t:'back',   id:'what-came-after', n:'What Came After',  d:"Bitcoin's evolution after v0.01" },
+  { t:'back',   id:'index',           n:'Index',            d:'Comprehensive term index with page references' },
 ];
 
-const TYPE_LABELS = { intro:'Primer', header:'.h Header', source:'.cpp Source', build:'Build / Config', back:'Reference' };
+const TYPE_LABELS = { front:'Front', intro:'Primer', header:'.h Header', source:'.cpp Source', build:'Build / Config', back:'Reference' };
 
 /* ── CHAPTERS GRID ────────────────────────────────────────────────── */
 function renderChapters(filter) {
   const grid = document.getElementById('ch-grid');
   grid.innerHTML = CHAPTERS.map(ch => {
     const hide = (filter !== 'all' && ch.t !== filter) ? ' hidden' : '';
-    return `<a class="ch-card${hide}" data-t="${ch.t}" href="/book" target="_blank">
+    return `<a class="ch-card${hide}" data-t="${ch.t}" data-id="${ch.id}" href="/book?section=${encodeURIComponent(ch.id)}" target="_blank">
       <div class="ch-badge">${TYPE_LABELS[ch.t]}</div>
       <div class="ch-name">${ch.n}</div>
       <div class="ch-desc">${ch.d}</div>
@@ -1622,9 +1645,12 @@ async function loadReleases() {
     const sheetHref = files.includes('contact-sheet.png') ? '/contact-sheet' : '/thumbnails';
     if (latest && files.includes(sheetPng)) {
       document.getElementById('thumb-strip').innerHTML = `
-        <div class="thumb-strip-wrap">
-          <a class="thumb-link" href="${sheetHref}" title="Open full sheet"></a>
-          <img src="/releases/${latest.name}/${sheetPng}" alt="Page overview" loading="lazy">
+        <div class="thumb-strip">
+          <div class="thumb-strip-wrap">
+            <a class="thumb-link" href="${sheetHref}" title="Open full sheet">
+              <img src="/releases/${latest.name}/${sheetPng}" alt="Page overview" loading="lazy">
+            </a>
+          </div>
           <div class="thumb-strip-cap">Latest release · ${latest.name.split('_')[0]} · click for ${files.includes('contact-sheet.png') ? 'contact sheet' : 'thumbnails'}</div>
         </div>`;
     }
@@ -1763,41 +1789,116 @@ document.querySelectorAll('.ds-page-tab').forEach(tab => {
 });
 
 /* ── DESIGN SYSTEM — typeface switcher ──────────────────────────── */
-const TYPEFACES = {
-  'redhat|inter':          { code: "'Red Hat Mono', monospace",                               body: "'Inter', sans-serif",             label: 'Red Hat Mono · Inter' },
-  'jetbrains|lora':        { code: "'JetBrains Mono', monospace",                  body: "'Lora', Georgia, serif",           label: 'JetBrains Mono · Lora' },
-  'plex|sourceserif':      { code: "'IBM Plex Mono', monospace",                   body: "'Source Serif 4', Georgia, serif", label: 'IBM Plex Mono · Source Serif 4' },
-  'firacode|crimson':      { code: "'Fira Code', monospace",                       body: "'Crimson Pro', Georgia, serif",    label: 'Fira Code · Crimson Pro' },
-  'jetbrains|merriweather':{ code: "'JetBrains Mono', monospace",                  body: "'Merriweather', Georgia, serif",   label: 'JetBrains Mono · Merriweather' },
-  'basis|inter':           { code: "'Basis Grotesque Mono Pro', monospace",        body: "'Inter', sans-serif",             label: 'Basis Grotesque Mono Pro · Inter' },
-};
+let TYPEFACES = null;
+let activeTypefaceKey = 'basis|inter';
 
-function applyTypeface(key) {
-  const tf = TYPEFACES[key];
-  if (!tf) return;
-  const pb = document.getElementById('ds-pasteboard');
-  if (pb) {
-    pb.style.setProperty('--mf-code', tf.code);
-    pb.style.setProperty('--mf-body', tf.body);
-  }
-  // Update the type scale preview
-  document.querySelectorAll('.ds-heading').forEach(el => el.style.fontFamily = tf.code);
-  document.querySelectorAll('.ds-body').forEach(el => el.style.fontFamily = tf.body);
-  document.querySelectorAll('.ds-code').forEach(el => el.style.fontFamily = tf.code);
-  // Update the note
+function applyTypefaceLive(pair) {
+  if (!pair) return;
+  const root = document.documentElement;
+  root.style.setProperty('--font-code', pair.codeStack);
+  root.style.setProperty('--font-body', pair.bodyStack);
+  root.style.setProperty('--font-heading', pair.codeStack);
+
+  document.querySelectorAll('.ds-heading').forEach(el => { el.style.fontFamily = pair.codeStack; });
+  document.querySelectorAll('.ds-body').forEach(el => { el.style.fontFamily = pair.bodyStack; });
+  document.querySelectorAll('.ds-code').forEach(el => { el.style.fontFamily = pair.codeStack; });
+
   const note = document.getElementById('ds-type-note');
   if (note) {
-    const parts = tf.label.split(' · ');
-    note.innerHTML = `Code: <strong>${parts[0]}</strong> · Body: <strong>${parts[1]}</strong>`;
+    note.innerHTML = `Code: <strong>${pair.code}</strong> · Body: <strong>${pair.body}</strong>`;
+  }
+
+  const specCode = document.querySelector('.spec-row .spec-v[data-spec="code-font"]');
+  const specBody = document.querySelector('.spec-row .spec-v[data-spec="body-font"]');
+  if (specCode) specCode.textContent = pair.code;
+  if (specBody) specBody.textContent = pair.body;
+}
+
+async function loadTypefaceCatalog() {
+  const status = document.getElementById('ds-apply-status');
+  try {
+    const res = await fetch('/api/typeface');
+    const data = await res.json();
+    TYPEFACES = data.catalog.pairs;
+    activeTypefaceKey = data.key;
+    const sel = document.getElementById('ds-typeface');
+    if (sel) {
+      sel.innerHTML = '';
+      for (const [key, pair] of Object.entries(TYPEFACES)) {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = `${pair.code} + ${pair.body}`;
+        if (key === activeTypefaceKey) opt.selected = true;
+        sel.appendChild(opt);
+      }
+    }
+    applyTypefaceLive(TYPEFACES[activeTypefaceKey]);
+  } catch (err) {
+    // Offline / file:// fallback
+    TYPEFACES = {
+      'basis|inter': {
+        code: 'Basis Grotesque Mono Pro', body: 'Inter',
+        codeStack: "'Basis Grotesque Mono Pro', monospace",
+        bodyStack: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      },
+    };
+    applyTypefaceLive(TYPEFACES['basis|inter']);
+    if (status) {
+      status.textContent = 'Preview-only (start npm run preview to apply)';
+      status.className = 'ds-apply-status';
+    }
   }
 }
 
 const tfSelect = document.getElementById('ds-typeface');
 if (tfSelect) {
-  tfSelect.addEventListener('change', () => applyTypeface(tfSelect.value));
-  // Apply default on load
-  applyTypeface(tfSelect.value);
+  tfSelect.addEventListener('change', () => {
+    activeTypefaceKey = tfSelect.value;
+    applyTypefaceLive(TYPEFACES?.[activeTypefaceKey]);
+    const status = document.getElementById('ds-apply-status');
+    if (status) {
+      status.textContent = 'Unsaved — click Apply to book';
+      status.className = 'ds-apply-status';
+    }
+  });
 }
+
+const applyBtn = document.getElementById('ds-apply');
+if (applyBtn) {
+  applyBtn.addEventListener('click', async () => {
+    const status = document.getElementById('ds-apply-status');
+    const key = tfSelect?.value || activeTypefaceKey;
+    applyBtn.disabled = true;
+    if (status) { status.textContent = 'Saving…'; status.className = 'ds-apply-status'; }
+    try {
+      const res = await fetch('/api/typeface', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Save failed');
+      activeTypefaceKey = key;
+      // Bust cache on typeface.css
+      const link = document.getElementById('ds-typeface-css');
+      if (link) link.href = '/styles/typeface.css?t=' + Date.now();
+      applyTypefaceLive(data.pair);
+      if (status) {
+        status.textContent = 'Saved to styles/typeface.css — run npm run build';
+        status.className = 'ds-apply-status ok';
+      }
+    } catch (err) {
+      if (status) {
+        status.textContent = err.message || 'Save failed';
+        status.className = 'ds-apply-status err';
+      }
+    } finally {
+      applyBtn.disabled = false;
+    }
+  });
+}
+
+loadTypefaceCatalog();
 
 /* ── SCROLL REVEAL ────────────────────────────────────────────────── */
 const io = new IntersectionObserver(entries => {

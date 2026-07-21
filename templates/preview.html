@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bitcoin v0.01 Alpha — Page Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --chrome:     #111111;
+      --chrome-2:   #181818;
+      --chrome-3:   #222222;
+      --chrome-4:   #2a2a2a;
+      --border:     #2e2e2e;
+      --border-2:   #3a3a3a;
+      --text:       #c8c8c8;
+      --text-2:     #707070;
+      --text-3:     #3d3d3d;
+      --accent:     #e8e8e8;
+      --accent-2:   #aaaaaa;
+      --guide-m:    rgba(255, 60, 200, 0.55);   /* magenta margin — kept, it's a guide color code */
+      --guide-b:    rgba(255, 50, 50,  0.45);   /* red bleed — kept, it's a guide color code */
+      --pasteboard: #3a3a3a;
+      --mono: 'Red Hat Mono', 'Courier New', monospace;
+      --toolbar-h: 40px;
+      --ruler-w: 22px;
+      --status-h: 26px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%; overflow: hidden;
+      background: var(--chrome);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text);
+      user-select: none;
+    }
+
+    /* ── LAYOUT ─────────────────────────────────── */
+    #app {
+      display: grid;
+      grid-template-rows: var(--toolbar-h) 1fr var(--status-h);
+      grid-template-columns: var(--ruler-w) 1fr;
+      grid-template-areas:
+        "toolbar toolbar"
+        "ruler   main"
+        "status  status";
+      height: 100vh;
+    }
+
+    /* ── TOOLBAR ────────────────────────────────── */
+    #toolbar {
+      grid-area: toolbar;
+      background: var(--chrome);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      gap: 0;
+      height: var(--toolbar-h);
+      flex-shrink: 0;
+    }
+
+    .tb-sep {
+      width: 1px; height: 20px;
+      background: var(--border);
+      margin: 0 8px;
+      flex-shrink: 0;
+    }
+
+    .tb-home {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+      color: var(--text-2); text-decoration: none;
+      padding: 0 10px; height: var(--toolbar-h);
+      display: flex; align-items: center;
+      transition: color 0.1s;
+      border-right: 1px solid var(--border);
+      margin-right: 8px;
+      white-space: nowrap;
+    }
+    .tb-home:hover { color: var(--text); }
+
+    .tb-title {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--text); margin-right: auto;
+      white-space: nowrap;
+    }
+    .tb-title em { color: var(--accent); font-style: normal; }
+
+    /* Page navigation */
+    .tb-nav {
+      display: flex; align-items: center; gap: 4px;
+    }
+
+    .tb-btn {
+      font-family: var(--mono); font-size: 10px; font-weight: 500;
+      color: var(--text-2); background: none; border: none;
+      padding: 4px 8px; cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.1s; line-height: 1;
+      letter-spacing: 0.06em;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .tb-btn:hover { color: var(--text); border-color: var(--border-2); }
+    .tb-btn.on {
+      color: var(--accent); border-color: var(--border-2);
+      background: var(--chrome-3);
+    }
+    .tb-btn:active { background: var(--chrome-4); }
+
+    .tb-page-input {
+      font-family: var(--mono); font-size: 11px;
+      background: var(--chrome-3);
+      border: 1px solid var(--border);
+      color: var(--text); text-align: center;
+      width: 44px; padding: 3px 4px;
+      outline: none;
+    }
+    .tb-page-input:focus { border-color: var(--accent); }
+
+    .tb-page-total {
+      font-size: 10px; color: var(--text-3);
+      white-space: nowrap;
+    }
+
+    /* Zoom select */
+    .tb-zoom {
+      font-family: var(--mono); font-size: 10px;
+      background: var(--chrome-3);
+      border: 1px solid var(--border);
+      color: var(--text); padding: 3px 6px;
+      cursor: pointer; outline: none;
+      appearance: none; -webkit-appearance: none;
+      width: 72px; text-align: center;
+    }
+    .tb-zoom:focus { border-color: var(--accent); }
+
+    /* Rendering badge */
+    #render-badge {
+      font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--accent); padding: 3px 8px;
+      border: 1px solid var(--border-2);
+      display: none;
+    }
+    #render-badge.visible { display: flex; align-items: center; gap: 5px; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 8px; height: 8px;
+      border: 1px solid var(--border-2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+
+    /* ── RULER (left edge) ──────────────────────── */
+    #ruler-v {
+      grid-area: ruler;
+      background: var(--chrome-2);
+      border-right: 1px solid var(--border);
+      width: var(--ruler-w);
+      overflow: hidden;
+      position: relative;
+    }
+
+    #ruler-h {
+      position: absolute;
+      top: 0; left: var(--ruler-w); right: 0;
+      height: var(--ruler-w);
+      background: var(--chrome-2);
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    /* ruler corner */
+    #ruler-corner {
+      position: absolute;
+      top: 0; left: 0;
+      width: var(--ruler-w); height: var(--ruler-w);
+      background: var(--chrome-2);
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      z-index: 11;
+    }
+
+    canvas#ruler-v-canvas,
+    canvas#ruler-h-canvas {
+      display: block;
+    }
+
+    /* ── MAIN PASTEBOARD AREA ───────────────────── */
+    #main {
+      grid-area: main;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* horizontal ruler inside main */
+    #ruler-h {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: var(--ruler-w);
+      background: var(--chrome-2);
+      border-bottom: 1px solid var(--border);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    #pasteboard-wrap {
+      position: absolute;
+      inset: 0;
+      overflow: auto;
+      background: var(--pasteboard);
+      padding-top: var(--ruler-w);
+    }
+
+    /* Scrollbar styling */
+    #pasteboard-wrap::-webkit-scrollbar { width: 12px; height: 12px; }
+    #pasteboard-wrap::-webkit-scrollbar-track { background: var(--chrome-2); }
+    #pasteboard-wrap::-webkit-scrollbar-thumb {
+      background: var(--chrome-4);
+      border: 2px solid var(--chrome-2);
+    }
+    #pasteboard-wrap::-webkit-scrollbar-thumb:hover { background: var(--border-2); }
+    #pasteboard-wrap::-webkit-scrollbar-corner { background: var(--chrome-2); }
+
+    #iframe-scale-wrap {
+      transform-origin: top center;
+      /* width/height set by JS */
+      margin: 0 auto;
+    }
+
+    #book-frame {
+      display: block;
+      border: none;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* ── STATUS BAR ─────────────────────────────── */
+    #status {
+      grid-area: status;
+      background: var(--chrome);
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      gap: 20px;
+      height: var(--status-h);
+      flex-shrink: 0;
+    }
+
+    .sb-item {
+      font-size: 10px; color: var(--text-2);
+      display: flex; align-items: center; gap: 5px;
+      white-space: nowrap;
+    }
+    .sb-item strong { color: var(--text); font-weight: 500; }
+    .sb-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--text-3); flex-shrink: 0;
+    }
+    .sb-dot.on { background: var(--accent); }
+
+    /* ── TOOLTIP / SHORTCUT HINT ────────────────── */
+    #shortcuts {
+      position: fixed; bottom: 40px; right: 16px;
+      background: var(--chrome-2);
+      border: 1px solid var(--border);
+      padding: 12px 16px;
+      font-size: 9px; line-height: 2;
+      color: var(--text-2);
+      z-index: 9999;
+      display: none;
+      min-width: 220px;
+    }
+    #shortcuts.show { display: block; }
+    #shortcuts h4 {
+      font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text); margin-bottom: 8px; font-weight: 600;
+    }
+    #shortcuts .row {
+      display: flex; justify-content: space-between;
+      gap: 24px;
+    }
+    #shortcuts kbd {
+      font-family: var(--mono); font-size: 9px;
+      background: var(--chrome-3); border: 1px solid var(--border);
+      padding: 1px 5px; color: var(--text);
+    }
+
+    /* ── LOADING OVERLAY ────────────────────────── */
+    #loading {
+      position: absolute;
+      inset: 0; z-index: 50;
+      background: var(--pasteboard);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px;
+    }
+    #loading.done { display: none; }
+    .load-ring {
+      width: 32px; height: 32px;
+      border: 2px solid rgba(200,200,200,0.12);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    .load-msg {
+      font-size: 11px; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--text-2);
+    }
+    .load-count {
+      font-size: 22px; font-weight: 700;
+      color: var(--text); letter-spacing: -0.02em;
+    }
+    .load-sub { font-size: 9px; color: var(--text-3); letter-spacing: 0.08em; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ── TOOLBAR ────────────────────────────────── -->
+  <div id="toolbar">
+    <a href="/" class="tb-home">← Home</a>
+    <div class="tb-title" id="tb-title">Bitcoin&nbsp;<em>v0.01 Alpha</em></div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Page nav -->
+    <div class="tb-nav">
+      <button class="tb-btn" id="btn-prev" title="Previous page (←)">◀</button>
+      <input  class="tb-page-input" id="page-input" type="number" min="1" value="1">
+      <span   class="tb-page-total" id="page-total">/ —</span>
+      <button class="tb-btn" id="btn-next" title="Next page (→)">▶</button>
+    </div>
+
+    <div class="tb-sep"></div>
+
+    <!-- Zoom -->
+    <button class="tb-btn" id="btn-zoom-out" title="Zoom out (−)">−</button>
+    <select class="tb-zoom" id="zoom-select" title="Zoom level">
+      <option value="fit-page">Fit Page</option>
+      <option value="fit-width">Fit Width</option>
+      <option value="33">33%</option>
+      <option value="50">50%</option>
+      <option value="75">75%</option>
+      <option value="100" selected>100%</option>
+      <option value="125">125%</option>
+      <option value="150">150%</option>
+      <option value="200">200%</option>
+    </select>
+    <button class="tb-btn" id="btn-zoom-in" title="Zoom in (+)">+</button>
+
+    <div class="tb-sep"></div>
+
+    <!-- View mode -->
+    <button class="tb-btn on" id="btn-single" title="Single page view">Single</button>
+    <button class="tb-btn"    id="btn-spread" title="Spread / facing pages (S)">Spread</button>
+
+    <div class="tb-sep"></div>
+
+    <!-- Guides / rulers -->
+    <button class="tb-btn on" id="btn-guides"  title="Toggle margin guides (G)">⊟ Guides</button>
+    <button class="tb-btn on" id="btn-rulers"  title="Toggle rulers (R)">⊞ Rulers</button>
+
+    <div class="tb-sep"></div>
+
+    <!-- Rendering badge -->
+    <div id="render-badge"><span class="spinner"></span> Rendering</div>
+
+    <!-- Keyboard help -->
+    <button class="tb-btn" id="btn-help" title="Keyboard shortcuts (?)" style="margin-left:auto">?</button>
+  </div>
+
+  <!-- ── LEFT RULER ─────────────────────────────── -->
+  <div id="ruler-v">
+    <canvas id="ruler-v-canvas"></canvas>
+  </div>
+
+  <!-- ── MAIN ───────────────────────────────────── -->
+  <div id="main">
+    <!-- Top ruler -->
+    <div id="ruler-h">
+      <canvas id="ruler-h-canvas"></canvas>
+    </div>
+
+    <!-- Pasteboard -->
+    <div id="pasteboard-wrap">
+      <div id="iframe-scale-wrap">
+        <iframe id="book-frame" src="about:blank" scrolling="auto"></iframe>
+      </div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loading">
+      <div class="load-ring"></div>
+      <div class="load-msg" id="load-msg">Rendering pages</div>
+      <div class="load-count" id="load-count">0</div>
+      <div class="load-sub">pages laid out by Paged.js</div>
+    </div>
+  </div>
+
+  <!-- ── STATUS BAR ────────────────────────────── -->
+  <div id="status">
+    <div class="sb-item">Page <strong id="sb-page">—</strong> of <strong id="sb-total">—</strong></div>
+    <div class="sb-item">7″ × 10″</div>
+    <div class="sb-item">Zoom <strong id="sb-zoom">100%</strong></div>
+    <div class="sb-item"><div class="sb-dot on" id="sb-guides-dot"></div> Guides</div>
+    <div class="sb-item"><div class="sb-dot on" id="sb-rulers-dot"></div> Rulers</div>
+    <div class="sb-item" id="sb-spread-item" style="display:none">Facing pages</div>
+    <div class="sb-item" style="margin-left:auto;color:var(--text-3)">
+      <kbd style="font-family:var(--mono);font-size:9px;background:var(--chrome-3);border:1px solid var(--border);padding:1px 5px">?</kbd>
+      keyboard shortcuts
+    </div>
+  </div>
+
+</div>
+
+<!-- Shortcut panel -->
+<div id="shortcuts">
+  <h4>Keyboard Shortcuts</h4>
+  <div class="row"><span>← / →</span><span>Previous / Next page</span></div>
+  <div class="row"><span><kbd>+</kbd> / <kbd>−</kbd></span><span>Zoom in / out</span></div>
+  <div class="row"><span><kbd>0</kbd></span><span>Fit page</span></div>
+  <div class="row"><span><kbd>1</kbd></span><span>100%</span></div>
+  <div class="row"><span><kbd>5</kbd></span><span>50%</span></div>
+  <div class="row"><span><kbd>G</kbd></span><span>Toggle guides</span></div>
+  <div class="row"><span><kbd>R</kbd></span><span>Toggle rulers</span></div>
+  <div class="row"><span><kbd>S</kbd></span><span>Toggle spread view</span></div>
+  <div class="row"><span><kbd>?</kbd></span><span>This panel</span></div>
+</div>
+
+<script>
+/* ── STATE ────────────────────────────────────────────────────────── */
+const BOOK_W = 672;   // 7in @ 96dpi
+const BOOK_H = 960;   // 10in @ 96dpi
+const PAGE_GAP = 28;  // between pages on pasteboard
+const PAD = 48;       // pasteboard padding
+
+const urlParams = new URLSearchParams(window.location.search);
+const sectionId = (() => {
+  const s = urlParams.get('section');
+  return s && /^[a-z0-9-]+$/.test(s) ? s : null;
+})();
+
+// Margins in px (at 100% zoom)
+const MARGIN = {
+  recto: { top: 82, right: 60,  bottom: 72, left: 84 },  // odd pages
+  verso: { top: 82, right: 84,  bottom: 72, left: 60 },  // even pages
+};
+
+let zoom = 100;          // % integer
+let isSpread = false;
+let showGuides = true;
+let showRulers = true;
+let totalPages = 0;
+let currentPage = 1;
+let renderDone = false;
+let shortcutsOpen = false;
+
+/* ── DOM REFS ────────────────────────────────────────────────────── */
+const frame       = document.getElementById('book-frame');
+const scaleWrap   = document.getElementById('iframe-scale-wrap');
+const pb          = document.getElementById('pasteboard-wrap');
+const loading     = document.getElementById('loading');
+const loadCount   = document.getElementById('load-count');
+const renderBadge = document.getElementById('render-badge');
+const pageInput   = document.getElementById('page-input');
+const pageTotal   = document.getElementById('page-total');
+const zoomSelect  = document.getElementById('zoom-select');
+const sbPage      = document.getElementById('sb-page');
+const sbTotal     = document.getElementById('sb-total');
+const sbZoom      = document.getElementById('sb-zoom');
+const sbGuidesDot = document.getElementById('sb-guides-dot');
+const sbRulersDot = document.getElementById('sb-rulers-dot');
+const sbSpread    = document.getElementById('sb-spread-item');
+const shortcuts   = document.getElementById('shortcuts');
+const rulerH      = document.getElementById('ruler-h');
+const rulerV      = document.getElementById('ruler-v');
+const rulerHCanvas = document.getElementById('ruler-h-canvas');
+const rulerVCanvas = document.getElementById('ruler-v-canvas');
+const btnSingle   = document.getElementById('btn-single');
+const btnSpread   = document.getElementById('btn-spread');
+const btnGuides   = document.getElementById('btn-guides');
+const btnRulers   = document.getElementById('btn-rulers');
+
+/* ── IFRAME INJECTION ────────────────────────────────────────────── */
+const DTP_STYLE_ID = 'dtp-pasteboard-style';
+const GUIDE_STYLE_ID = 'dtp-guide-style';
+
+const PASTEBOARD_CSS = `
+  html { zoom: 1; }
+
+  body.dtp-active {
+    background: #3c3f44 !important;
+    padding: ${PAD}px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    min-height: 100vh !important;
+  }
+
+  body.dtp-active .pagedjs_pages {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: ${PAGE_GAP}px !important;
+    background: transparent !important;
+    width: auto !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+  }
+
+  body.dtp-active .pagedjs_page {
+    position: relative !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.35),
+      0 2px 8px  rgba(0,0,0,0.45),
+      0 10px 32px rgba(0,0,0,0.30) !important;
+    outline: none !important;
+  }
+
+  /* spread mode: pairs side by side */
+  body.dtp-active.spread-mode .dtp-spread {
+    display: flex !important;
+    gap: 0 !important;
+    align-items: flex-start !important;
+  }
+  body.dtp-active.spread-mode .dtp-spread .pagedjs_page {
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.35),
+      0 2px 8px  rgba(0,0,0,0.45),
+      0 10px 32px rgba(0,0,0,0.30) !important;
+  }
+  /* gutter line between spread pages */
+  body.dtp-active.spread-mode .dtp-spread .pagedjs_page:not(:last-child)::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important; right: -1px !important;
+    width: 1px !important; height: 100% !important;
+    background: rgba(0,0,0,0.5) !important;
+    z-index: 9998 !important;
+  }
+
+  /* Remove Paged.js UI chrome */
+  .pagedjs_interface, .pagedjs-cli-toolbar { display: none !important; }
+`;
+
+const guideCss = (on) => on ? `
+  /* Margin guides */
+  body.dtp-active .pagedjs_page .dtp-guide-margin {
+    display: block !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    z-index: 9997 !important;
+    border: 1px solid rgba(255, 60, 200, 0.55) !important;
+    background: transparent !important;
+  }
+  /* Verso (even/left) pages */
+  body.dtp-active .pagedjs_page[data-side="left"] .dtp-guide-margin {
+    top: ${MARGIN.verso.top}px !important;
+    right: ${MARGIN.verso.right}px !important;
+    bottom: ${MARGIN.verso.bottom}px !important;
+    left: ${MARGIN.verso.left}px !important;
+  }
+  /* Recto (odd/right) pages — default */
+  body.dtp-active .pagedjs_page:not([data-side="left"]) .dtp-guide-margin {
+    top: ${MARGIN.recto.top}px !important;
+    right: ${MARGIN.recto.right}px !important;
+    bottom: ${MARGIN.recto.bottom}px !important;
+    left: ${MARGIN.recto.left}px !important;
+  }
+` : `
+  body.dtp-active .dtp-guide-margin { display: none !important; }
+`;
+
+function injectStyles(doc) {
+  if (!doc) return;
+  let s = doc.getElementById(DTP_STYLE_ID);
+  if (!s) {
+    s = doc.createElement('style');
+    s.id = DTP_STYLE_ID;
+    doc.head.appendChild(s);
+  }
+  s.textContent = PASTEBOARD_CSS;
+  setGuideStyle(doc, showGuides);
+}
+
+function setGuideStyle(doc, on) {
+  if (!doc) return;
+  let s = doc.getElementById(GUIDE_STYLE_ID);
+  if (!s) {
+    s = doc.createElement('style');
+    s.id = GUIDE_STYLE_ID;
+    doc.head.appendChild(s);
+  }
+  s.textContent = guideCss(on);
+}
+
+/* inject a guide overlay div into each page if not already present */
+function injectGuideOverlays(doc) {
+  doc.querySelectorAll('.pagedjs_page').forEach(page => {
+    if (!page.querySelector('.dtp-guide-margin')) {
+      const div = doc.createElement('div');
+      div.className = 'dtp-guide-margin';
+      page.appendChild(div);
+    }
+  });
+}
+
+/* ── SPREAD DOM RESTRUCTURE ──────────────────────────────────────── */
+function applySpreadLayout(doc, on) {
+  const container = doc.querySelector('.pagedjs_pages');
+  if (!container) return;
+
+  if (on) {
+    // group into pairs, wrapping in .dtp-spread divs
+    const pages = Array.from(container.querySelectorAll(':scope > .pagedjs_page'));
+    if (pages.length === 0) return;
+
+    // page 1 is recto (right), starts solo
+    let i = 0;
+    // first page solo
+    const solo = doc.createElement('div');
+    solo.className = 'dtp-spread';
+    container.insertBefore(solo, pages[0]);
+    solo.appendChild(pages[0]);
+    i = 1;
+    // rest in pairs: verso + recto
+    while (i < pages.length) {
+      const wrap = doc.createElement('div');
+      wrap.className = 'dtp-spread';
+      container.insertBefore(wrap, pages[i] || null);
+      wrap.appendChild(pages[i]);
+      if (pages[i + 1]) wrap.appendChild(pages[i + 1]);
+      i += 2;
+    }
+    doc.body.classList.add('spread-mode');
+  } else {
+    // unwrap all spreads
+    doc.querySelectorAll('.dtp-spread').forEach(wrap => {
+      while (wrap.firstChild) wrap.parentNode.insertBefore(wrap.firstChild, wrap);
+      wrap.remove();
+    });
+    doc.body.classList.remove('spread-mode');
+  }
+}
+
+/* ── ZOOM ────────────────────────────────────────────────────────── */
+const ZOOM_STEPS = [25, 33, 50, 75, 100, 125, 150, 175, 200];
+
+function computeFitZoom(mode) {
+  const pbW = pb.clientWidth;
+  const pbH = pb.clientHeight - 22; // subtract h-ruler
+  if (mode === 'fit-page') {
+    const zW = Math.floor((pbW - PAD * 2) / BOOK_W * 100);
+    const zH = Math.floor((pbH - PAD * 2) / BOOK_H * 100);
+    return Math.min(zW, zH);
+  } else { // fit-width
+    return Math.floor((pbW - PAD * 2) / BOOK_W * 100);
+  }
+}
+
+function applyZoomToFrame(z) {
+  const doc = getDoc();
+  if (!doc) return;
+  let s = doc.getElementById('dtp-zoom');
+  if (!s) {
+    s = doc.createElement('style');
+    s.id = 'dtp-zoom';
+    doc.head.appendChild(s);
+  }
+  s.textContent = `html { zoom: ${z / 100}; }`;
+
+  // Size the iframe to match scaled content
+  const scaledW = Math.round(BOOK_W * z / 100) + PAD * 2 * z / 100;
+  const scaledH = totalPages > 0
+    ? Math.round((BOOK_H * totalPages + PAGE_GAP * (totalPages - 1) + PAD * 2) * z / 100)
+    : 200000; // large default while loading
+
+  frame.style.width  = Math.max(scaledW, pb.clientWidth) + 'px';
+  frame.style.height = scaledH + 'px';
+}
+
+function setZoom(val) {
+  if (val === 'fit-page' || val === 'fit-width') {
+    zoom = computeFitZoom(val);
+  } else {
+    zoom = parseInt(val, 10) || 100;
+  }
+  zoom = Math.max(20, Math.min(400, zoom));
+
+  applyZoomToFrame(zoom);
+  sbZoom.textContent = zoom + '%';
+
+  // sync select
+  const opt = [...zoomSelect.options].find(o => parseInt(o.value) === zoom);
+  zoomSelect.value = opt ? opt.value : zoomSelect.value;
+  drawRulers();
+}
+
+function zoomStep(dir) {
+  const idx = ZOOM_STEPS.reduce((best, z, i) =>
+    Math.abs(z - zoom) < Math.abs(ZOOM_STEPS[best] - zoom) ? i : best, 0);
+  const next = ZOOM_STEPS[Math.max(0, Math.min(ZOOM_STEPS.length - 1, idx + dir))];
+  setZoom(next);
+}
+
+/* ── PAGE NAVIGATION ─────────────────────────────────────────────── */
+function scrollToPage(n) {
+  const doc = getDoc();
+  if (!doc) return;
+  const pages = doc.querySelectorAll('.pagedjs_page');
+  if (!pages.length) return;
+  n = Math.max(1, Math.min(pages.length, n));
+  currentPage = n;
+  pages[n - 1].scrollIntoView({ block: 'center', behavior: 'smooth' });
+  updatePageDisplay();
+}
+
+function updatePageDisplay() {
+  pageInput.value = currentPage;
+  sbPage.textContent = currentPage;
+}
+
+/* track current page from scroll */
+function onBookScroll() {
+  const doc = getDoc();
+  if (!doc) return;
+  const pages = doc.querySelectorAll('.pagedjs_page');
+  if (!pages.length) return;
+
+  const winH = frame.contentWindow.innerHeight;
+  let best = 0, bestScore = -Infinity;
+  pages.forEach((page, i) => {
+    const r = page.getBoundingClientRect();
+    const visible = Math.min(r.bottom, winH) - Math.max(r.top, 0);
+    if (visible > bestScore) { bestScore = visible; best = i; }
+  });
+  currentPage = best + 1;
+  updatePageDisplay();
+}
+
+/* ── RULERS ──────────────────────────────────────────────────────── */
+function drawRulers() {
+  if (!showRulers) return;
+  const dpr = window.devicePixelRatio || 1;
+
+  // Horizontal ruler
+  {
+    const w = pb.clientWidth;
+    const h = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--ruler-w'));
+    rulerHCanvas.width = w * dpr;
+    rulerHCanvas.height = h * dpr;
+    rulerHCanvas.style.width = w + 'px';
+    rulerHCanvas.style.height = h + 'px';
+    const ctx = rulerHCanvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = '#252830';
+    ctx.fillRect(0, 0, w, h);
+
+    // inch marks: 1in = 96px * zoom/100, but scroll offset affects origin
+    const inchPx = 96 * zoom / 100;
+    const scrollLeft = pb.scrollLeft;
+
+    ctx.strokeStyle = '#464c58';
+    ctx.fillStyle = '#7a8394';
+    ctx.font = `${9 * dpr / dpr}px 'Red Hat Mono', monospace`;
+    ctx.textAlign = 'center';
+
+    const PAD_SCALED = PAD * zoom / 100;
+    const origin = PAD_SCALED - scrollLeft;
+    const maxIn = Math.ceil((w + scrollLeft) / inchPx) + 1;
+
+    for (let i = -1; i < maxIn; i++) {
+      const x = origin + i * inchPx;
+      if (x < 0 || x > w) continue;
+      // major tick (inch)
+      ctx.beginPath();
+      ctx.moveTo(x, h); ctx.lineTo(x, h - 10);
+      ctx.stroke();
+      ctx.fillText(i + '"', x, h - 12);
+      // minor ticks (quarter inch)
+      for (let q = 1; q < 4; q++) {
+        const xq = x + q * inchPx / 4;
+        ctx.beginPath();
+        ctx.moveTo(xq, h); ctx.lineTo(xq, h - (q === 2 ? 7 : 4));
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Vertical ruler
+  {
+    const w = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--ruler-w'));
+    const h = pb.clientHeight;
+    rulerVCanvas.width = w * dpr;
+    rulerVCanvas.height = h * dpr;
+    rulerVCanvas.style.width = w + 'px';
+    rulerVCanvas.style.height = h + 'px';
+    const ctx = rulerVCanvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = '#252830';
+    ctx.fillRect(0, 0, w, h);
+
+    const inchPx = 96 * zoom / 100;
+    const scrollTop = pb.scrollTop;
+    const rulerH_height = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--ruler-w'));
+
+    ctx.strokeStyle = '#464c58';
+    ctx.fillStyle = '#7a8394';
+    ctx.font = `${9 * dpr / dpr}px 'Red Hat Mono', monospace`;
+    ctx.textAlign = 'right';
+
+    const PAD_SCALED = (PAD + rulerH_height) * zoom / 100;
+    const origin = PAD_SCALED - scrollTop + rulerH_height;
+    const maxIn = Math.ceil((h + scrollTop) / inchPx) + 1;
+
+    for (let i = -1; i < maxIn; i++) {
+      const y = origin + i * inchPx;
+      if (y < rulerH_height || y > h) continue;
+      ctx.beginPath();
+      ctx.moveTo(w, y); ctx.lineTo(w - 10, y);
+      ctx.stroke();
+
+      ctx.save();
+      ctx.translate(w - 13, y);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(i + '"', 0, 0);
+      ctx.restore();
+
+      for (let q = 1; q < 4; q++) {
+        const yq = y + q * inchPx / 4;
+        ctx.beginPath();
+        ctx.moveTo(w, yq); ctx.lineTo(w - (q === 2 ? 7 : 4), yq);
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+/* ── GUIDES TOGGLE ───────────────────────────────────────────────── */
+function toggleGuides(on) {
+  showGuides = on;
+  btnGuides.classList.toggle('on', on);
+  sbGuidesDot.classList.toggle('on', on);
+  setGuideStyle(getDoc(), on);
+}
+
+/* ── RULERS TOGGLE ───────────────────────────────────────────────── */
+function toggleRulers(on) {
+  showRulers = on;
+  btnRulers.classList.toggle('on', on);
+  sbRulersDot.classList.toggle('on', on);
+  rulerH.style.display = on ? '' : 'none';
+  rulerV.style.display = on ? '' : 'none';
+  document.documentElement.style.setProperty('--ruler-w', on ? '22px' : '0px');
+  if (on) drawRulers();
+}
+
+/* ── SPREAD TOGGLE ───────────────────────────────────────────────── */
+function toggleSpread(on) {
+  isSpread = on;
+  btnSingle.classList.toggle('on', !on);
+  btnSpread.classList.toggle('on', on);
+  sbSpread.style.display = on ? '' : 'none';
+  applySpreadLayout(getDoc(), on);
+}
+
+/* ── HELPERS ─────────────────────────────────────────────────────── */
+function getDoc() {
+  try { return frame.contentDocument; } catch { return null; }
+}
+
+/* ── PAGED.JS WATCH ──────────────────────────────────────────────── */
+function startPageWatch() {
+  renderBadge.classList.add('visible');
+  let lastCount = 0;
+  let stableFor = 0;
+
+  const check = setInterval(() => {
+    const doc = getDoc();
+    if (!doc) return;
+    const count = doc.querySelectorAll('.pagedjs_page').length;
+    loadCount.textContent = count;
+
+    if (count > 0 && count === lastCount) {
+      stableFor++;
+      if (stableFor >= 2) {
+        clearInterval(check);
+        onRenderComplete(doc, count);
+      }
+    } else {
+      stableFor = 0;
+    }
+    lastCount = count;
+  }, 1500);
+}
+
+function onRenderComplete(doc, count) {
+  totalPages = count;
+  renderDone = true;
+
+  renderBadge.classList.remove('visible');
+  loading.classList.add('done');
+
+  pageTotal.textContent = '/ ' + count;
+  sbTotal.textContent = count;
+  sbPage.textContent = currentPage;
+
+  // activate DTP mode on iframe body
+  doc.body.classList.add('dtp-active');
+  injectStyles(doc);
+  injectGuideOverlays(doc);
+
+  // fit page on first load
+  setZoom('fit-page');
+  applyZoomToFrame(zoom);
+
+  // scroll tracking
+  try {
+    frame.contentWindow.addEventListener('scroll', () => {
+      onBookScroll();
+      drawRulers();
+    }, { passive: true });
+  } catch(e) {}
+
+  drawRulers();
+}
+
+/* ── EVENT WIRING ────────────────────────────────────────────────── */
+frame.addEventListener('load', () => {
+  const doc = getDoc();
+  if (!doc) return;
+  // inject stub styles immediately so the iframe isn't bare white
+  injectStyles(doc);
+  doc.body.classList.add('dtp-active');
+  startPageWatch();
+});
+
+document.getElementById('btn-prev').addEventListener('click', () => scrollToPage(currentPage - 1));
+document.getElementById('btn-next').addEventListener('click', () => scrollToPage(currentPage + 1));
+
+pageInput.addEventListener('change', () => {
+  const n = parseInt(pageInput.value, 10);
+  if (!isNaN(n)) scrollToPage(n);
+});
+
+document.getElementById('btn-zoom-in').addEventListener('click',  () => zoomStep(+1));
+document.getElementById('btn-zoom-out').addEventListener('click', () => zoomStep(-1));
+
+zoomSelect.addEventListener('change', () => setZoom(zoomSelect.value));
+
+btnSingle.addEventListener('click', () => toggleSpread(false));
+btnSpread.addEventListener('click', () => toggleSpread(true));
+btnGuides.addEventListener('click', () => toggleGuides(!showGuides));
+btnRulers.addEventListener('click', () => toggleRulers(!showRulers));
+
+document.getElementById('btn-help').addEventListener('click', () => {
+  shortcutsOpen = !shortcutsOpen;
+  shortcuts.classList.toggle('show', shortcutsOpen);
+});
+
+pb.addEventListener('scroll', drawRulers, { passive: true });
+window.addEventListener('resize', () => { drawRulers(); setZoom(zoom); });
+
+/* ── KEYBOARD SHORTCUTS ──────────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (e.target === pageInput) return;
+  const key = e.key.toLowerCase();
+
+  if (key === 'arrowleft'  || key === 'arrowup')   { scrollToPage(currentPage - 1); e.preventDefault(); }
+  if (key === 'arrowright' || key === 'arrowdown')  { scrollToPage(currentPage + 1); e.preventDefault(); }
+  if (key === '+' || key === '=') { zoomStep(+1); e.preventDefault(); }
+  if (key === '-')                { zoomStep(-1); e.preventDefault(); }
+  if (key === '0')                { setZoom('fit-page'); zoomSelect.value = 'fit-page'; }
+  if (key === '1')                { setZoom(100);  zoomSelect.value = '100'; }
+  if (key === '5')                { setZoom(50);   zoomSelect.value = '50'; }
+  if (key === 'g')                { toggleGuides(!showGuides); }
+  if (key === 'r')                { toggleRulers(!showRulers); }
+  if (key === 's')                { toggleSpread(!isSpread); }
+  if (key === '?')                { shortcutsOpen = !shortcutsOpen; shortcuts.classList.toggle('show', shortcutsOpen); }
+  if (key === 'escape')           { shortcutsOpen = false; shortcuts.classList.remove('show'); }
+});
+
+// initial ruler draw
+drawRulers();
+
+/* ── SECTION / BOOK LOAD ─────────────────────────────────────────── */
+(function initBookFrame() {
+  const bookSrc = sectionId
+    ? `bitcoin-alpha-book.html?section=${encodeURIComponent(sectionId)}`
+    : 'bitcoin-alpha-book.html';
+
+  if (sectionId) {
+    document.getElementById('tb-title').innerHTML =
+      `Section&nbsp;<em>${sectionId}</em>`;
+    document.getElementById('load-msg').textContent = 'Rendering section';
+    document.title = `${sectionId} — Bitcoin v0.01 Alpha`;
+  }
+
+  frame.src = bookSrc;
+})();
+</script>
+</body>
+</html>

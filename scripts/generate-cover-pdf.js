@@ -10,115 +10,109 @@
  *   npm run cover:pdf
  */
 
-import puppeteer from 'puppeteer';
 import { existsSync, readFileSync } from 'fs';
-import { join, dirname } from 'path';
+import { join, dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { launchBrowser } from './puppeteer-launch.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = dirname(__filename);
 const ROOT_DIR   = join(__dirname, '..');
 const OUTPUT_DIR = join(ROOT_DIR, 'output');
 
-async function generateCoverPDF() {
-  console.log('📄 Bitcoin Alpha Book — Cover PDF Generator\n');
+export async function generateCoverPDF({ quiet = false } = {}) {
+  if (!quiet) console.log('📄 Bitcoin Alpha Book — Cover PDF Generator\n');
 
-  // Resolve source HTML
   const coverHtmlPath = join(OUTPUT_DIR, 'cover.html');
   if (!existsSync(coverHtmlPath)) {
-    console.error('Error: cover.html not found. Run "npm run cover" first.');
-    process.exit(1);
+    throw new Error('cover.html not found. Run "npm run cover" first.');
   }
 
-  // Resolve canvas dimensions from cover-meta.json (written by build-cover.js)
   const metaPath = join(OUTPUT_DIR, 'cover-meta.json');
   if (!existsSync(metaPath)) {
-    console.error('Error: cover-meta.json not found. Run "npm run cover" first.');
-    process.exit(1);
+    throw new Error('cover-meta.json not found. Run "npm run cover" first.');
   }
 
-  const { pageCount, spine, canvasW, canvasH, printW, printH, bleedOffsetPx } = JSON.parse(readFileSync(metaPath, 'utf8'));
+  const { pageCount, spine, canvasW, canvasH, printW, printH } = JSON.parse(readFileSync(metaPath, 'utf8'));
   const canvasWpx  = Math.ceil(canvasW * 96);
   const canvasHpx  = Math.ceil(canvasH * 96);
   const printWpx   = Math.ceil(printW * 96);
   const printHpx   = Math.ceil(printH * 96);
 
-  console.log(`   Pages:  ${pageCount}`);
-  console.log(`   Spine:  ${spine.toFixed(4)}"`);
-  console.log(`   Canvas: ${canvasW.toFixed(4)}" × ${canvasH.toFixed(4)}" (full, incl. crop marks)`);
-  console.log(`   Output: ${printW.toFixed(4)}" × ${printH.toFixed(4)}" (bleed-to-bleed, matches printer template)\n`);
+  if (!quiet) {
+    console.log(`   Pages:  ${pageCount}`);
+    console.log(`   Spine:  ${spine.toFixed(4)}"`);
+    console.log(`   Canvas: ${canvasW.toFixed(4)}" × ${canvasH.toFixed(4)}" (full, incl. crop marks)`);
+    console.log(`   Output: ${printW.toFixed(4)}" × ${printH.toFixed(4)}" (bleed-to-bleed, matches printer template)\n`);
+  }
 
-  // Launch browser
-  console.log('   Launching browser...');
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    timeout: 60000,
-  });
+  if (!quiet) console.log('   Launching browser...');
+  const browser = await launchBrowser({ timeout: 60000 });
 
-  const page = await browser.newPage();
-  page.setDefaultTimeout(60000);
-  page.setDefaultNavigationTimeout(60000);
+  try {
+    const page = await browser.newPage();
+    page.setDefaultTimeout(60000);
+    page.setDefaultNavigationTimeout(60000);
 
-  // Viewport = full canvas so all absolutely-positioned elements render at correct size.
-  // Resized to printWpx after transform so Puppeteer PDF scale = 1.0.
-  await page.setViewport({
-    width:             canvasWpx,
-    height:            canvasHpx,
-    deviceScaleFactor: 2,
-  });
+    await page.setViewport({
+      width:             canvasWpx,
+      height:            canvasHpx,
+      deviceScaleFactor: 2,
+    });
 
-  // Load the cover HTML
-  console.log('   Loading cover HTML...');
-  await page.goto(`file://${coverHtmlPath}`, {
-    waitUntil: 'networkidle2',
-    timeout:   30000,
-  });
+    if (!quiet) console.log('   Loading cover HTML...');
+    await page.goto(`file://${coverHtmlPath}`, {
+      waitUntil: 'networkidle2',
+      timeout:   30000,
+    });
 
-  // Wait for web fonts
-  await page.evaluateHandle('document.fonts.ready');
-  console.log('   ✓ Fonts loaded');
+    await page.evaluateHandle('document.fonts.ready');
+    if (!quiet) console.log('   ✓ Fonts loaded');
 
-  // Strip preview-only elements and reposition the print area to the document origin.
-  // Directly setting left/top=0 on .print-area is cleaner than transform:translate
-  // (translate doesn't affect the layout box, causing scroll-height / clipping bugs).
-  // Crop marks are removed — printer only needs the bleed-to-bleed content.
-  await page.evaluate((wPx, hPx) => {
-    document.querySelectorAll('.guide, .info-bar, .crop-marks').forEach(el => el.remove());
-    const pa = document.querySelector('.print-area');
-    if (pa) { pa.style.left = '0'; pa.style.top = '0'; }
-    for (const el of [document.documentElement, document.body]) {
-      el.style.height   = `${hPx}px`;
-      el.style.width    = `${wPx}px`;
-      el.style.overflow = 'hidden';
-      el.style.margin   = '0';
-      el.style.padding  = '0';
+    // Strip preview-only chrome; crop marks removed — printer needs bleed-to-bleed only.
+    await page.evaluate((wPx, hPx) => {
+      document.querySelectorAll(
+        '.guide, .info-bar, .crop-marks, #cover-preview-chrome, #cover-preview-bar, #cover-inspect-panel, #cover-inspect-hilite'
+      ).forEach(el => el.remove());
+      const pa = document.querySelector('.print-area');
+      if (pa) { pa.style.left = '0'; pa.style.top = '0'; }
+      for (const el of [document.documentElement, document.body]) {
+        el.style.height   = `${hPx}px`;
+        el.style.width    = `${wPx}px`;
+        el.style.overflow = 'hidden';
+        el.style.margin   = '0';
+        el.style.padding  = '0';
+      }
+    }, printWpx, printHpx);
+
+    await page.setViewport({ width: printWpx, height: printHpx, deviceScaleFactor: 2 });
+
+    const pdfPath = join(OUTPUT_DIR, 'cover.pdf');
+    if (!quiet) console.log('   Generating PDF...');
+
+    await page.pdf({
+      path:            pdfPath,
+      width:           `${printW}in`,
+      height:          `${printH}in`,
+      printBackground: true,
+      margin:          { top: 0, right: 0, bottom: 0, left: 0 },
+      timeout:         120000,
+    });
+
+    if (!quiet) {
+      console.log(`   ✓ PDF saved to ${pdfPath}`);
+      console.log('\n✨ Cover PDF generation complete!');
     }
-  }, printWpx, printHpx);
-
-  // Resize viewport to exact print dimensions so Puppeteer PDF scale = 1.0.
-  await page.setViewport({ width: printWpx, height: printHpx, deviceScaleFactor: 2 });
-
-  // Export PDF — bleed-to-bleed, single page, matches printer template dimensions
-  const pdfPath = join(OUTPUT_DIR, 'cover.pdf');
-  console.log('   Generating PDF...');
-
-  await page.pdf({
-    path:            pdfPath,
-    width:           `${printW}in`,
-    height:          `${printH}in`,
-    printBackground: true,
-    margin:          { top: 0, right: 0, bottom: 0, left: 0 },
-    timeout:         120000,
-  });
-
-  await browser.close();
-
-  console.log(`   ✓ PDF saved to ${pdfPath}`);
-  console.log('\n✨ Cover PDF generation complete!');
+    return { pdfPath, printW, printH, pageCount, spine };
+  } finally {
+    await browser.close();
+  }
 }
 
-generateCoverPDF().catch(err => {
-  console.error('Error:', err.message);
-  process.exit(1);
-});
+const isCli = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1]);
+if (isCli) {
+  generateCoverPDF().catch(err => {
+    console.error('Error:', err.message);
+    process.exit(1);
+  });
+}

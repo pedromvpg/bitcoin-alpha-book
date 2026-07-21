@@ -1,0 +1,11 @@
+/**
+ * Active typeface pairing for Bitcoin Alpha Book.
+ * Edited by the Design System preview (POST /api/typeface) and read by build.js.
+ * Do not hardcode font families elsewhere — use these CSS variables.
+ * @typeface basis|inter
+ */
+:root {
+  --font-code: 'Basis Grotesque Mono Pro', monospace;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Basis Grotesque Mono Pro', monospace;
+}

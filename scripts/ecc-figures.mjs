@@ -39,20 +39,22 @@ function yUpper(x) {
   return Math.sqrt(v);
 }
 
-/** Third intersection of line through P and Q; P ≠ Q, x1 ≠ x2 */
-function thirdPointDistinct(x1, y1, x2, y2) {
+/**
+ * Algebraic group-law formulas return the *sum* R = P ⊕ Q (already reflected).
+ * The third curve intersection on the chord/tangent is R′ = (x, −y_R).
+ */
+function sumDistinct(x1, y1, x2, y2) {
   const lam = (y2 - y1) / (x2 - x1);
-  const x3 = lam * lam - x1 - x2;
-  const y3 = lam * (x1 - x3) - y1;
-  return { x: x3, y: y3, lam };
+  const x = lam * lam - x1 - x2;
+  const y = lam * (x1 - x) - y1;
+  return { x, y, lam };
 }
 
-/** Third point for tangent at P (doubling) */
-function thirdPointDouble(x1, y1) {
+function sumDouble(x1, y1) {
   const lam = (3 * x1 * x1 + A) / (2 * y1);
-  const x3 = lam * lam - 2 * x1;
-  const y3 = lam * (x1 - x3) - y1;
-  return { x: x3, y: y3, lam };
+  const x = lam * lam - 2 * x1;
+  const y = lam * (x1 - x) - y1;
+  return { x, y, lam };
 }
 
 function sampleCurve(xMin, xMax, steps) {
@@ -136,37 +138,34 @@ function label(proj, x, y, text, dx = 6, dy = -6, size = 11) {
   return `<text x="${(p.x + dx).toFixed(2)}" y="${(p.y + dy).toFixed(2)}" font-family="Basis Grotesque Mono Pro, monospace" font-size="${size}" fill="${STROKE.panelTitle}">${text}</text>`;
 }
 
-/** Points on y² = x³ + 7 for construction diagrams */
-const P_ADD = { x: 3, y: yUpper(3) };
-const Q_ADD = { x: 5, y: yUpper(5) };
-const RPRIME_ADD = thirdPointDistinct(P_ADD.x, P_ADD.y, Q_ADD.x, Q_ADD.y);
-const R_ADD = { x: RPRIME_ADD.x, y: -RPRIME_ADD.y };
+/** Demo points — compact so constructions fit a readable zoom window */
+const P_ADD = { x: 2, y: yUpper(2) };
+const Q_ADD = { x: 3, y: yUpper(3) };
+const R_ADD = sumDistinct(P_ADD.x, P_ADD.y, Q_ADD.x, Q_ADD.y); // P ⊕ Q
+const RPRIME_ADD = { x: R_ADD.x, y: -R_ADD.y }; // third intersection on the chord
 
 const P_DBL = { x: 2, y: yUpper(2) };
-const RPRIME_DBL = thirdPointDouble(P_DBL.x, P_DBL.y);
-const R2_DBL = { x: RPRIME_DBL.x, y: -RPRIME_DBL.y };
+const R2_DBL = sumDouble(P_DBL.x, P_DBL.y); // 2P
+const RPRIME_DBL = { x: R2_DBL.x, y: -R2_DBL.y };
 
-const X_MIN = -2.35;
-const X_MAX = 8.25;
-const Y_EXT = 14;
+/** Shared framing for op figures — room for labels without cropping */
+const OP_VIEW = { xMin: -3.0, xMax: 4.4, yMin: -5.2, yMax: 7.2 };
+
 
 /**
- * 3-D surface  z = y² − x³ − 7  with orthographic projection + painter's algorithm.
- * The elliptic curve y² = x³ + 7 is the zero-contour where the surface crosses z = 0.
- */
-/**
- * Stacked curve slices: y² = x³ + (7 + z) for z = −8…+8, step 2.
- * Each horizontal slice is one curve of the family; z = 0 is secp256k1 (red).
+ * Stacked curve slices: y² = x³ + (7 + z) for integer z.
+ * Each horizontal slice is one Weierstrass curve; z = 0 is secp256k1 (red).
+ * Titles / legend live in HTML (build.js); SVG is diagram-only.
  */
 function curveSpatialFigure() {
-  const W = 700, H = 420;
+  const W = 720, H = 400;
 
-  const PHI = Math.PI * 0.20;  // ~36° azimuth
-  const EPS = Math.PI * 0.22;  // ~40° elevation — more foreshortening on z
+  const PHI = Math.PI * 0.18;
+  const EPS = Math.PI * 0.24;
   const cPhi = Math.cos(PHI), sPhi = Math.sin(PHI);
   const cEps = Math.cos(EPS), sEps = Math.sin(EPS);
 
-  const SC = 20, CX = W * 0.42, CY = H * 0.58;
+  const SC = 22, CX = W * 0.44, CY = H * 0.56;
 
   function toSc(x, y, z) {
     const r = x * sPhi + y * cPhi;
@@ -176,29 +175,32 @@ function curveSpatialFigure() {
     };
   }
 
-  const X_MAX = 5.0, Y_CLIP = 5.2, STEPS = 280;
+  const X_MAX = 5.0, Y_CLIP = 5.0, STEPS = 320;
+  const Z_LO = -8, Z_HI = 6;
 
-  // Z levels: −10…+6, step 1 — more slices below z=0. Draw bottom-to-top (back-to-front).
-  const levels = [
-    { z: -10, col: 'rgb(12,28,100)',   w: 0.65, op: 0.28 },
-    { z:  -9, col: 'rgb(18,40,130)',   w: 0.70, op: 0.33 },
-    { z:  -8, col: 'rgb(26,54,158)',   w: 0.75, op: 0.38 },
-    { z:  -7, col: 'rgb(35,68,178)',   w: 0.82, op: 0.43 },
-    { z:  -6, col: 'rgb(45,80,190)',   w: 0.9,  op: 0.50 },
-    { z:  -5, col: 'rgb(60,105,205)',  w: 1.0,  op: 0.57 },
-    { z:  -4, col: 'rgb(80,135,215)',  w: 1.1,  op: 0.64 },
-    { z:  -3, col: 'rgb(110,160,220)', w: 1.2,  op: 0.72 },
-    { z:  -2, col: 'rgb(140,185,225)', w: 1.3,  op: 0.80 },
-    { z:  -1, col: 'rgb(175,205,235)', w: 1.4,  op: 0.88 },
-    { z:   1, col: 'rgb(240,195,100)', w: 1.4,  op: 0.88 },
-    { z:   2, col: 'rgb(235,170,70)',  w: 1.3,  op: 0.80 },
-    { z:   3, col: 'rgb(228,145,50)',  w: 1.2,  op: 0.72 },
-    { z:   4, col: 'rgb(220,118,35)',  w: 1.1,  op: 0.64 },
-    { z:   5, col: 'rgb(208,90,25)',   w: 1.0,  op: 0.57 },
-    { z:   6, col: 'rgb(192,60,15)',   w: 0.9,  op: 0.50 },
-  ];
+  // Cool below z=0 (cyan family), warm above (orange family) — same language as torus figures
+  function levelStyle(z) {
+    if (z === 0) return { col: '#dc2626', w: 2.4, op: 1 };
+    const t = z < 0 ? (z - Z_LO) / (0 - Z_LO) : (z - 0) / (Z_HI - 0); // 0 far → 1 near zero
+    if (z < 0) {
+      // deep blue → ECC cyan
+      const u = 0.25 + 0.75 * t;
+      return {
+        col: `rgb(${Math.round(6 + 0 * u)}, ${Math.round(80 + 102 * u)}, ${Math.round(140 + 72 * u)})`,
+        w: 0.7 + 0.7 * t,
+        op: 0.28 + 0.62 * t,
+      };
+    }
+    const u = 1 - t; // near zero brighter
+    return {
+      col: `rgb(${Math.round(180 + 69 * (1 - u))}, ${Math.round(90 + 25 * (1 - u))}, ${Math.round(20 + 5 * (1 - u))})`,
+      w: 0.7 + 0.7 * (1 - u),
+      op: 0.28 + 0.62 * (1 - u),
+    };
+  }
 
-  function drawLevel(z, col, w, op) {
+  function drawLevel(z) {
+    const { col, w, op } = levelStyle(z);
     const b = 7 + z;
     const xMin = Math.max(-2.7, Math.cbrt(-b) + (b <= 0 ? 0.08 : 0));
     const upper = [], lower = [];
@@ -208,66 +210,95 @@ function curveSpatialFigure() {
       if (y2 < 0) continue;
       const y = Math.sqrt(y2);
       if (y > Y_CLIP) continue;
-      upper.push(toSc(x,  y, z));
+      upper.push(toSc(x, y, z));
       lower.push(toSc(x, -y, z));
     }
     if (upper.length < 2) return '';
     const up = 'M ' + upper.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L ');
     const lo = 'M ' + lower.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L ');
-    return `<path d="${up}" fill="none" stroke="${col}" stroke-width="${w}" opacity="${op}" stroke-linejoin="round"/>` +
-           `<path d="${lo}" fill="none" stroke="${col}" stroke-width="${w}" opacity="${op}" stroke-linejoin="round"/>`;
+    return `<path d="${up}" fill="none" stroke="${col}" stroke-width="${w.toFixed(2)}" opacity="${op.toFixed(2)}" stroke-linejoin="round"${VEC}/>` +
+           `<path d="${lo}" fill="none" stroke="${col}" stroke-width="${w.toFixed(2)}" opacity="${op.toFixed(2)}" stroke-linejoin="round"${VEC}/>`;
   }
 
-  // Draw non-zero levels first (back-to-front by z), then z=0 on top
+  // Painter order: far (low z) → near (high z), secp256k1 last
   let curvesSvg = '';
-  for (const lv of levels) curvesSvg += drawLevel(lv.z, lv.col, lv.w, lv.op);
-  curvesSvg += drawLevel(0, '#dc2626', 2.6, 1.0);
+  for (let z = Z_LO; z <= Z_HI; z++) {
+    if (z === 0) continue;
+    curvesSvg += drawLevel(z);
+  }
+  curvesSvg += drawLevel(0);
 
-  // Axes
-  function seg(x1,y1,z1,x2,y2,z2,col='#aaa',sw=0.8,dash=''){
-    const a=toSc(x1,y1,z1), b=toSc(x2,y2,z2);
+  function seg(x1, y1, z1, x2, y2, z2, col = '#94a3b8', sw = 0.9, dash = '', marker = '') {
+    const a = toSc(x1, y1, z1), b = toSc(x2, y2, z2);
     const da = dash ? ` stroke-dasharray="${dash}"` : '';
-    return `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${col}" stroke-width="${sw}"${da}/>`;
+    const mk = marker ? ` marker-end="url(#${marker})"` : '';
+    return `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${col}" stroke-width="${sw}"${da}${mk}${VEC}/>`;
   }
-  function lbl(x,y,z,txt,dx,dy){
-    const p=toSc(x,y,z);
-    return `<text x="${(p.x+dx).toFixed(1)}" y="${(p.y+dy).toFixed(1)}" font-family="Basis Grotesque Mono Pro, monospace" font-size="11" font-style="italic" fill="#555">${txt}</text>`;
+  function lbl(x, y, z, txt, dx, dy) {
+    const p = toSc(x, y, z);
+    return `<text x="${(p.x + dx).toFixed(1)}" y="${(p.y + dy).toFixed(1)}" font-family="${FONT_MONO}" font-size="11" font-style="italic" fill="${STROKE.axisStrong}">${txt}</text>`;
   }
 
-  const X0 = -2.8, Y0 = 5.5, Z0 = -11;
+  // z = 0 plane (parallelogram) — makes the red slice read as “the” chart
+  const planeCorners = [
+    toSc(-2.4, -4.6, 0),
+    toSc(5.0, -4.6, 0),
+    toSc(5.0, 4.6, 0),
+    toSc(-2.4, 4.6, 0),
+  ];
+  const planePts = planeCorners.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const plane = `
+    <polygon points="${planePts}" fill="rgba(220,38,38,0.06)" stroke="#dc2626" stroke-width="0.7" opacity="0.85"${VEC}/>
+    ${seg(-2.4, 0, 0, 5.0, 0, 0, '#dc2626', 0.55, '4,3')}
+    ${lbl(5.05, 0, 0, 'z = 0', 6, -2)}`;
+
+  const X0 = -2.6, Y0 = 5.0, Z0 = -9;
   const axes = `
-    ${seg(X0, 0, Z0, 5.4, 0, Z0, '#999', 0.9)}
-    ${seg(X0, -Y0, Z0, X0, Y0, Z0, '#999', 0.9)}
-    ${seg(X0, 0, Z0, X0, 0, 7, '#999', 0.9)}
-    ${lbl(5.5, 0, Z0, 'x', 0, 4)}
-    ${lbl(X0, Y0+0.3, Z0, 'y', 0, 4)}
-    ${lbl(X0, 0, 7.3, 'z', 4, 0)}
-    ${seg(X0, 0, 0, 5.2, 0, 0, '#3b82f6', 0.5, '3,3')}`;
+    <defs>
+      <marker id="ecc-arr-cs-x" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <polygon points="0 0.5, 6 3, 0 5.5" fill="${STROKE.axisStrong}"/>
+      </marker>
+      <marker id="ecc-arr-cs-y" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <polygon points="0 0.5, 6 3, 0 5.5" fill="${STROKE.axisStrong}"/>
+      </marker>
+      <marker id="ecc-arr-cs-z" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+        <polygon points="0 0.5, 6 3, 0 5.5" fill="${STROKE.axisStrong}"/>
+      </marker>
+    </defs>
+    ${seg(X0, 0, Z0, 5.4, 0, Z0, STROKE.axisStrong, 1.0, '', 'ecc-arr-cs-x')}
+    ${seg(X0, -Y0, Z0, X0, Y0, Z0, STROKE.axisStrong, 1.0, '', 'ecc-arr-cs-y')}
+    ${seg(X0, 0, Z0, X0, 0, 7.2, STROKE.axisStrong, 1.0, '', 'ecc-arr-cs-z')}
+    ${lbl(5.55, 0, Z0, 'x', 0, 4)}
+    ${lbl(X0, Y0 + 0.25, Z0, 'y', -2, 4)}
+    ${lbl(X0, 0, 7.5, 'z', 5, 0)}`;
 
-  // Legend — top-right, clear of y-axis and curves
-  const LX = W - 258, LY = 44;
-  const legend = `
-    <rect x="${LX-4}" y="${LY-16}" width="248" height="90" rx="3" fill="rgba(255,255,255,0.96)" stroke="#ddd" stroke-width="0.8"/>
-    <line x1="${LX+2}" y1="${LY}" x2="${LX+22}" y2="${LY}" stroke="#dc2626" stroke-width="2.5"/>
-    <text x="${LX+28}" y="${LY+4}" font-family="Basis Grotesque Mono Pro, monospace" font-size="9.5" fill="#222">z = 0  secp256k1: y² = x³ + 7</text>
-    <line x1="${LX+2}" y1="${LY+22}" x2="${LX+22}" y2="${LY+22}" stroke="rgb(80,135,215)" stroke-width="1.5" opacity="0.8"/>
-    <text x="${LX+28}" y="${LY+26}" font-family="Basis Grotesque Mono Pro, monospace" font-size="9.5" fill="#555">z &lt; 0  y² = x³ + (7+z),  smaller b</text>
-    <line x1="${LX+2}" y1="${LY+44}" x2="${LX+22}" y2="${LY+44}" stroke="rgb(228,145,50)" stroke-width="1.5" opacity="0.8"/>
-    <text x="${LX+28}" y="${LY+48}" font-family="Basis Grotesque Mono Pro, monospace" font-size="9.5" fill="#555">z &gt; 0  y² = x³ + (7+z),  larger b</text>
-    <text x="${LX+2}" y="${LY+68}" font-family="Basis Grotesque Mono Pro, monospace" font-size="8.5" fill="#999">17 slices, Δz = 1</text>`;
+  // Tiny in-figure key (no floating white box) — full legend is HTML
+  const keyX = W - 148, keyY = 22;
+  const miniKey = `
+    <line x1="${keyX}" y1="${keyY}" x2="${keyX + 18}" y2="${keyY}" stroke="#dc2626" stroke-width="2.4"${VEC}/>
+    <text x="${keyX + 24}" y="${keyY + 3.5}" font-family="${FONT_MONO}" font-size="9.5" fill="#374151">secp256k1</text>
+    <line x1="${keyX}" y1="${keyY + 16}" x2="${keyX + 18}" y2="${keyY + 16}" stroke="${ECC_CYAN}" stroke-width="1.5"${VEC}/>
+    <text x="${keyX + 24}" y="${keyY + 19.5}" font-family="${FONT_MONO}" font-size="9.5" fill="#6b7280">z &lt; 0</text>
+    <line x1="${keyX}" y1="${keyY + 32}" x2="${keyX + 18}" y2="${keyY + 32}" stroke="${ECC_ORANGE}" stroke-width="1.5"${VEC}/>
+    <text x="${keyX + 24}" y="${keyY + 35.5}" font-family="${FONT_MONO}" font-size="9.5" fill="#6b7280">z &gt; 0</text>`;
 
   const body = `
-    <text x="12" y="18" font-family="Basis Grotesque Mono Pro, monospace" font-size="11" font-weight="700" fill="#111">y² = x³ + (7+z)  —  curve family along z</text>
-    <text x="12" y="32" font-family="Basis Grotesque Mono Pro, monospace" font-size="9" fill="#6b7280">Each slice is y² = x³ + b for b = 7+z; secp256k1 (red) lives at z = 0</text>
-    ${legend}
-    ${axes}
-    ${curvesSvg}`;
+    <rect width="${W}" height="${H}" fill="#ffffff"/>
+    <g stroke-linecap="round" stroke-linejoin="round">
+      ${axes}
+      ${plane}
+      ${curvesSvg}
+      ${miniKey}
+    </g>`;
 
   return svgWrap(W, H, body);
 }
 
 /** Toy prime field F_p, same cubic reduced mod p (cf. modular / torus pictures in ECC primers) */
 const TOY_P = 17;
+const ECC_ORANGE = '#f97316';
+const ECC_CYAN = '#06b6d4';
+const FONT_MONO = 'Basis Grotesque Mono Pro, monospace';
 
 function mod(n, p) {
   let r = n % p;
@@ -293,140 +324,313 @@ function toyCurvePoints(p = TOY_P) {
 function finiteFieldToyFigure() {
   const p = TOY_P;
   const pts = toyCurvePoints(p);
-  const cell = 7;
-  const pad = 36;
+  const cell = 16;
+  const leftPad = 36;
+  const topPad = 12; // title lives in HTML caption (build.js)
+  const rightPad = 58; // room for "y = p/2"
   const plot = p * cell;
-  const w = pad + plot + pad + 168;
-  const h = pad + plot + 56;
+  const w = leftPad + plot + rightPad;
+  const h = topPad + plot + 36; // room for axis labels under the grid
 
   const toPx = (xv, yv) => ({
-    x: pad + xv * cell + cell / 2,
-    y: pad + (p - 1 - yv) * cell + cell / 2,
+    x: leftPad + xv * cell + cell / 2,
+    y: topPad + (p - 1 - yv) * cell + cell / 2,
   });
 
   let grid = '';
   for (let i = 0; i <= p; i++) {
-    const x = pad + i * cell;
-    const y = pad + i * cell;
-    grid += `<line x1="${x}" y1="${pad}" x2="${x}" y2="${pad + plot}" stroke="${STROKE.grid}" stroke-width="0.6"${VEC}/>`;
-    grid += `<line x1="${pad}" y1="${y}" x2="${pad + plot}" y2="${y}" stroke="${STROKE.grid}" stroke-width="0.6"${VEC}/>`;
+    const x = leftPad + i * cell;
+    const y = topPad + i * cell;
+    grid += `<line x1="${x}" y1="${topPad}" x2="${x}" y2="${topPad + plot}" stroke="${STROKE.grid}" stroke-width="0.6"${VEC}/>`;
+    grid += `<line x1="${leftPad}" y1="${y}" x2="${leftPad + plot}" y2="${y}" stroke="${STROKE.grid}" stroke-width="0.6"${VEC}/>`;
   }
 
-  const midY = pad + (p / 2) * cell;
-  const midLine = `<line x1="${pad}" y1="${midY}" x2="${pad + plot}" y2="${midY}" stroke="#fb923c" stroke-width="1" stroke-dasharray="4 3" opacity="0.9"${VEC}/>`;
+  // Axis ticks at 0, 8, 16
+  const tickVals = [0, 8, 16];
+  let ticks = '';
+  for (const t of tickVals) {
+    const px = leftPad + t * cell + cell / 2;
+    const py = topPad + (p - 1 - t) * cell + cell / 2;
+    ticks += `<text x="${px.toFixed(1)}" y="${topPad + plot + 14}" font-family="${FONT_MONO}" font-size="9" text-anchor="middle" fill="${STROKE.axisStrong}">${t}</text>`;
+    ticks += `<text x="${leftPad - 6}" y="${(py + 3).toFixed(1)}" font-family="${FONT_MONO}" font-size="9" text-anchor="end" fill="${STROKE.axisStrong}">${t}</text>`;
+  }
+  ticks += `<text x="${leftPad + plot / 2}" y="${topPad + plot + 26}" font-family="${FONT_MONO}" font-size="10" font-style="italic" text-anchor="middle" fill="${STROKE.axisStrong}">x</text>`;
+  ticks += `<text x="${leftPad - 22}" y="${topPad + plot / 2}" font-family="${FONT_MONO}" font-size="10" font-style="italic" text-anchor="middle" fill="${STROKE.axisStrong}">y</text>`;
+
+  const midY = topPad + (p / 2) * cell;
+  const midLine = `
+    <line x1="${leftPad}" y1="${midY}" x2="${leftPad + plot}" y2="${midY}" stroke="${ECC_ORANGE}" stroke-width="1.2" stroke-dasharray="4 3" opacity="0.95"${VEC}/>
+    <text x="${leftPad + plot + 6}" y="${midY + 4}" font-family="${FONT_MONO}" font-size="10" fill="${ECC_ORANGE}">y = p/2</text>`;
 
   let dots = '';
   for (const q of pts) {
     const c = toPx(q.x, q.y);
-    dots += `<circle cx="${c.x.toFixed(2)}" cy="${c.y.toFixed(2)}" r="3.2" fill="${STROKE.curve}"/>`;
+    dots += `<circle cx="${c.x.toFixed(2)}" cy="${c.y.toFixed(2)}" r="3.6" fill="${STROKE.curve}"/>`;
   }
 
-  const axX = pad + plot + 20;
-  const note = `
-    <text x="${axX}" y="${pad + 14}" font-family="Basis Grotesque Mono Pro, monospace" font-size="13" font-weight="700" fill="${STROKE.panelTitle}">Modular picture (toy field)</text>
-    <text x="${axX}" y="${pad + 32}" font-family="Basis Grotesque Mono Pro, monospace" font-size="11" fill="#444">Prime p = ${p}. Integer pairs (x, y) with</text>
-    <text x="${axX}" y="${pad + 46}" font-family="Basis Grotesque Mono Pro, monospace" font-size="11" fill="#444">y² ≡ x³ + 7 (mod p).</text>
-    <text x="${axX}" y="${pad + 66}" font-family="Basis Grotesque Mono Pro, monospace" font-size="11" fill="#444">Negation (x, y) ↦ (x, −y) is reflection</text>
-    <text x="${axX}" y="${pad + 80}" font-family="Basis Grotesque Mono Pro, monospace" font-size="11" fill="#444">across y = ${p}/2 (orange). With modulus,</text>
-    <text x="${axX}" y="${pad + 94}" font-family="Basis Grotesque Mono Pro, monospace" font-size="11" fill="#444">edges identify like a torus—unlike ℝ².</text>
-  `;
-
-  const title = `<text x="${pad}" y="${pad - 12}" font-family="Basis Grotesque Mono Pro, monospace" font-size="13" font-weight="700" fill="${STROKE.panelTitle}">F₁₇ (schematic grid)</text>`;
-
+  // Title / legend live in HTML (build.js); SVG is diagram-only.
   const body = `
-  ${title}
   <g stroke-linecap="round">${grid}${midLine}${dots}</g>
-  ${note}
-  <text x="${pad}" y="${h - 18}" font-family="Basis Grotesque Mono Pro, monospace" font-size="10" fill="#9ca3af">Not secp256k1’s field—only illustrates wrapping & symmetry.</text>`;
+  ${ticks}`;
 
   return svgWrap(w, h, body);
 }
 
-function reflectionGuide(proj, x, yA, yB, suffix) {
-  const p1 = proj(x, yA);
-  const p2 = proj(x, yB);
+function reflectionGuide(proj, x, yFrom, yTo, suffix) {
+  const p1 = proj(x, yFrom);
+  const p2 = proj(x, yTo);
   const xMid = (p1.x + p2.x) / 2;
   const yTop = Math.min(p1.y, p2.y) - 2;
   return `
+    <defs>
+      <marker id="ecc-arrow-${suffix}" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+        <polygon points="0 0, 5 2.5, 0 5" fill="${ECC_ORANGE}"/>
+      </marker>
+    </defs>
     <path d="M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} L ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}"
-      stroke="${STROKE.guide}" stroke-width="1.2" fill="none" stroke-dasharray="3 3" marker-end="url(#ecc-arrow-${suffix})"${VEC}/>
-    <text x="${(xMid + 8).toFixed(2)}" y="${yTop.toFixed(2)}" font-family="Basis Grotesque Mono Pro, monospace" font-size="9.5" fill="${STROKE.guide}">reflect</text>`;
+      stroke="${ECC_ORANGE}" stroke-width="1.4" fill="none" stroke-dasharray="3 3" marker-end="url(#ecc-arrow-${suffix})"${VEC}/>
+    <text x="${(xMid + 8).toFixed(2)}" y="${yTop.toFixed(2)}" font-family="${FONT_MONO}" font-size="9.5" fill="${ECC_ORANGE}">reflect</text>`;
+}
+
+/** Clip an infinite-ish line segment to the data view (keeps strokes inside the plot). */
+function clipSegToView(x1, y1, x2, y2, view) {
+  const { xMin, xMax, yMin, yMax } = view;
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  let t0 = 0;
+  let t1 = 1;
+  const clip = (p, q) => {
+    if (Math.abs(p) < 1e-12) return q >= 0;
+    const r = q / p;
+    if (p < 0) {
+      if (r > t1) return false;
+      if (r > t0) t0 = r;
+    } else {
+      if (r < t0) return false;
+      if (r < t1) t1 = r;
+    }
+    return true;
+  };
+  if (
+    clip(-dx, x1 - xMin) &&
+    clip(dx, xMax - x1) &&
+    clip(-dy, y1 - yMin) &&
+    clip(dy, yMax - y1)
+  ) {
+    return {
+      a: { x: x1 + t0 * dx, y: y1 + t0 * dy },
+      b: { x: x1 + t1 * dx, y: y1 + t1 * dy },
+    };
+  }
+  return null;
+}
+
+function curveAndAxes(proj, view, overhang = 0.35) {
+  const { xMin, xMax, yMin, yMax } = view;
+  const curveX0 = Math.max(Math.cbrt(-B) + 0.02, xMin);
+  const { upper, lower } = sampleCurve(curveX0, xMax, 180);
+  const x0 = proj(xMin - overhang, 0);
+  const x1 = proj(xMax + overhang * 1.4, 0);
+  const y0 = proj(0, yMin);
+  const y1 = proj(0, yMax);
+  return `
+    <line x1="${y0.x.toFixed(2)}" y1="${y0.y.toFixed(2)}" x2="${y1.x.toFixed(2)}" y2="${y1.y.toFixed(2)}" stroke="${STROKE.axisStrong}" stroke-width="1.1" fill="none"${VEC}/>
+    <line x1="${x0.x.toFixed(2)}" y1="${x0.y.toFixed(2)}" x2="${x1.x.toFixed(2)}" y2="${x1.y.toFixed(2)}" stroke="${STROKE.axisStrong}" stroke-width="1.45" fill="none"${VEC}/>
+    <path d="${pathFromPoints(proj, upper)}" stroke="${STROKE.curve}" stroke-width="1.7" fill="none"${VEC}/>
+    <path d="${pathFromPoints(proj, lower)}" stroke="${STROKE.curve}" stroke-width="1.7" fill="none"${VEC}/>
+    <text x="${(x1.x - 1).toFixed(2)}" y="${(x1.y + 13).toFixed(2)}" font-family="${FONT_MONO}" font-size="11" font-style="italic" font-weight="600" text-anchor="end" fill="${STROKE.panelTitle}">x</text>
+    <text x="${(y1.x + 7).toFixed(2)}" y="${(y1.y + 4).toFixed(2)}" font-family="${FONT_MONO}" font-size="11" font-style="italic" font-weight="600" fill="${STROKE.panelTitle}">y</text>`;
 }
 
 function pointAddFigure() {
-  const yMin = -Y_EXT;
-  const yMax = Y_EXT;
-  const w = 520;
-  const h = 252;
-  const pad = 32;
-  const proj = makeProjector(X_MIN, X_MAX, yMin, yMax, w, h, pad);
-  const { upper, lower } = sampleCurve(Math.cbrt(-B) + 0.02, X_MAX, 220);
+  const view = OP_VIEW;
+  const w = 680;
+  const h = 300;
+  const pad = 42;
+  const proj = makeProjector(view.xMin, view.xMax, view.yMin, view.yMax, w, h, pad);
 
-  const line = (t) => ({
-    x: P_ADD.x + t * (Q_ADD.x - P_ADD.x),
-    y: P_ADD.y + t * (Q_ADD.y - P_ADD.y),
-  });
-  const t0 = -0.42;
-  const t1 = 1.48;
-  const L0 = line(t0);
-  const L1 = line(t1);
+  // Chord through R′ and Q (contains P) — clipped so strokes stay in-frame
+  const ext = clipSegToView(
+    RPRIME_ADD.x - 1.2, RPRIME_ADD.y - R_ADD.lam * 1.2,
+    Q_ADD.x + 0.8, Q_ADD.y + R_ADD.lam * 0.8,
+    view,
+  );
 
   const body = `
-  ${arrowDefs('add')}
   <g stroke-linecap="round" stroke-linejoin="round">
-    <path d="${axesPath(proj, X_MIN, X_MAX, yMin, yMax)}" stroke="${STROKE.axis}" stroke-width="1" fill="none"${VEC}/>
-    <path d="${pathFromPoints(proj, upper)}" stroke="${STROKE.curve}" stroke-width="1.7" fill="none"${VEC}/>
-    <path d="${pathFromPoints(proj, lower)}" stroke="${STROKE.curve}" stroke-width="1.7" fill="none"${VEC}/>
-    <path d="${linePath(proj, L0.x, L0.y, L1.x, L1.y)}" stroke="${STROKE.line}" stroke-width="1.35" fill="none" stroke-dasharray="5 4"${VEC}/>
+    ${curveAndAxes(proj, view)}
+    ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${ECC_CYAN}" stroke-width="1.55" fill="none" stroke-dasharray="5 4"${VEC}/>` : ''}
     ${reflectionGuide(proj, RPRIME_ADD.x, RPRIME_ADD.y, R_ADD.y, 'add')}
-    ${dot(proj, P_ADD.x, P_ADD.y)}
-    ${dot(proj, Q_ADD.x, Q_ADD.y)}
-    ${dot(proj, RPRIME_ADD.x, RPRIME_ADD.y)}
-    ${dot(proj, R_ADD.x, R_ADD.y)}
-    ${label(proj, P_ADD.x, P_ADD.y, 'P', -20, -5)}
-    ${label(proj, Q_ADD.x, Q_ADD.y, 'Q', -2, 16)}
-    ${label(proj, RPRIME_ADD.x, RPRIME_ADD.y, "R′", 8, -10)}
-    ${label(proj, R_ADD.x, R_ADD.y, 'R = P ⊕ Q', 8, 6, 10)}
-    <text x="${w - pad - 2}" y="${h - pad + 4}" font-family="Basis Grotesque Mono Pro, monospace" font-size="10" font-style="italic" text-anchor="end" fill="${STROKE.axisStrong}">x</text>
-    <text x="${pad + 2}" y="${pad + 10}" font-family="Basis Grotesque Mono Pro, monospace" font-size="10" font-style="italic" fill="${STROKE.axisStrong}">y</text>
+    ${dot(proj, P_ADD.x, P_ADD.y, 4.5)}
+    ${dot(proj, Q_ADD.x, Q_ADD.y, 4.5)}
+    ${dot(proj, RPRIME_ADD.x, RPRIME_ADD.y, 4.5)}
+    ${dot(proj, R_ADD.x, R_ADD.y, 4.5)}
+    ${label(proj, P_ADD.x, P_ADD.y, 'P', -16, -8)}
+    ${label(proj, Q_ADD.x, Q_ADD.y, 'Q', 7, -8)}
+    ${label(proj, RPRIME_ADD.x, RPRIME_ADD.y, "R′", 8, 14)}
+    ${label(proj, R_ADD.x, R_ADD.y, 'R = P ⊕ Q', 8, -8, 10)}
   </g>`;
 
   return svgWrap(w, h, body);
 }
 
 function pointDoubleFigure() {
-  const yMin = -Y_EXT;
-  const yMax = Y_EXT;
-  const w = 520;
-  const h = 252;
-  const pad = 32;
-  const proj = makeProjector(X_MIN, X_MAX, yMin, yMax, w, h, pad);
-  const { upper, lower } = sampleCurve(Math.cbrt(-B) + 0.02, X_MAX, 220);
+  const view = OP_VIEW;
+  const w = 680;
+  const h = 300;
+  const pad = 42;
+  const proj = makeProjector(view.xMin, view.xMax, view.yMin, view.yMax, w, h, pad);
 
-  const { lam } = RPRIME_DBL;
-  const span = 5.5;
-  const L0 = { x: P_DBL.x - span, y: P_DBL.y - lam * span };
-  const L1 = { x: P_DBL.x + span, y: P_DBL.y + lam * span };
+  const { lam } = R2_DBL;
+  const ext = clipSegToView(
+    P_DBL.x - 3.2, P_DBL.y - lam * 3.2,
+    P_DBL.x + 2.4, P_DBL.y + lam * 2.4,
+    view,
+  );
 
   const body = `
-  ${arrowDefs('dbl')}
   <g stroke-linecap="round" stroke-linejoin="round">
-    <path d="${axesPath(proj, X_MIN, X_MAX, yMin, yMax)}" stroke="${STROKE.axis}" stroke-width="1" fill="none"${VEC}/>
-    <path d="${pathFromPoints(proj, upper)}" stroke="${STROKE.curve}" stroke-width="1.7" fill="none"${VEC}/>
-    <path d="${pathFromPoints(proj, lower)}" stroke="${STROKE.curve}" stroke-width="1.7" fill="none"${VEC}/>
-    <path d="${linePath(proj, L0.x, L0.y, L1.x, L1.y)}" stroke="${STROKE.tangent}" stroke-width="1.35" fill="none"${VEC}/>
+    ${curveAndAxes(proj, view)}
+    ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${STROKE.tangent}" stroke-width="1.55" fill="none" stroke-dasharray="5 4"${VEC}/>` : ''}
     ${reflectionGuide(proj, RPRIME_DBL.x, RPRIME_DBL.y, R2_DBL.y, 'dbl')}
-    ${dot(proj, P_DBL.x, P_DBL.y)}
-    ${dot(proj, RPRIME_DBL.x, RPRIME_DBL.y)}
-    ${dot(proj, R2_DBL.x, R2_DBL.y)}
-    ${label(proj, P_DBL.x, P_DBL.y, 'P', -18, -6)}
-    ${label(proj, RPRIME_DBL.x, RPRIME_DBL.y, "R′", 8, -8)}
-    ${label(proj, R2_DBL.x, R2_DBL.y, '2P = P ⊕ P', 8, 6, 10)}
-    <text x="${w - pad - 2}" y="${h - pad + 4}" font-family="Basis Grotesque Mono Pro, monospace" font-size="10" font-style="italic" text-anchor="end" fill="${STROKE.axisStrong}">x</text>
-    <text x="${pad + 2}" y="${pad + 10}" font-family="Basis Grotesque Mono Pro, monospace" font-size="10" font-style="italic" fill="${STROKE.axisStrong}">y</text>
+    ${dot(proj, P_DBL.x, P_DBL.y, 4.5)}
+    ${dot(proj, RPRIME_DBL.x, RPRIME_DBL.y, 4.5)}
+    ${dot(proj, R2_DBL.x, R2_DBL.y, 4.5)}
+    ${label(proj, P_DBL.x, P_DBL.y, 'P', -16, -8)}
+    ${label(proj, RPRIME_DBL.x, RPRIME_DBL.y, "R′", 8, 14)}
+    ${label(proj, R2_DBL.x, R2_DBL.y, '2P = P ⊕ P', 8, -8, 10)}
   </g>`;
 
   return svgWrap(w, h, body);
+}
+
+/**
+ * Jimmy Song–style overview: addition, doubling, inverse → 𝒪, subtraction.
+ * Small 2×2 grid of the same real curve with the essential construction in each cell.
+ */
+function pointOpsGridFigure() {
+  const COLS = 2;
+  const ROWS = 2;
+  const pw = 310;
+  const ph = 210;
+  const gapX = 18;
+  const gapY = 22;
+  const titleH = 18;
+  const W = COLS * pw + (COLS - 1) * gapX;
+  const H = ROWS * (ph + titleH) + (ROWS - 1) * gapY;
+  const view = OP_VIEW;
+  const pad = 28;
+
+  const panels = [
+    {
+      title: '(a)  Addition  P ⊕ Q',
+      draw: (proj) => {
+        const ext = clipSegToView(
+          RPRIME_ADD.x - 1.0, RPRIME_ADD.y - R_ADD.lam * 1.0,
+          Q_ADD.x + 0.6, Q_ADD.y + R_ADD.lam * 0.6,
+          view,
+        );
+        return `
+          ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${ECC_CYAN}" stroke-width="1.35" fill="none" stroke-dasharray="4 3"${VEC}/>` : ''}
+          ${reflectionGuide(proj, RPRIME_ADD.x, RPRIME_ADD.y, R_ADD.y, 'g-add')}
+          ${dot(proj, P_ADD.x, P_ADD.y, 3.6)}
+          ${dot(proj, Q_ADD.x, Q_ADD.y, 3.6)}
+          ${dot(proj, RPRIME_ADD.x, RPRIME_ADD.y, 3.6)}
+          ${dot(proj, R_ADD.x, R_ADD.y, 3.6)}
+          ${label(proj, P_ADD.x, P_ADD.y, 'P', -14, -6, 10)}
+          ${label(proj, Q_ADD.x, Q_ADD.y, 'Q', 6, -6, 10)}
+          ${label(proj, RPRIME_ADD.x, RPRIME_ADD.y, "R′", 6, 12, 10)}
+          ${label(proj, R_ADD.x, R_ADD.y, 'R', 6, -6, 10)}`;
+      },
+    },
+    {
+      title: '(b)  Doubling  2P = P ⊕ P',
+      draw: (proj) => {
+        const { lam } = R2_DBL;
+        const ext = clipSegToView(
+          P_DBL.x - 3.0, P_DBL.y - lam * 3.0,
+          P_DBL.x + 2.2, P_DBL.y + lam * 2.2,
+          view,
+        );
+        return `
+          ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${STROKE.tangent}" stroke-width="1.35" fill="none" stroke-dasharray="4 3"${VEC}/>` : ''}
+          ${reflectionGuide(proj, RPRIME_DBL.x, RPRIME_DBL.y, R2_DBL.y, 'g-dbl')}
+          ${dot(proj, P_DBL.x, P_DBL.y, 3.6)}
+          ${dot(proj, RPRIME_DBL.x, RPRIME_DBL.y, 3.6)}
+          ${dot(proj, R2_DBL.x, R2_DBL.y, 3.6)}
+          ${label(proj, P_DBL.x, P_DBL.y, 'P', -14, -6, 10)}
+          ${label(proj, RPRIME_DBL.x, RPRIME_DBL.y, "R′", 6, 12, 10)}
+          ${label(proj, R2_DBL.x, R2_DBL.y, '2P', 6, -6, 10)}`;
+      },
+    },
+    {
+      title: '(c)  Inverse  P ⊕ (−P) = 𝒪',
+      draw: (proj) => {
+        const P = P_DBL;
+        const nP = { x: P.x, y: -P.y };
+        const top = proj(P.x, view.yMax - 0.15);
+        const bot = proj(P.x, view.yMin + 0.15);
+        return `
+          <line x1="${top.x.toFixed(2)}" y1="${top.y.toFixed(2)}" x2="${bot.x.toFixed(2)}" y2="${bot.y.toFixed(2)}"
+            stroke="${ECC_CYAN}" stroke-width="1.35" fill="none" stroke-dasharray="4 3"${VEC}/>
+          ${dot(proj, P.x, P.y, 3.6)}
+          ${dot(proj, nP.x, nP.y, 3.6)}
+          ${label(proj, P.x, P.y, 'P', 8, -6, 10)}
+          ${label(proj, nP.x, nP.y, '−P', 8, 12, 10)}
+          <text x="${top.x.toFixed(2)}" y="${(top.y + 14).toFixed(2)}" font-family="${FONT_MONO}" font-size="12" font-weight="600" text-anchor="middle" fill="${STROKE.panelTitle}">𝒪</text>`;
+      },
+    },
+    {
+      title: '(d)  Subtraction  P − Q = P ⊕ (−Q)',
+      draw: (proj) => {
+        const P = P_ADD;
+        const Q = Q_ADD;
+        const nQ = { x: Q.x, y: -Q.y };
+        const S = sumDistinct(P.x, P.y, nQ.x, nQ.y);
+        const Sp = { x: S.x, y: -S.y };
+        const ext = clipSegToView(
+          Sp.x - 0.8, Sp.y - S.lam * 0.8,
+          nQ.x + 0.5, nQ.y + S.lam * 0.5,
+          view,
+        );
+        return `
+          ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${ECC_CYAN}" stroke-width="1.35" fill="none" stroke-dasharray="4 3"${VEC}/>` : ''}
+          ${reflectionGuide(proj, Sp.x, Sp.y, S.y, 'g-sub')}
+          ${dot(proj, P.x, P.y, 3.6)}
+          ${dot(proj, Q.x, Q.y, 3.2)}
+          ${dot(proj, nQ.x, nQ.y, 3.6)}
+          ${dot(proj, Sp.x, Sp.y, 3.6)}
+          ${dot(proj, S.x, S.y, 3.6)}
+          ${label(proj, P.x, P.y, 'P', -14, -6, 10)}
+          ${label(proj, Q.x, Q.y, 'Q', 6, -6, 9)}
+          ${label(proj, nQ.x, nQ.y, '−Q', 6, 12, 10)}
+          ${label(proj, S.x, S.y, 'P−Q', 6, -6, 10)}`;
+      },
+    },
+  ];
+
+  let body = '';
+  panels.forEach((panel, i) => {
+    const col = i % COLS;
+    const row = Math.floor(i / COLS);
+    const ox = col * (pw + gapX);
+    const oy = row * (ph + titleH + gapY);
+    const proj = makeProjector(view.xMin, view.xMax, view.yMin, view.yMax, pw, ph, pad);
+    // Offset projector into panel
+    const base = proj;
+    const off = (x, y) => {
+      const p = base(x, y);
+      return { x: p.x + ox, y: p.y + oy + titleH };
+    };
+    body += `
+      <text x="${(ox + 4).toFixed(1)}" y="${(oy + 12).toFixed(1)}" font-family="${FONT_MONO}" font-size="11" font-weight="600" fill="${STROKE.panelTitle}">${panel.title}</text>
+      <g stroke-linecap="round" stroke-linejoin="round">
+        ${curveAndAxes(off, view, 0.25)}
+        ${panel.draw(off)}
+      </g>`;
+  });
+
+  return svgWrap(W, H, body);
 }
 
 /**
@@ -435,27 +639,27 @@ function pointDoubleFigure() {
  * Right: 3D torus with curve points mapped by (x/p, y/p) → (θ, φ).
  */
 function torusFigure() {
-  const W = 760, H = 330;
+  const W = 760, H = 300;
   const p = TOY_P;
   const curvePts = toyCurvePoints(p);
 
   /* ── LEFT PANEL: flat F_p grid ──────────────────────────────────────── */
-  const cell = 9, flatPad = 36;
+  const cell = 9;
   const flatW = p * cell;
-  const FX = 16, FY = H - flatPad - flatW;
+  const FX = 16, FY = 28;
 
   let flatGrid = '';
   for (let i = 0; i <= p; i++) {
-    flatGrid += `<line x1="${FX + i*cell}" y1="${FY}" x2="${FX + i*cell}" y2="${FY+flatW}" stroke="#e5e7eb" stroke-width="0.6"/>`;
-    flatGrid += `<line x1="${FX}" y1="${FY + i*cell}" x2="${FX+flatW}" y2="${FY + i*cell}" stroke="#e5e7eb" stroke-width="0.6"/>`;
+    flatGrid += `<line x1="${FX + i * cell}" y1="${FY}" x2="${FX + i * cell}" y2="${FY + flatW}" stroke="#e5e7eb" stroke-width="0.6"/>`;
+    flatGrid += `<line x1="${FX}" y1="${FY + i * cell}" x2="${FX + flatW}" y2="${FY + i * cell}" stroke="#e5e7eb" stroke-width="0.6"/>`;
   }
-  // Identified edges (same-colour pairs will be glued)
-  const orangeEdge = `stroke="#f97316" stroke-width="1.8" stroke-dasharray="3 2"`;
-  const cyanEdge   = `stroke="#06b6d4" stroke-width="1.8" stroke-dasharray="3 2"`;
-  flatGrid += `<line x1="${FX}" y1="${FY}" x2="${FX+flatW}" y2="${FY}" ${orangeEdge}/>`;
-  flatGrid += `<line x1="${FX}" y1="${FY+flatW}" x2="${FX+flatW}" y2="${FY+flatW}" ${orangeEdge}/>`;
-  flatGrid += `<line x1="${FX}" y1="${FY}" x2="${FX}" y2="${FY+flatW}" ${cyanEdge}/>`;
-  flatGrid += `<line x1="${FX+flatW}" y1="${FY}" x2="${FX+flatW}" y2="${FY+flatW}" ${cyanEdge}/>`;
+  // Identified edges: a = top/bottom (orange/latitude), b = left/right (cyan/longitude)
+  const orangeEdge = `stroke="${ECC_ORANGE}" stroke-width="1.8" stroke-dasharray="3 2"`;
+  const cyanEdge = `stroke="${ECC_CYAN}" stroke-width="1.8" stroke-dasharray="3 2"`;
+  flatGrid += `<line x1="${FX}" y1="${FY}" x2="${FX + flatW}" y2="${FY}" ${orangeEdge}/>`;
+  flatGrid += `<line x1="${FX}" y1="${FY + flatW}" x2="${FX + flatW}" y2="${FY + flatW}" ${orangeEdge}/>`;
+  flatGrid += `<line x1="${FX}" y1="${FY}" x2="${FX}" y2="${FY + flatW}" ${cyanEdge}/>`;
+  flatGrid += `<line x1="${FX + flatW}" y1="${FY}" x2="${FX + flatW}" y2="${FY + flatW}" ${cyanEdge}/>`;
 
   // Curve dots
   let flatDots = '';
@@ -477,10 +681,10 @@ function torusFigure() {
     return { sx: x * cPt - y * sPt, sy: -(r * sEt + z * cEt), d: r * cEt - z * sEt };
   }
 
-  const SC_t = 32, TCX = W * 0.70, TCY = H * 0.50;
+  const SC_t = 30, TCX = W * 0.70, TCY = H * 0.48;
   function toScT(x, y, z) {
-    const p = projT(x, y, z);
-    return { x: TCX + p.sx * SC_t, y: TCY + p.sy * SC_t, d: p.d };
+    const pr = projT(x, y, z);
+    return { x: TCX + pr.sx * SC_t, y: TCY + pr.sy * SC_t, d: pr.d };
   }
 
   function torusXYZ(theta, phi) {
@@ -527,12 +731,14 @@ function torusFigure() {
   let torusMesh = '';
   for (const f of tFaces) {
     const pts = [f.a, f.b, f.c, f.d].map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-    const lit = 0.28 + 0.72 * f.ndl;
-    const rv = Math.min(255, Math.round(200 * lit));
-    const gv = Math.min(255, Math.round(215 * lit));
-    const bv = Math.min(255, Math.round(235 * lit));
-    const sv = Math.round(rv * 0.82);
-    torusMesh += `<polygon points="${pts}" fill="rgb(${rv},${gv},${bv})" stroke="rgb(${sv},${Math.round(gv*0.82)},${Math.round(bv*0.82)})" stroke-width="0.3"/>`;
+    const lit = 0.48 + 0.52 * f.ndl;
+    const rv = Math.min(255, Math.round(218 * lit));
+    const gv = Math.min(255, Math.round(222 * lit));
+    const bv = Math.min(255, Math.round(230 * lit));
+    const sr = Math.min(255, Math.round(rv * 0.78));
+    const sg = Math.min(255, Math.round(gv * 0.80));
+    const sb = Math.min(255, Math.round(bv * 0.82));
+    torusMesh += `<polygon points="${pts}" fill="rgb(${rv},${gv},${bv})" stroke="rgb(${sr},${sg},${sb})" stroke-width="0.35"/>`;
   }
 
   // Reference circles: longitude (orange) and meridian (cyan)
@@ -566,12 +772,13 @@ function torusFigure() {
   }
 
   /* ── Arrow between panels ────────────────────────────────────────────── */
-  const AX = FX + flatW + 22, AY = H / 2 - 10;
+  const AX = FX + flatW + 22, AY = FY + flatW / 2;
   const arrow = `
-    <path d="M ${AX} ${AY} L ${AX+34} ${AY}" stroke="#666" stroke-width="1.4" fill="none" marker-end="url(#ecc-arrow-tor)"/>
-    <text x="${AX+2}" y="${AY-6}" font-family="Basis Grotesque Mono Pro, monospace" font-size="10" fill="#555">identify</text>
-    <text x="${AX+2}" y="${AY+16}" font-family="Basis Grotesque Mono Pro, monospace" font-size="10" fill="#555">both pairs</text>`;
+    <path d="M ${AX} ${AY} L ${AX + 34} ${AY}" stroke="#666" stroke-width="1.4" fill="none" marker-end="url(#ecc-arrow-tor)"/>
+    <text x="${AX + 2}" y="${AY - 6}" font-family="${FONT_MONO}" font-size="10" fill="#555">identify</text>
+    <text x="${AX + 2}" y="${AY + 16}" font-family="${FONT_MONO}" font-size="10" fill="#555">both pairs</text>`;
 
+  // Titles live in HTML captions (build.js); SVG keeps only diagram + edge keys.
   const body = `
     <defs>
       <marker id="ecc-arrow-tor" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
@@ -579,170 +786,288 @@ function torusFigure() {
       </marker>
     </defs>
 
-    <text x="12" y="18" font-family="Basis Grotesque Mono Pro, monospace" font-size="11" font-weight="600" fill="#111">From flat grid to torus: modular wrapping in both axes</text>
-
     ${flatGrid}
     ${flatDots}
 
-    <text x="${FX}" y="${FY - 20}" font-family="Basis Grotesque Mono Pro, monospace" font-size="11" font-weight="700" fill="#374151">𝔽₁₇  (p = 17)</text>
-    <text x="${FX}" y="${FY - 7}" font-family="Basis Grotesque Mono Pro, monospace" font-size="10" fill="#555">● = y² ≡ x³ + 7 (mod 17)</text>
-    <text x="${FX}" y="${FY + flatW + 15}" font-family="Basis Grotesque Mono Pro, monospace" font-size="10" fill="#f97316">— top = bottom  (wrap → latitude)</text>
-    <text x="${FX}" y="${FY + flatW + 28}" font-family="Basis Grotesque Mono Pro, monospace" font-size="10" fill="#06b6d4">— left = right  (wrap → longitude)</text>
+    <text x="${FX}" y="${FY + flatW + 16}" font-family="${FONT_MONO}" font-size="10" fill="${ECC_ORANGE}">a — top = bottom  (→ latitude)</text>
+    <text x="${FX}" y="${FY + flatW + 30}" font-family="${FONT_MONO}" font-size="10" fill="${ECC_CYAN}">b — left = right  (→ longitude)</text>
 
     ${arrow}
 
     ${torusMesh}
-    <polyline points="${lonPts.join(' ')}" fill="none" stroke="#f97316" stroke-width="1.4" stroke-dasharray="4 3" opacity="0.75"/>
-    <polyline points="${merPts.join(' ')}" fill="none" stroke="#06b6d4" stroke-width="1.4" stroke-dasharray="4 3" opacity="0.75"/>
-    ${torusDots}
-
-    <text x="${TCX - 55}" y="${H - 16}" font-family="Basis Grotesque Mono Pro, monospace" font-size="11" font-weight="700" fill="#374151">Torus  (𝔽₁₇ curve points mapped)</text>
-    <text x="${TCX - 55}" y="${H - 4}" font-family="Basis Grotesque Mono Pro, monospace" font-size="10" fill="#555">secp256k1 uses p ≈ 2²⁵⁶ — same topology, incomprehensibly larger</text>`;
+    <polyline points="${lonPts.join(' ')}" fill="none" stroke="${ECC_ORANGE}" stroke-width="1.6" stroke-dasharray="4 3"/>
+    <polyline points="${merPts.join(' ')}" fill="none" stroke="${ECC_CYAN}" stroke-width="1.6" stroke-dasharray="4 3"/>
+    ${torusDots}`;
 
   return svgWrap(W, H, body);
 }
 
-/**
- * Step-by-step: flat square → cylinder → torus.
- * Shows edge identification with labelled arrows (a, b).
- */
-function planeToTorusFigure() {
-  const W = 700, H = 208;
-  const F = `font-family="Basis Grotesque Mono Pro, monospace"`;
+/** Shared orthographic projector for lit meshes (same camera as torusFigure). */
+function makeMeshProjector(cx, cy, scale) {
+  const PHI = 0.42, EPS = 0.52;
+  const cP = Math.cos(PHI), sP = Math.sin(PHI);
+  const cE = Math.cos(EPS), sE = Math.sin(EPS);
+  return (x, y, z) => {
+    const r = x * sP + y * cP;
+    return {
+      x: cx + (x * cP - y * sP) * scale,
+      y: cy - (r * sE + z * cE) * scale,
+      d: r * cE - z * sE,
+    };
+  };
+}
 
+/** Painter's-algorithm lit quad mesh from a (nu+1)×(nv+1) vertex grid. */
+function renderLitGrid(TV, nu, nv) {
+  const faces = [];
+  for (let i = 0; i < nu; i++) {
+    for (let j = 0; j < nv; j++) {
+      const a = TV[i][j], b = TV[i + 1][j], c = TV[i + 1][j + 1], d = TV[i][j + 1];
+      const dc = (a.d + b.d + c.d + d.d) / 4;
+      const nx = (a.nx + b.nx + c.nx + d.nx) / 4;
+      const ny = (a.ny + b.ny + c.ny + d.ny) / 4;
+      const nz = (a.nz + b.nz + c.nz + d.nz) / 4;
+      const nl = Math.sqrt(nx * nx + ny * ny + nz * nz) || 1;
+      const [lx, ly, lz] = [0.30, -0.20, 0.93];
+      const ndl = Math.abs((nx / nl) * lx + (ny / nl) * ly + (nz / nl) * lz);
+      faces.push({ a, b, c, d, dc, ndl });
+    }
+  }
+  faces.sort((a, b) => b.dc - a.dc);
+  let mesh = '';
+  for (const f of faces) {
+    const pts = [f.a, f.b, f.c, f.d].map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+    // Soft cool grey fill; mesh strokes stay crisp (full-opacity grey lines)
+    const lit = 0.48 + 0.52 * f.ndl;
+    const rv = Math.min(255, Math.round(218 * lit));
+    const gv = Math.min(255, Math.round(222 * lit));
+    const bv = Math.min(255, Math.round(230 * lit));
+    const sr = Math.min(255, Math.round(rv * 0.78));
+    const sg = Math.min(255, Math.round(gv * 0.80));
+    const sb = Math.min(255, Math.round(bv * 0.82));
+    mesh += `<polygon points="${pts}" fill="rgb(${rv},${gv},${bv})" stroke="rgb(${sr},${sg},${sb})" stroke-width="0.35"/>`;
+  }
+  return mesh;
+}
+
+function projectPolyline(toSc, pts3) {
+  return pts3.map(p => {
+    const s = toSc(p.x, p.y, p.z);
+    return `${s.x.toFixed(1)},${s.y.toFixed(1)}`;
+  }).join(' ');
+}
+
+function meshSquare(cx, cy, scale = 22) {
+  const toSc = makeMeshProjector(cx, cy, scale);
+  const N = 10;
+  const TV = [];
+  for (let i = 0; i <= N; i++) {
+    const row = [];
+    for (let j = 0; j <= N; j++) {
+      const u = i / N, v = j / N;
+      const x = (u - 0.5) * 2.2, y = (v - 0.5) * 2.2, z = 0;
+      const s = toSc(x, y, z);
+      row.push({ ...s, nx: 0, ny: 0, nz: 1 });
+    }
+    TV.push(row);
+  }
+  const mesh = renderLitGrid(TV, N, N);
+  const top = [], bot = [], left = [], right = [];
+  for (let i = 0; i <= 40; i++) {
+    const t = i / 40;
+    top.push({ x: (t - 0.5) * 2.2, y: -1.1, z: 0 });
+    bot.push({ x: (t - 0.5) * 2.2, y: 1.1, z: 0 });
+    left.push({ x: -1.1, y: (t - 0.5) * 2.2, z: 0 });
+    right.push({ x: 1.1, y: (t - 0.5) * 2.2, z: 0 });
+  }
+  return `${mesh}
+    <polyline points="${projectPolyline(toSc, top)}" fill="none" stroke="${ECC_ORANGE}" stroke-width="1.8" stroke-dasharray="3 2"/>
+    <polyline points="${projectPolyline(toSc, bot)}" fill="none" stroke="${ECC_ORANGE}" stroke-width="1.8" stroke-dasharray="3 2"/>
+    <polyline points="${projectPolyline(toSc, left)}" fill="none" stroke="${ECC_CYAN}" stroke-width="1.8" stroke-dasharray="3 2"/>
+    <polyline points="${projectPolyline(toSc, right)}" fill="none" stroke="${ECC_CYAN}" stroke-width="1.8" stroke-dasharray="3 2"/>`;
+}
+
+function meshCylinder(cx, cy, scale = 18) {
+  const toSc = makeMeshProjector(cx, cy, scale);
+  const NU = 28, NV = 12;
+  const R = 0.85, H = 2.4;
+  const TV = [];
+  for (let i = 0; i <= NU; i++) {
+    const row = [];
+    for (let j = 0; j <= NV; j++) {
+      const theta = (i / NU) * 2 * Math.PI;
+      const h = -H / 2 + (j / NV) * H;
+      const x = R * Math.cos(theta), y = h, z = R * Math.sin(theta);
+      const s = toSc(x, y, z);
+      row.push({ ...s, nx: Math.cos(theta), ny: 0, nz: Math.sin(theta) });
+    }
+    TV.push(row);
+  }
+  const mesh = renderLitGrid(TV, NU, NV);
+  // Glue a: free ends are b (cyan); a is an orange seam along the cylinder (end → end).
+  const endTop = [], endBot = [], alongA = [];
+  for (let i = 0; i <= 48; i++) {
+    const th = (i / 48) * 2 * Math.PI;
+    endTop.push({ x: R * Math.cos(th), y: H / 2, z: R * Math.sin(th) });
+    endBot.push({ x: R * Math.cos(th), y: -H / 2, z: R * Math.sin(th) });
+  }
+  for (let j = 0; j <= 24; j++) {
+    const h = -H / 2 + (j / 24) * H;
+    alongA.push({ x: R, y: h, z: 0 });
+  }
+  return `${mesh}
+    <polyline points="${projectPolyline(toSc, endTop)}" fill="none" stroke="${ECC_CYAN}" stroke-width="1.7" stroke-dasharray="3 2"/>
+    <polyline points="${projectPolyline(toSc, endBot)}" fill="none" stroke="${ECC_CYAN}" stroke-width="1.7" stroke-dasharray="3 2"/>
+    <polyline points="${projectPolyline(toSc, alongA)}" fill="none" stroke="${ECC_ORANGE}" stroke-width="1.7" stroke-dasharray="3 2"/>`;
+}
+
+function meshBentTube(cx, cy, scale = 16) {
+  const toSc = makeMeshProjector(cx, cy, scale);
+  const bendR = 1.35, tubeR = 0.55;
+  const NU = 28, NV = 14;
+  const TV = [];
+  for (let i = 0; i <= NU; i++) {
+    const row = [];
+    // U opening upward: θ from π → 2π
+    const u = Math.PI + (i / NU) * Math.PI;
+    const ccx = bendR * Math.cos(u);
+    const ccy = bendR * Math.sin(u);
+    const tx = -Math.sin(u), ty = Math.cos(u), tz = 0;
+    const nx0 = Math.cos(u), ny0 = Math.sin(u), nz0 = 0;
+    const bx = 0, by = 0, bz = 1;
+    for (let j = 0; j <= NV; j++) {
+      const v = (j / NV) * 2 * Math.PI;
+      const nxx = Math.cos(v) * nx0 + Math.sin(v) * bx;
+      const nyy = Math.cos(v) * ny0 + Math.sin(v) * by;
+      const nzz = Math.cos(v) * nz0 + Math.sin(v) * bz;
+      const x = ccx + tubeR * nxx;
+      const y = ccy + tubeR * nyy;
+      const z = 0 + tubeR * nzz;
+      const s = toSc(x, y, z);
+      row.push({ ...s, nx: nxx, ny: nyy, nz: nzz, _tx: tx, _ty: ty, _tz: tz });
+    }
+    TV.push(row);
+  }
+  const mesh = renderLitGrid(TV, NU, NV);
+  // Open ends = b (cyan), ready for glue b; orange a runs along the outer bend.
+  const endL = [], endR = [], alongA = [];
+  for (let j = 0; j <= 32; j++) {
+    const v = (j / 32) * 2 * Math.PI;
+    for (const [u, arr] of [[Math.PI, endL], [2 * Math.PI, endR]]) {
+      const ccx = bendR * Math.cos(u), ccy = bendR * Math.sin(u);
+      const nx0 = Math.cos(u), ny0 = Math.sin(u);
+      arr.push({
+        x: ccx + tubeR * (Math.cos(v) * nx0),
+        y: ccy + tubeR * (Math.cos(v) * ny0),
+        z: tubeR * Math.sin(v),
+      });
+    }
+  }
+  for (let i = 0; i <= 40; i++) {
+    const u = Math.PI + (i / 40) * Math.PI;
+    alongA.push({
+      x: (bendR + tubeR) * Math.cos(u),
+      y: (bendR + tubeR) * Math.sin(u),
+      z: 0,
+    });
+  }
+  return `${mesh}
+    <polyline points="${projectPolyline(toSc, alongA)}" fill="none" stroke="${ECC_ORANGE}" stroke-width="1.7" stroke-dasharray="3 2"/>
+    <polyline points="${projectPolyline(toSc, endL)}" fill="none" stroke="${ECC_CYAN}" stroke-width="1.7" stroke-dasharray="3 2"/>
+    <polyline points="${projectPolyline(toSc, endR)}" fill="none" stroke="${ECC_CYAN}" stroke-width="1.7" stroke-dasharray="3 2"/>`;
+}
+
+function meshTorus(cx, cy, scale = 14) {
+  const toSc = makeMeshProjector(cx, cy, scale);
+  const R_t = 3.0, r_t = 1.35;
+  const NU = 36, NV = 18;
+  function xyz(theta, phi) {
+    return {
+      x: (R_t + r_t * Math.cos(phi)) * Math.cos(theta),
+      y: (R_t + r_t * Math.cos(phi)) * Math.sin(theta),
+      z: r_t * Math.sin(phi),
+    };
+  }
+  const TV = [];
+  for (let i = 0; i <= NU; i++) {
+    const row = [];
+    for (let j = 0; j <= NV; j++) {
+      const theta = (i / NU) * 2 * Math.PI;
+      const phi = (j / NV) * 2 * Math.PI;
+      const wp = xyz(theta, phi);
+      const s = toSc(wp.x, wp.y, wp.z);
+      row.push({
+        ...s,
+        nx: Math.cos(phi) * Math.cos(theta),
+        ny: Math.cos(phi) * Math.sin(theta),
+        nz: Math.sin(phi),
+      });
+    }
+    TV.push(row);
+  }
+  const mesh = renderLitGrid(TV, NU, NV);
+  const lon = [], mer = [];
+  for (let i = 0; i <= 64; i++) lon.push(xyz((i / 64) * 2 * Math.PI, 0));
+  for (let j = 0; j <= 48; j++) mer.push(xyz(0, (j / 48) * 2 * Math.PI));
+  return `${mesh}
+    <polyline points="${projectPolyline(toSc, lon)}" fill="none" stroke="${ECC_ORANGE}" stroke-width="1.7" stroke-dasharray="3 2"/>
+    <polyline points="${projectPolyline(toSc, mer)}" fill="none" stroke="${ECC_CYAN}" stroke-width="1.7" stroke-dasharray="3 2"/>`;
+}
+
+function planeToTorusChrome(idSuffix) {
+  const F = `font-family="${FONT_MONO}"`;
   const defs = `<defs>
-    <marker id="ptt-arr" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-      <polygon points="0 0.5, 7 4, 0 7.5" fill="#222"/>
+    <marker id="ptt-arr-a-${idSuffix}" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <polygon points="0 0.5, 7 3.5, 0 6.5" fill="${ECC_ORANGE}"/>
     </marker>
-    <marker id="ptt-arr-step" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-      <polygon points="0 0.5, 7 4, 0 7.5" fill="#666"/>
+    <marker id="ptt-arr-b-${idSuffix}" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <polygon points="0 0.5, 7 3.5, 0 6.5" fill="${ECC_CYAN}"/>
+    </marker>
+    <marker id="ptt-arr-step-${idSuffix}" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+      <polygon points="0 0.5, 7 3.5, 0 6.5" fill="#9ca3af"/>
     </marker>
   </defs>`;
-
-  // Arrow at midpoint of edge (from 60% toward 40%)
-  function edgeArr(x1, y1, x2, y2) {
-    const ax = x1 + 0.60*(x2-x1), ay = y1 + 0.60*(y2-y1);
-    const bx = x1 + 0.40*(x2-x1), by = y1 + 0.40*(y2-y1);
-    return `<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${by.toFixed(1)}" stroke="#222" stroke-width="1.6" marker-end="url(#ptt-arr)"/>`;
+  function stepArrow(x1, x2, y, label, color) {
+    const mx = (x1 + x2) / 2;
+    return `
+      <line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#cbd5e1" stroke-width="1.4" marker-end="url(#ptt-arr-step-${idSuffix})"/>
+      <text x="${mx}" y="${y - 7}" ${F} font-size="9" text-anchor="middle" fill="${color}">${label}</text>`;
   }
+  return { F, defs, stepArrow };
+}
 
-  // ── 1. Square ──────────────────────────────────────────────────────────────
-  const SX = 28, SY = 44, SW = 96, SH = 96;
+/** Flat square → torus, all lit mesh. Titles are HTML captions in build.js. */
+function planeToTorusFigure() {
+  const W = 760, H = 220;
+  const { F, defs, stepArrow } = planeToTorusChrome('msh');
+  const cap = `${F} font-size="8.5" text-anchor="middle" fill="#6b7280"`;
+
+  const AY = 100;
   const square = `
-    <rect x="${SX}" y="${SY}" width="${SW}" height="${SH}" fill="#f4f4f4" stroke="#222" stroke-width="1.5"/>
-    ${edgeArr(SX+SW, SY,    SX,    SY)}
-    ${edgeArr(SX+SW, SY+SH, SX,    SY+SH)}
-    ${edgeArr(SX,    SY+SH, SX,    SY)}
-    ${edgeArr(SX+SW, SY+SH, SX+SW, SY)}
-    <text x="${SX+SW/2}" y="${SY-8}"      ${F} font-size="14" font-style="italic" text-anchor="middle" fill="#222">a</text>
-    <text x="${SX+SW/2}" y="${SY+SH+17}"  ${F} font-size="14" font-style="italic" text-anchor="middle" fill="#222">a</text>
-    <text x="${SX-14}"   y="${SY+SH/2+5}" ${F} font-size="14" font-style="italic" text-anchor="middle" fill="#222">b</text>
-    <text x="${SX+SW+14}" y="${SY+SH/2+5}" ${F} font-size="14" font-style="italic" text-anchor="middle" fill="#222">b</text>
-    <text x="${SX+SW/2}" y="${SY+SH+32}" ${F} font-size="9" text-anchor="middle" fill="#aaa">flat square</text>`;
+    ${meshSquare(80, 98, 28)}
+    <text x="80" y="158" ${F} font-size="12" font-style="italic" text-anchor="middle" fill="${ECC_ORANGE}">a</text>
+    <text x="36" y="100" ${F} font-size="12" font-style="italic" text-anchor="middle" fill="${ECC_CYAN}">b</text>
+    <text x="124" y="100" ${F} font-size="12" font-style="italic" text-anchor="middle" fill="${ECC_CYAN}">b</text>
+    <text x="80" y="178" ${cap}>flat square</text>`;
+  const arr1 = stepArrow(128, 158, AY, 'glue a', ECC_ORANGE);
 
-  // ── Arrow 1 ────────────────────────────────────────────────────────────────
-  const A1X = SX + SW + 12, AY = SY + SH/2;
-  const arr1 = `
-    <line x1="${A1X}" y1="${AY}" x2="${A1X+24}" y2="${AY}" stroke="#888" stroke-width="1.5" marker-end="url(#ptt-arr-step)"/>
-    <text x="${A1X+12}" y="${AY-8}" ${F} font-size="9" text-anchor="middle" fill="#888">glue a</text>`;
-
-  // ── 2. Cylinder ────────────────────────────────────────────────────────────
-  const CX = 210, CYT = 53, CH = 88, CRX = 27, CRY = 11, CYB = CYT + CH;
   const cylinder = `
-    <line x1="${CX-CRX}" y1="${CYT}" x2="${CX-CRX}" y2="${CYB}" stroke="#222" stroke-width="1.5"/>
-    <line x1="${CX+CRX}" y1="${CYT}" x2="${CX+CRX}" y2="${CYB}" stroke="#222" stroke-width="1.5"/>
-    <ellipse cx="${CX}" cy="${CYT}" rx="${CRX}" ry="${CRY}" fill="none" stroke="#222" stroke-width="1.5"/>
-    <ellipse cx="${CX}" cy="${CYB}" rx="${CRX}" ry="${CRY}" fill="none" stroke="#222" stroke-width="1.5" stroke-dasharray="5,3"/>
-    ${edgeArr(CX+8, CYT-CRY+5, CX-8, CYT-CRY+5)}
-    ${edgeArr(CX+8, CYB+CRY-5, CX-8, CYB+CRY-5)}
-    <text x="${CX+CRX+7}" y="${CYT+5}"  ${F} font-size="14" font-style="italic" fill="#222">b</text>
-    <text x="${CX+CRX+7}" y="${CYB+5}"  ${F} font-size="14" font-style="italic" fill="#222">b</text>
-    <text x="${CX}" y="${CYB+CRY+20}" ${F} font-size="9" text-anchor="middle" fill="#aaa">cylinder (a→a)</text>`;
+    ${meshCylinder(230, 95, 22)}
+    <text x="230" y="178" ${cap}>cylinder (a glued)</text>`;
+  const arr2 = stepArrow(278, 308, AY, 'bend', '#94a3b8');
 
-  // ── Arrow 2 ────────────────────────────────────────────────────────────────
-  const A2X = CX + CRX + 14;
-  const arr2 = `
-    <line x1="${A2X}" y1="${AY}" x2="${A2X+24}" y2="${AY}" stroke="#888" stroke-width="1.5" marker-end="url(#ptt-arr-step)"/>
-    <text x="${A2X+12}" y="${AY-8}" ${F} font-size="9" text-anchor="middle" fill="#888">glue b</text>`;
-
-  // ── 3. Bent cylinder (C-shape) ─────────────────────────────────────────────
-  // A U-shaped tube with matching open ends facing each other
-  const BX = 335, BY = 104;
-  // The U-shape: outer arc (large) + inner arc (small) + two tubes
-  const BR = 36; // bend radius (center of tube follows this arc)
-  const Br = 14; // tube radius
-  const bk = 0.42; // foreshortening for tube cross-section ellipses
-  // Outer bend arc (bottom of U) — concave up
-  // The U spans from left top (BX-BR, BY-40) going around to right top (BX+BR, BY-40)
-  const btop = BY - 62;
   const bent = `
-    <!-- tube outer wall -->
-    <path d="M${BX-BR-Br},${btop} Q${BX-BR-Br},${BY+Br} ${BX},${BY+Br} Q${BX+BR+Br},${BY+Br} ${BX+BR+Br},${btop}"
-          fill="none" stroke="#222" stroke-width="1.5"/>
-    <!-- tube inner wall -->
-    <path d="M${BX-BR+Br},${btop} Q${BX-BR+Br},${BY-Br} ${BX},${BY-Br} Q${BX+BR-Br},${BY-Br} ${BX+BR-Br},${btop}"
-          fill="none" stroke="#222" stroke-width="1.5"/>
-    <!-- left open end (top-left) — ellipse -->
-    <ellipse cx="${BX-BR}" cy="${btop}" rx="${Br}" ry="${Br*bk}" fill="none" stroke="#222" stroke-width="1.5"/>
-    <!-- right open end (top-right) — ellipse, dashed (far side) -->
-    <ellipse cx="${BX+BR}" cy="${btop}" rx="${Br}" ry="${Br*bk}" fill="none" stroke="#222" stroke-width="1.5"/>
-    <!-- b-arrows on open ends pointing same direction (to be identified) -->
-    ${edgeArr(BX-BR+6, btop-Br*bk+3.5, BX-BR-6, btop-Br*bk+3.5)}
-    ${edgeArr(BX+BR+6, btop-Br*bk+3.5, BX+BR-6, btop-Br*bk+3.5)}
-    <text x="${BX-BR}" y="${btop-Br*bk-6}" ${F} font-size="11" font-style="italic" text-anchor="middle" fill="#222">b</text>
-    <text x="${BX+BR}" y="${btop-Br*bk-6}" ${F} font-size="11" font-style="italic" text-anchor="middle" fill="#222">b</text>
-    <text x="${BX}" y="${BY+Br+20}" ${F} font-size="9" text-anchor="middle" fill="#aaa">bent tube (a→a, bend)</text>`;
-
-  // ── Arrow 3 ────────────────────────────────────────────────────────────────
-  const A3X = BX + BR + Br + 14;
-  const arr3 = `
-    <line x1="${A3X}" y1="${AY}" x2="${A3X+24}" y2="${AY}" stroke="#888" stroke-width="1.5" marker-end="url(#ptt-arr-step)"/>
-    <text x="${A3X+12}" y="${AY-8}" ${F} font-size="9" text-anchor="middle" fill="#888">glue b</text>`;
-
-  // ── 4. Torus schematic ─────────────────────────────────────────────────────
-  const TX = 596, TY = 102;
-  const Rmaj = 56, Rmin = 21, kT = 0.44;
-  const oRx = Rmaj + Rmin, oRy = (Rmaj + Rmin) * kT;  // 77, 33.9
-  const iRx = Rmaj - Rmin, iRy = (Rmaj - Rmin) * kT;  // 35, 15.4
-  const tubeRy = (Rmin * kT).toFixed(2);               // half-height of tube cross-section ellipse
-
-  // Even-odd donut fill
-  const donutFill = `M ${TX-oRx},${TY} A ${oRx},${oRy} 0 1 1 ${TX+oRx},${TY} A ${oRx},${oRy} 0 1 1 ${TX-oRx},${TY} Z ` +
-                    `M ${TX-iRx},${TY} A ${iRx},${iRy} 0 1 1 ${TX+iRx},${TY} A ${iRx},${iRy} 0 1 1 ${TX-iRx},${TY} Z`;
+    ${meshBentTube(385, 110, 28)}
+    <text x="385" y="178" ${cap}>bent tube</text>`;
+  const arr3 = stepArrow(448, 478, AY, 'glue b', ECC_CYAN);
 
   const torus = `
-    <!-- filled donut body -->
-    <path d="${donutFill}" fill="#efefef" fill-rule="evenodd" stroke="none"/>
-    <!-- outer ring -->
-    <ellipse cx="${TX}" cy="${TY}" rx="${oRx}" ry="${oRy}" fill="none" stroke="#222" stroke-width="1.5"/>
-    <!-- inner hole -->
-    <ellipse cx="${TX}" cy="${TY}" rx="${iRx}" ry="${iRy}" fill="none" stroke="#222" stroke-width="1.5"/>
-    <!-- left near-side tube arc (lower half-ellipse, visible) -->
-    <path d="M ${TX-Rmaj-Rmin},${TY} A ${Rmin},${tubeRy} 0 0 1 ${TX-Rmaj+Rmin},${TY}"
-          fill="none" stroke="#222" stroke-width="1.5"/>
-    <!-- right near-side tube arc -->
-    <path d="M ${TX+Rmaj-Rmin},${TY} A ${Rmin},${tubeRy} 0 0 1 ${TX+Rmaj+Rmin},${TY}"
-          fill="none" stroke="#222" stroke-width="1.5"/>
-    <!-- left far-side arc (upper half-ellipse, hidden) -->
-    <path d="M ${TX-Rmaj-Rmin},${TY} A ${Rmin},${tubeRy} 0 0 0 ${TX-Rmaj+Rmin},${TY}"
-          fill="none" stroke="#bbb" stroke-width="1.2" stroke-dasharray="5,3"/>
-    <!-- right far-side arc -->
-    <path d="M ${TX+Rmaj-Rmin},${TY} A ${Rmin},${tubeRy} 0 0 0 ${TX+Rmaj+Rmin},${TY}"
-          fill="none" stroke="#bbb" stroke-width="1.2" stroke-dasharray="5,3"/>
-    <text x="${TX}" y="${TY+oRy+20}" ${F} font-size="9" text-anchor="middle" fill="#aaa">torus (a and b glued)</text>`;
+    ${meshTorus(620, 95, 15)}
+    <text x="620" y="178" ${cap}>torus (a and b glued)</text>`;
 
-  const body = `
+  return svgWrap(W, H, `
     ${defs}
-    <text x="14" y="18" ${F} font-size="11" font-weight="700" fill="#111">From flat square to torus: identifying opposite edges</text>
-    ${square}
-    ${arr1}
-    ${cylinder}
-    ${arr2}
-    ${bent}
-    ${arr3}
-    ${torus}`;
-
-  return svgWrap(W, H, body);
+    ${square}${arr1}${cylinder}${arr2}${bent}${arr3}${torus}`);
 }
 
 export function getEccPrimerFigures() {
@@ -753,5 +1078,6 @@ export function getEccPrimerFigures() {
     torus: torusFigure(),
     pointAdd: pointAddFigure(),
     pointDouble: pointDoubleFigure(),
+    pointOpsGrid: pointOpsGridFigure(),
   };
 }

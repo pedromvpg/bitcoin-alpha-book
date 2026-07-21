@@ -80,11 +80,11 @@
    ============================================ */
 
 :root {
-  /* Type scale (based on 10pt body) */
+  /* Type scale (based on 9pt body) */
   --font-size-xs: 7pt;
   --font-size-sm: 8pt;
-  --font-size-base: 10pt;
-  --font-size-md: 11pt;
+  --font-size-base: 9pt;
+  --font-size-md: 10pt;
   --font-size-lg: 13pt;
   --font-size-xl: 16pt;
   --font-size-2xl: 20pt;
@@ -97,10 +97,7 @@
   --line-height-relaxed: 1.65;
   --line-height-code: 1.55;
   
-  /* Font families */
-  --font-code: 'Basis Grotesque Mono Pro', monospace;
-  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-heading: 'Basis Grotesque Mono Pro', monospace;
+  /* Font families: defined in typeface.css (Design System source of truth) */
   
   /* Colors */
   --color-text: #1a1a1f;
@@ -114,7 +111,7 @@
 }
 
 html {
-  font-size: 10pt;
+  font-size: 9pt;
 }
 
 body {
@@ -222,6 +219,9 @@ p.lead {
   margin-top: 0;
   padding-top: 2em;
   border-top: 1px solid #dddddd;
+  /* annotation-block also draws a bottom border; drop it so Sources'
+     border-top is the only ruler between Summary and footnotes */
+  border-bottom: none;
 }
 
 .annotation-block h4,
@@ -721,7 +721,7 @@ dd {
 }
 
 .color-key th {
-  font-family: 'Basis Grotesque Mono Pro', monospace;
+  font-family: var(--font-code);
   font-weight: 600;
   color: #888888;
   text-transform: uppercase;
@@ -974,6 +974,197 @@ pre.example .token.punctuation { color: #24292e; }
 pre.example .token.constant { color: #005cc5; }
 
 /* ============================================
+   SYNTHESIS DIAGRAM (prior innovations → Bitcoin)
+   ============================================ */
+
+.synthesis-diagram {
+  font-family: var(--font-code);
+  font-size: 7.5pt;
+  line-height: 1.35;
+  color: #222;
+  margin: 1em 0 1.25em;
+  padding: 0;
+  border: none;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  max-width: 100%;
+}
+
+.synth-stage {
+  border: 1px solid #333;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+.synth-stage-label {
+  font-size: 7pt;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0.55em 0.75em 0.4em;
+  border-bottom: 1px solid #333;
+}
+
+.synth-prior .synth-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+}
+
+.synth-col {
+  padding: 0.55em 0.7em 0.7em;
+  box-sizing: border-box;
+}
+
+.synth-col + .synth-col {
+  border-left: 1px solid #333;
+}
+
+.synth-col-head {
+  font-size: 6.5pt;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  margin: 0 0 0.45em;
+  padding-bottom: 0.35em;
+  border-bottom: 1px solid #ccc;
+}
+
+.synth-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+.synth-col li {
+  margin: 0;
+  padding: 0.12em 0;
+  font-size: 7pt;
+  line-height: 1.35;
+  color: #333;
+}
+
+.synth-join {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.synth-join-stems {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  height: 14px;
+}
+
+.synth-join-stems span {
+  position: relative;
+}
+
+.synth-join-stems span::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: #333;
+  transform: translateX(-50%);
+}
+
+.synth-join-bar {
+  height: 1px;
+  background: #333;
+  /* Span from center of col1 to center of col3 */
+  margin: 0 calc(100% / 6);
+}
+
+.synth-join-arrow {
+  position: relative;
+  height: 18px;
+  width: 1px;
+  background: #333;
+  margin: 0 auto;
+}
+
+.synth-join-arrow::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid #333;
+  transform: translateX(-50%);
+}
+
+.synth-join-simple {
+  align-items: center;
+}
+
+.synth-join-simple .synth-join-arrow {
+  height: 16px;
+}
+
+.synth-insight,
+.synth-bitcoin {
+  width: 72%;
+  max-width: 28rem;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
+
+.synth-insight-title {
+  font-size: 8pt;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0.55em 0 0.35em;
+}
+
+.synth-insight-eq,
+.synth-insight-quote,
+.synth-bitcoin-tag {
+  margin: 0;
+  padding: 0 0.9em;
+  font-size: 7pt;
+  line-height: 1.4;
+  color: #333;
+}
+
+.synth-insight-eq {
+  margin-bottom: 0.35em;
+}
+
+.synth-insight-quote {
+  font-style: italic;
+  color: #555;
+  padding-bottom: 0.7em;
+}
+
+.synth-bitcoin .synth-stage-label {
+  border-bottom: none;
+  padding-bottom: 0.15em;
+}
+
+.synth-bitcoin-tag {
+  padding-bottom: 0.7em;
+  font-weight: 500;
+}
+
+/* ============================================
    CHAPTER (source file sections)
    ============================================ */
 
@@ -1064,6 +1255,18 @@ hr {
   font-size: 0.75em;
   vertical-align: super;
   line-height: 0;
+  text-decoration: none;
+  color: var(--color-text);
+  font-weight: 600;
+  margin-left: 0.1em;
+}
+
+.footnote-ref:hover {
+  color: var(--color-accent);
+}
+
+.footnote-missing {
+  color: #b00020;
 }
 
 .footnotes {
@@ -1071,15 +1274,47 @@ hr {
   border-top: 1px solid var(--color-border);
   margin-top: 2em;
   padding-top: 1em;
+  font-family: var(--font-body);
+  color: var(--color-text);
+}
+
+.footnotes-title {
+  font-family: var(--font-code);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 0.75em 0;
+  color: var(--color-text);
+}
+
+.footnotes-list {
+  margin: 0;
+  padding-left: 1.5em;
+  list-style: decimal;
 }
 
 .footnote {
   margin-bottom: 0.5em;
+  padding-left: 0.25em;
+  line-height: var(--line-height-relaxed);
+  text-indent: 0;
+  /* hanging indent for wrapped URLs / long titles */
+  padding-left: 0.5em;
+  text-indent: -0.5em;
+}
+
+.footnote a.footnote-url {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  font-size: 0.95em;
 }
 
 .footnote-backref {
   text-decoration: none;
   color: var(--color-accent);
+  margin-left: 0.25em;
+  white-space: nowrap;
 }
 
 /* ============================================
@@ -1122,7 +1357,7 @@ hr {
 
 .resource-filename {
   display: block;
-  font-family: 'Basis Grotesque Mono Pro', monospace;
+  font-family: var(--font-code);
   font-size: 7pt;
   font-weight: 600;
   color: #333;
@@ -1130,7 +1365,7 @@ hr {
 
 .resource-description {
   display: block;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 6pt;
   color: #888;
   line-height: 1.3;

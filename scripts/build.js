@@ -11,11 +11,12 @@ import { fileURLToPath } from 'url';
 import yaml from 'js-yaml';
 import Prism from 'prismjs';
 import { getEccPrimerFigures } from './ecc-figures.mjs';
-import { EDITION } from './edition.mjs';
+import { EDITION, ANNOTATIONS_CREDIT } from './edition.mjs';
 import {
   SOURCE_FILE_ORDER as FILE_ORDER,
   chapterIdFromFilename,
 } from './source-file-order.mjs';
+import { renderRcGalleryHtml } from './rc-gallery.mjs';
 
 // Load additional Prism languages
 import 'prismjs/components/prism-c.js';
@@ -29,8 +30,191 @@ const ROOT_DIR = join(__dirname, '..');
 // Directories
 const SOURCE_DIR = join(ROOT_DIR, 'src', 'bitcoin-0.01', 'src');
 const ANNOTATIONS_DIR = join(ROOT_DIR, 'src', 'annotations');
+const REFERENCES_PATH = join(ROOT_DIR, 'src', 'references.yaml');
 const STYLES_DIR = join(ROOT_DIR, 'styles');
 const OUTPUT_DIR = join(ROOT_DIR, 'output');
+
+// =============================================================================
+// CITATIONS / FOOTNOTES
+// =============================================================================
+
+/**
+ * Load the shared reference registry from src/references.yaml
+ */
+function loadReferences() {
+  if (!existsSync(REFERENCES_PATH)) {
+    console.warn('Warning: src/references.yaml not found; citations will warn as unknown keys');
+    return {};
+  }
+  try {
+    const content = readFileSync(REFERENCES_PATH, 'utf8');
+    const refs = yaml.load(content);
+    return refs && typeof refs === 'object' ? refs : {};
+  } catch (err) {
+    console.warn(`Warning: Could not parse references.yaml: ${err.message}`);
+    return {};
+  }
+}
+
+/**
+ * Format a structured reference into footnote HTML body text.
+ */
+function formatFootnote(ref) {
+  if (!ref || typeof ref !== 'object') return '<em>Unknown reference</em>';
+
+  const parts = [];
+  if (ref.author) parts.push(escapeHtml(ref.author));
+  if (ref.title) {
+    parts.push(parts.length ? `, <em>${escapeHtml(ref.title)}</em>` : `<em>${escapeHtml(ref.title)}</em>`);
+  }
+  if (ref.date) parts.push(` (${escapeHtml(String(ref.date))})`);
+  let text = parts.join('') + (parts.length ? '.' : '');
+
+  if (ref.note) {
+    text += ` ${escapeHtml(ref.note)}.`;
+  }
+  if (ref.url) {
+    const url = String(ref.url);
+    text += ` <a href="${escapeHtml(url)}" class="footnote-url">${escapeHtml(url)}</a>`;
+  }
+  return text.trim() || '<em>Incomplete reference</em>';
+}
+
+/**
+ * Per-chapter citation accumulator. Numbers are assigned in order of first appearance.
+ */
+class CitationContext {
+  /**
+   * @param {string} chapterId
+   * @param {Record<string, object>} refs Merged global + per-chapter sources
+   * @param {Set<string>} [localKeys] Keys defined only in the chapter's sources: block
+   */
+  constructor(chapterId, refs, localKeys = new Set()) {
+    this.chapterId = chapterId;
+    this.refs = refs;
+    this.localKeys = localKeys;
+    this.keyToNumber = new Map();
+    this.keyOccurrences = new Map(); // key -> how many times cited in this chapter
+    this.usedOrder = []; // [{ key, number, ref }]
+    this.citedLocalKeys = new Set();
+  }
+
+  process(html) {
+    if (!html || typeof html !== 'string') return html || '';
+
+    // Fresh regex each call — avoid /g lastIndex carry-over across chapters
+    return html.replace(/\{\{cite:([a-zA-Z0-9][a-zA-Z0-9_-]*)\}\}/g, (_match, key) => {
+      const ref = this.refs[key];
+      if (!ref) {
+        console.warn(`   Warning: Unknown cite key "${key}" in ${this.chapterId}`);
+        return `<sup class="footnote-ref footnote-missing" title="Unknown citation: ${escapeHtml(key)}">?</sup>`;
+      }
+
+      if (!ref.url && !ref.note) {
+        console.warn(`   Warning: Reference "${key}" has neither url nor note`);
+      }
+
+      let number = this.keyToNumber.get(key);
+      if (number == null) {
+        number = this.usedOrder.length + 1;
+        this.keyToNumber.set(key, number);
+        this.usedOrder.push({ key, number, ref });
+      }
+
+      const occurrence = (this.keyOccurrences.get(key) || 0) + 1;
+      this.keyOccurrences.set(key, occurrence);
+
+      if (this.localKeys.has(key)) {
+        this.citedLocalKeys.add(key);
+      }
+
+      const fnId = `${this.chapterId}-fn-${number}`;
+      // First occurrence keeps the canonical id for ↩ backrefs; later ones stay unique
+      const refId = occurrence === 1
+        ? `${this.chapterId}-fnref-${number}`
+        : `${this.chapterId}-fnref-${number}-${occurrence}`;
+      return `<sup><a id="${refId}" href="#${fnId}" class="footnote-ref">${number}</a></sup>`;
+    });
+  }
+
+  warnUnusedLocalSources() {
+    for (const key of this.localKeys) {
+      if (!this.citedLocalKeys.has(key)) {
+        console.warn(`   Warning: Unused local source "${key}" in ${this.chapterId}`);
+      }
+    }
+  }
+
+  renderFootnotes() {
+    this.warnUnusedLocalSources();
+    if (this.usedOrder.length === 0) return '';
+
+    const items = this.usedOrder.map(({ number, ref }) => {
+      const fnId = `${this.chapterId}-fn-${number}`;
+      const refId = `${this.chapterId}-fnref-${number}`;
+      return `
+      <li id="${fnId}" class="footnote" value="${number}">
+        ${formatFootnote(ref)}
+        <a href="#${refId}" class="footnote-backref" aria-label="Return to text">↩</a>
+      </li>`;
+    }).join('');
+
+    return `
+    <section class="footnotes" id="${this.chapterId}-sources">
+      <h4 class="footnotes-title">Sources</h4>
+      <ol class="footnotes-list">${items}
+      </ol>
+    </section>`;
+  }
+}
+
+/**
+ * Build a CitationContext for a chapter, merging global refs with per-chapter sources.
+ */
+function createCitationContext(chapterId, globalRefs, annotation) {
+  const localSources = annotation?.sources && typeof annotation.sources === 'object'
+    ? annotation.sources
+    : {};
+  const localKeys = new Set(Object.keys(localSources));
+  const merged = { ...globalRefs, ...localSources };
+  return new CitationContext(chapterId, merged, localKeys);
+}
+
+/**
+ * Expand {{cite:key}} markers inside Part I primer sections and append Sources.
+ * Applied to the finished book HTML so primers (hardcoded in the template) get
+ * the same footnote treatment as annotation chapters.
+ */
+function injectPrimerCitations(html) {
+  const primerIds = [
+    'introduction',
+    'prehistory',
+    'computer-concepts',
+    'cryptography-primer',
+    'cpp-primer',
+    'what-came-after',
+  ];
+
+  for (const id of primerIds) {
+    const pattern = new RegExp(
+      `(<section\\b[^>]*\\bid="${id}"[^>]*>)([\\s\\S]*?)(<\\/section>)`,
+      'i'
+    );
+    html = html.replace(pattern, (_match, open, body, close) => {
+      // Skip if already processed or no cite markers
+      if (!/\{\{cite:[a-zA-Z0-9_-]+\}\}/.test(body)) {
+        return open + body + close;
+      }
+      const ctx = createCitationContext(id, GLOBAL_REFERENCES, {});
+      const processed = ctx.process(body);
+      return open + processed + ctx.renderFootnotes() + close;
+    });
+  }
+  return html;
+}
+
+// Global reference registry (loaded at build time)
+let GLOBAL_REFERENCES = {};
 
 // =============================================================================
 // INDEX TERMS
@@ -409,8 +593,9 @@ function processCodeWithAnnotations(code, language, annotations = []) {
  * Generate HTML for a single code block
  * Uses per-line structure so line numbers stay aligned when code wraps
  * Includes margin notes from annotations
+ * @param {CitationContext|null} citationCtx Optional citation context for {{cite:key}} expansion
  */
-function generateCodeBlockHtml(filename, code, language, annotations) {
+function generateCodeBlockHtml(filename, code, language, annotations, citationCtx = null) {
   const lines = code.split('\n');
   
   // Create a map of line annotations
@@ -447,13 +632,14 @@ function generateCodeBlockHtml(filename, code, language, annotations) {
       lineClass += ` highlighted ${annotation.category || ''}`;
     }
 
-    linesHtml += `<div class="${lineClass}"><span class="line-num">${String(lineNum).padStart(4, ' ')}</span><span class="line-code">${highlightedContent}</span></div>`;
-    
-    // Add annotation block after the line
+    // Annotation immediately above the referenced line (not after)
     // Note: Don't escape HTML to allow <code> tags for syntax-colored references
     if (annotation && annotation.text) {
-      linesHtml += `<div class="annotation-block"><div class="annotation-content">${annotation.text}</div></div>`;
+      const text = citationCtx ? citationCtx.process(annotation.text) : annotation.text;
+      linesHtml += `<div class="annotation-block"><div class="annotation-content">${text}</div></div>`;
     }
+
+    linesHtml += `<div class="${lineClass}"><span class="line-num">${String(lineNum).padStart(4, ' ')}</span><span class="line-code">${highlightedContent}</span></div>`;
   }
   
   const html = `
@@ -473,9 +659,27 @@ function generateBookHtml(files) {
   const eccFigs = getEccPrimerFigures();
   const printCss = readFileSync(join(STYLES_DIR, 'print.css'), 'utf8');
   const syntaxCss = readFileSync(join(STYLES_DIR, 'syntax.css'), 'utf8');
+  const typefaceCss = readFileSync(join(STYLES_DIR, 'typeface.css'), 'utf8');
   // Rewrite relative font URLs so they resolve correctly from output/ (both file:// and http://)
   const typographyCss = readFileSync(join(STYLES_DIR, 'typography.css'), 'utf8')
     .replace(/url\('fonts\//g, "url('../styles/fonts/");
+
+  // Active typeface pairing (Design System → styles/typeface.css + typefaces.json)
+  let googleFontsHref = 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+  let typefaceMeta = { code: 'Basis Grotesque Mono Pro', body: 'Inter' };
+  try {
+    const tfCatalog = JSON.parse(readFileSync(join(STYLES_DIR, 'typefaces.json'), 'utf8'));
+    const keyFromCss = (typefaceCss.match(/@typeface\s+(\S+)/) || [])[1];
+    const pair = tfCatalog.pairs?.[keyFromCss]
+      || tfCatalog.pairs?.[tfCatalog.default]
+      || null;
+    if (pair) {
+      typefaceMeta = { code: pair.code, body: pair.body };
+      if (pair.google) {
+        googleFontsHref = `https://fonts.googleapis.com/css2?${pair.google}&display=swap`;
+      }
+    }
+  } catch { /* keep defaults */ }
   
   // Generate TOC entries - start with intro sections
   let tocHtml = `
@@ -535,6 +739,18 @@ function generateBookHtml(files) {
   let chaptersHtml = '';
   for (const file of files) {
     const annotation = file.annotation || {};
+    const ctx = createCitationContext(file.id, GLOBAL_REFERENCES, annotation);
+    const introduction = annotation.introduction ? ctx.process(annotation.introduction) : '';
+    const conclusion = annotation.conclusion ? ctx.process(annotation.conclusion) : '';
+    // Re-render code with citations so line-note cites share chapter numbering
+    const codeHtml = generateCodeBlockHtml(
+      file.filename,
+      file.code,
+      file.language,
+      annotation.annotations || [],
+      ctx
+    );
+    const footnotesHtml = ctx.renderFootnotes();
 
     // Blank pages before chapters
     if (['main.cpp', 'net.cpp', 'market.h', 'readme.txt', 'ui.cpp', 'base58.h',
@@ -566,17 +782,18 @@ function generateBookHtml(files) {
           
           ${annotation.title ? `<h2 class="intro-title">${escapeHtml(annotation.title)}</h2>` : ''}
           
-          ${annotation.introduction ? `<div class="description">${annotation.introduction}</div>` : ''}
+          ${introduction ? `<div class="description">${introduction}</div>` : ''}
         </div>
       </header>
       
-      ${file.codeHtml}
+      ${codeHtml}
       
-      ${annotation.conclusion ? `
+      ${conclusion ? `
       <div class="annotation-block chapter-conclusion">
         <h4>Summary</h4>
-        ${annotation.conclusion}
+        ${conclusion}
       </div>` : ''}
+      ${footnotesHtml}
     </section>`;
 
     // Blank pages after chapters
@@ -605,7 +822,7 @@ function generateBookHtml(files) {
   
   console.log(`   Found ${termLocations.size} index terms across ${Array.from(termLocations.values()).reduce((acc, set) => acc + set.size, 0)} locations`);
   
-  return `<!DOCTYPE html>
+  const bookHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -615,9 +832,11 @@ function generateBookHtml(files) {
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="${googleFontsHref}" rel="stylesheet">
   
   <style>
+${typefaceCss}
+
 ${printCss}
 
 ${syntaxCss}
@@ -701,14 +920,14 @@ ${typographyCss}
   <section class="blank-page"></section>
 
   <!-- Page 1: TITLE PAGE (right) -->
-  <section class="title-page">
+  <section class="title-page" id="front-matter">
     <div class="title-content">
       <h1 class="book-title">BITCOIN</h1>
       <p class="book-subtitle">v0.01 ALPHA</p>
       <p class="book-edition-banner">Annotated edition — ${EDITION}</p>
     </div>
     <div class="footer-content">
-      <p class="annotations-credit">Annotations by Claude Sonnet 4.6 (Revised Opus 4.6)</p>
+      <p class="annotations-credit">${ANNOTATIONS_CREDIT}</p>
       <p class="copyright">Copyright (c) 2009 Satoshi Nakamoto</p>
     </div>
   </section>
@@ -806,24 +1025,24 @@ ${typographyCss}
 
     <p class="lead">
       For three decades before Bitcoin, cryptographers tried to build digital money.
-      Every attempt failed. DigiCash went bankrupt. e-gold was seized by the federal
-      government. Liberty Reserve was shut down. Hashcash never became currency.
-      b-money and Bit Gold were never implemented. The problem was always the same:
+      Every attempt failed. DigiCash went bankrupt.{{cite:chaum-digicash}} e-gold was seized by the federal
+      government.{{cite:egold-seizure}} Liberty Reserve was shut down.{{cite:liberty-reserve}} Hashcash never became currency.{{cite:back-hashcash}}
+      b-money{{cite:dai-bmoney}} and Bit Gold{{cite:szabo-bit-gold}} were never implemented. The problem was always the same:
       someone had to be in charge, and whoever was in charge could be pressured,
       arrested, or simply lose interest.
     </p>
 
     <p>
-      On October 31, 2008, a pseudonymous figure calling themselves Satoshi Nakamoto
+      On October 31, 2008,{{cite:nakamoto-mailing-list-announcement}} a pseudonymous figure calling themselves Satoshi Nakamoto
       posted a nine-page paper to the Cryptography Mailing List. The paper described
-      "a purely peer-to-peer version of electronic cash" requiring no trusted third
-      party. Two months later, on January 3, 2009, Nakamoto released the software
+      "a purely peer-to-peer version of electronic cash"{{cite:nakamoto-whitepaper}} requiring no trusted third
+      party. Two months later, on January 3, 2009,{{cite:genesis-block}} Nakamoto released the software
       and mined the first block.
     </p>
 
     <p>
       Embedded in that block was a message: "The Times 03/Jan/2009 Chancellor on
-      brink of second bailout for banks." The headline from a British newspaper
+      brink of second bailout for banks."{{cite:times-bailout-2009}} The headline from a British newspaper
       served as both a timestamp proof—the block could not have been created before
       that date—and a declaration of intent. The 2008 financial crisis, the bank
       bailouts, the revelation that the global economy depended on institutions that
@@ -833,7 +1052,7 @@ ${typographyCss}
 
     <p>
       This book contains the complete source code of Bitcoin version 0.01 Alpha, the
-      first public release. Roughly 16,000 lines of C++ that solved a problem widely
+      first public release.{{cite:nakamoto-institute-code}}{{cite:readme-v001}} Roughly 16,000 lines of C++ that solved a problem widely
       considered unsolvable: how to prevent double-spending in a digital currency
       without a central authority. The code has been running continuously since
       that January day—producing a block approximately every ten minutes, without
@@ -949,8 +1168,8 @@ ${typographyCss}
     </p>
     <ul>
       <li><strong>The Road to Bitcoin</strong> traces the cryptographic ideas and
-          failed projects that preceded Satoshi's synthesis—from Diffie-Hellman
-          to DigiCash to Hal Finney's RPOW.</li>
+          failed projects that preceded Satoshi's synthesis—from Diffie-Hellman{{cite:diffie-hellman-1976}}
+          to DigiCash{{cite:chaum-digicash}} to Hal Finney's RPOW.{{cite:finney-rpow}}</li>
       <li><strong>Computer Concepts</strong> and <strong>Cryptography Basics</strong>
           provide the technical foundation needed to follow the code: binary
           arithmetic, hash functions, elliptic curves, digital signatures.</li>
@@ -988,7 +1207,7 @@ ${typographyCss}
       They called themselves the <strong>cypherpunks</strong>—a portmanteau of
       "cipher" and "cyberpunk." Eric Hughes wrote in the founding manifesto:
       "Privacy is necessary for an open society in the electronic age…
-      Cypherpunks write code."
+      Cypherpunks write code."{{cite:hughes-cypherpunk-manifesto}}
     </p>
     <p>
       Among their goals was anonymous digital cash—money that couldn't be traced,
@@ -1000,7 +1219,7 @@ ${typographyCss}
     <h2>Public Key Cryptography (1976)</h2>
     <p>
       In 1976, Whitfield Diffie and Martin Hellman published "New Directions in
-      Cryptography," introducing the concept of <strong>public key cryptography</strong>.
+      Cryptography,"{{cite:diffie-hellman-1976}} introducing the concept of <strong>public key cryptography</strong>.
       Before this, sharing encrypted messages required both parties to have the same
       secret key—but how do you securely share that key in the first place?
     </p>
@@ -1024,7 +1243,7 @@ Shared secret: abG (same for both!)</pre>
     </p>
     <p>
       The Bitcoin whitepaper cites Diffie-Hellman indirectly through the cryptographic
-      concepts it enabled. Your Bitcoin public key can be shared with the world, yet
+      concepts it enabled.{{cite:nakamoto-whitepaper}} Your Bitcoin public key can be shared with the world, yet
       no one can reverse-engineer your private key. The math that protects Diffie-Hellman
       key exchange protects your coins.
     </p>
@@ -1032,20 +1251,20 @@ Shared secret: abG (same for both!)</pre>
     <h2>David Chaum's DigiCash (1989)</h2>
     <p>
       Cryptographer David Chaum invented <strong>blind signatures</strong> and
-      founded DigiCash in 1989—the first attempt at cryptographic digital cash.
+      founded DigiCash in 1989—the first attempt at cryptographic digital cash.{{cite:chaum-digicash}}
       His "eCash" system used clever math to make transactions untraceable while
       preventing double-spending.
     </p>
     <p>
       The problem: DigiCash required a central server to validate transactions.
-      When the company went bankrupt in 1998, the money system died with it.
+      When the company went bankrupt in 1998, the money system died with it.{{cite:chaum-digicash}}
       <strong>Lesson learned: centralization is a single point of failure.</strong>
     </p>
 
     <h2>Hashcash (1997)</h2>
     <p>
       Adam Back, a British cryptographer, invented <strong>Hashcash</strong> to
-      combat email spam. The idea: require senders to compute a partial hash
+      combat email spam.{{cite:back-hashcash}} The idea: require senders to compute a partial hash
       collision before sending email. Finding such a collision takes CPU work—
       trivial for one email, prohibitive for millions of spam messages.
     </p>
@@ -1054,7 +1273,7 @@ Shared secret: abG (same for both!)</pre>
 The sender must find a value where SHA1(header) starts with 20 zero bits.
 This requires ~2^20 hash computations—about a second of CPU time.</pre>
     <p>
-      The Bitcoin whitepaper explicitly cites Hashcash in its references. Satoshi
+      The Bitcoin whitepaper explicitly cites Hashcash in its references.{{cite:nakamoto-whitepaper}}{{cite:back-hashcash}} Satoshi
       adapted the concept: instead of proving work to send email, miners prove
       work to add blocks. The difficulty is adjusted so the network collectively
       finds one valid proof every 10 minutes.
@@ -1063,7 +1282,7 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
     <h2>b-money (1998)</h2>
     <p>
       Wei Dai, a cypherpunk and computer scientist, proposed <strong>b-money</strong>—
-      a theoretical system for anonymous digital cash. His paper describes:
+      a theoretical system for anonymous digital cash.{{cite:dai-bmoney}} His paper describes:
     </p>
     <ul>
       <li>Money created through proof-of-work</li>
@@ -1073,9 +1292,9 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
     </ul>
     <p>
       Sound familiar? Wei Dai's b-money was never implemented, but Satoshi cited
-      it first in the Bitcoin whitepaper's references. In early emails, Satoshi
+      it first in the Bitcoin whitepaper's references.{{cite:nakamoto-whitepaper}}{{cite:dai-bmoney}} In early emails, Satoshi
       told Wei Dai: "I was very interested to read your b-money page. I'm getting
-      ready to release a paper that expands on your ideas."
+      ready to release a paper that expands on your ideas."{{cite:nakamoto-dai-email}}
     </p>
 
     <h2>Bit Gold (1998-2005)</h2>
@@ -1084,28 +1303,28 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       crushed the 1956 revolt. This shaped his distrust of government overreach
       and drew him to Hayek's writings on monetary economics. After studying
       computer science and working at NASA's Jet Propulsion Laboratory, he joined
-      the cypherpunks and briefly worked at DigiCash in Amsterdam.
+      the cypherpunks and briefly worked at DigiCash in Amsterdam.{{cite:chaum-digicash}}
     </p>
     <p>
       At DigiCash, Szabo saw firsthand how easy it was to manipulate balances
       in a centralized system. This led to his influential essay "Trusted Third
-      Parties Are Security Holes"—the insight that any system depending on a
+      Parties Are Security Holes"{{cite:szabo-trusted-third-parties}}—the insight that any system depending on a
       central party inherits that party's vulnerabilities, whether from hackers,
       rogue employees, or government pressure.
     </p>
     <p>
       Szabo designed <strong>Bit Gold</strong> to eliminate trusted third parties
-      entirely. His system used proof-of-work to create tokens, chained hashes
+      entirely.{{cite:szabo-bit-gold}} His system used proof-of-work to create tokens, chained hashes
       together (each valid hash becoming the input for the next), and proposed
       a distributed "property club" to track ownership. It was never implemented,
       but its architecture clearly influenced Bitcoin. Szabo later acknowledged:
-      "Bitcoin is an implementation of bit gold."
+      "Bitcoin is an implementation of bit gold."{{cite:szabo-bit-gold}}
     </p>
 
     <h2>Merkle Trees (1979)</h2>
     <p>
       Ralph Merkle invented the <strong>Merkle tree</strong>—a data structure
-      that efficiently summarizes large amounts of data into a single hash.
+      that efficiently summarizes large amounts of data into a single hash.{{cite:merkle-1980}}
       His original patent was for digital signatures, but the concept proved
       far more versatile.
     </p>
@@ -1120,18 +1339,18 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       Bitcoin uses Merkle trees to commit to all transactions in a block while
       enabling "light clients" that can verify transaction inclusion without
       downloading the entire blockchain. The whitepaper's Section 7 explicitly
-      credits "Protocols for Public Key Cryptosystems" (Merkle, 1980).
+      credits "Protocols for Public Key Cryptosystems" (Merkle, 1980).{{cite:nakamoto-whitepaper}}{{cite:merkle-1980}}
     </p>
 
     <h2>Timestamping (1991)</h2>
     <p>
       Stuart Haber and W. Scott Stornetta published "How to Time-Stamp a Digital
-      Document"—a system for proving a document existed at a certain time by
+      Document"{{cite:haber-stornetta-1991}}—a system for proving a document existed at a certain time by
       publishing hashes in a newspaper. Their subsequent work on hash chains
       and Merkle trees directly influenced Bitcoin's blockchain structure.
     </p>
     <p>
-      The Bitcoin whitepaper cites three Haber-Stornetta papers. Their idea of
+      The Bitcoin whitepaper cites three Haber-Stornetta papers.{{cite:nakamoto-whitepaper}}{{cite:haber-stornetta-1991}} Their idea of
       chaining hashes together—where each timestamp includes the hash of the
       previous one—is exactly how Bitcoin blocks link together.
     </p>
@@ -1147,7 +1366,7 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
     </p>
     <p>
       Still, Finney wanted electronic cash to exist. In 2004, he launched
-      <strong>RPOW</strong> (Reusable Proofs of Work). Users would generate
+      <strong>RPOW</strong> (Reusable Proofs of Work).{{cite:finney-rpow}} Users would generate
       a hashcash-style proof-of-work and exchange it for a token. That token
       could then be transferred to others, who would redeem it for a fresh
       token—making the proof of work reusable.
@@ -1155,15 +1374,17 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
     <p>
       To prevent double-spending without trusting the server operator (himself),
       Finney ran RPOW on tamper-proof IBM hardware that could cryptographically
-      prove it was running unmodified open-source code. It was clever, but RPOW
+      prove it was running unmodified open-source code.{{cite:finney-rpow}} It was clever, but RPOW
       failed to gain users. The tokens had no reason to hold value—Moore's Law
       would make them cheaper to produce over time—and without users, there was
       nothing to buy.
     </p>
     <p>
-      When Satoshi announced Bitcoin on the cryptography mailing list in 2008,
-      Hal Finney was among the first to respond positively. On January 11, 2009,
-      Finney received the first Bitcoin transaction ever: 10 BTC from Satoshi.
+      When Satoshi announced Bitcoin on the cryptography mailing list in 2008,{{cite:nakamoto-mailing-list-announcement}}
+      Hal Finney was among the first to respond positively. He missed the January 9
+      launch; his node joined around block 49 on January 10 (logged in a crash report
+      <code>debug.log</code>), and on January 12 he received the first Bitcoin
+      transaction ever: 10 BTC from Satoshi in block 170.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer}}{{cite:finney-first-tx}}
       Finney ran one of the first Bitcoin nodes and contributed code fixes before
       his death in 2014.
     </p>
@@ -1218,37 +1439,61 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       Satoshi's breakthrough was not any single invention but a synthesis—combining
       these existing pieces with one novel insight:
     </p>
-    <pre class="example">
-                        PRIOR INNOVATIONS
-    ┌─────────────────┬─────────────────┬─────────────────┐
-    │    IDENTITY     │  PROOF-OF-WORK  │     HISTORY     │
-    │                 │                 │                 │
-    │ Diffie-Hellman  │   Hashcash      │ Haber-Stornetta │
-    │ RSA, ECC        │   b-money       │  Merkle Trees   │
-    │ Public Keys     │   Bit Gold      │  Timestamping   │
-    └────────┬────────┴────────┬────────┴────────┬────────┘
-             │                 │                 │
-             └─────────────────┼─────────────────┘
-                               │
-                               ▼
-              ┌────────────────────────────────┐
-              │      SATOSHI'S INSIGHT         │
-              │                                │
-              │    DIFFICULTY ADJUSTMENT       │
-              │                                │
-              │  Proof-of-work + time target   │
-              │  = decentralized consensus     │
-              │                                │
-              │  "The system adjusts to keep   │
-              │   ~10 min between blocks"      │
-              └────────────────────────────────┘
-                               │
-                               ▼
-              ┌────────────────────────────────┐
-              │           BITCOIN              │
-              │     Trustless Digital Cash     │
-              └────────────────────────────────┘
-    </pre>
+    <figure class="synthesis-diagram" aria-label="Prior innovations converging into Bitcoin via difficulty adjustment">
+      <div class="synth-stage synth-prior">
+        <div class="synth-stage-label">Prior innovations</div>
+        <div class="synth-cols">
+          <div class="synth-col">
+            <div class="synth-col-head">Identity</div>
+            <ul>
+              <li>Diffie-Hellman</li>
+              <li>RSA, ECC</li>
+              <li>Public Keys</li>
+            </ul>
+          </div>
+          <div class="synth-col">
+            <div class="synth-col-head">Proof-of-work</div>
+            <ul>
+              <li>Hashcash</li>
+              <li>b-money</li>
+              <li>Bit Gold</li>
+            </ul>
+          </div>
+          <div class="synth-col">
+            <div class="synth-col-head">History</div>
+            <ul>
+              <li>Haber-Stornetta</li>
+              <li>Merkle Trees</li>
+              <li>Timestamping</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="synth-join" aria-hidden="true">
+        <div class="synth-join-stems">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="synth-join-bar"></div>
+        <div class="synth-join-arrow"></div>
+      </div>
+
+      <div class="synth-stage synth-insight">
+        <div class="synth-stage-label">Satoshi's insight</div>
+        <div class="synth-insight-title">Difficulty adjustment</div>
+        <p class="synth-insight-eq">Proof-of-work + time target = decentralized consensus</p>
+        <p class="synth-insight-quote">“The system adjusts to keep ~10 min between blocks”</p>
+      </div>
+
+      <div class="synth-join synth-join-simple" aria-hidden="true">
+        <div class="synth-join-arrow"></div>
+      </div>
+
+      <div class="synth-stage synth-bitcoin">
+        <div class="synth-stage-label">Bitcoin</div>
+        <p class="synth-bitcoin-tag">Trustless Digital Cash</p>
+      </div>
+    </figure>
     <p>
       Use proof-of-work not just to create money, but to reach <strong>consensus</strong>
       about which transactions are valid. The longest chain (most cumulative work)
@@ -1258,7 +1503,7 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       As Satoshi wrote: "A lot of people automatically dismiss e-currency as a
       lost cause because of all the companies that failed since the 1990s. I hope
       it's obvious it was only the centrally controlled nature of those systems
-      that doomed them."
+      that doomed them."{{cite:nakamoto-central-control-quote}}
     </p>
   </section>
 
@@ -1320,7 +1565,27 @@ Dec:  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15</pre>
     </p>
     <pre class="example">000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f</pre>
     <p>
-      This is the hash of Bitcoin's genesis block—the first block ever mined.
+      This is the hash of Bitcoin's genesis block—the first block ever mined.{{cite:genesis-block}}
+    </p>
+    <p>
+      Text is just bytes too. The genesis block coinbase embeds a newspaper
+      headline as ASCII—each character is one byte, which you can also write as
+      hex or binary. Here is the opening of that message:{{cite:times-bailout-2009}}
+    </p>
+    <pre class="example">ASCII:  T  h  e     T  i  m  e  s     0  3  /  J  a  n  /  2  0  0  9
+Hex:   54 68 65 20 54 69 6d 65 73 20 30 33 2f 4a 61 6e 2f 32 30 30 39
+
+Binary (first four bytes — "The "):
+  'T'  = 01010100 = 0x54
+  'h'  = 01101000 = 0x68
+  'e'  = 01100101 = 0x65
+  ' '  = 00100000 = 0x20
+
+Full string: "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"</pre>
+    <p>
+      Same data, three notations: readable text (ASCII), compact hex, and the
+      bits the machine actually stores. The rest of the book flips between these
+      views constantly—especially once byte <em>order</em> enters the picture.
     </p>
     
     <h2>Little Endian vs Big Endian</h2>
@@ -1373,7 +1638,7 @@ Little Endian: [78] [56] [34] [12]  (least significant first)</pre>
     <h2>Cryptographic Hashing</h2>
     <p>
       A <strong>hash function</strong> takes any input and produces a fixed-size 
-      output (the "hash" or "digest"). Bitcoin primarily uses SHA-256, which 
+      output (the "hash" or "digest"). Bitcoin primarily uses SHA-256,{{cite:fips-180-2}} which 
       always produces 256 bits.
     </p>
     <p>
@@ -1503,10 +1768,17 @@ Hard:    3^? mod 17 = 6       (which exponent gives 6?)</pre>
       (All About Circuits, 2019).
     </p>
     <div class="ecc-block">
-      <figure class="ecc-figure ecc-figure--wide" aria-label="Schematic affine chart and real plot of y squared equals x cubed plus seven">
+      <p class="ecc-caption"><strong>Curve family along z:</strong>
+        each slice is <span class="token variable">y</span>² = <span class="token variable">x</span>³ + <span class="token variable">b</span> for <span class="token variable">b</span> = 7 + <span class="token variable">z</span>.
+        Red = secp256k1 at <span class="token variable">z</span> = 0 · cyan = smaller <span class="token variable">b</span> · orange = larger <span class="token variable">b</span>.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Family of real elliptic curves y squared equals x cubed plus seven plus z, with secp256k1 highlighted at z equals zero">
         ${eccFigs.curveSpatial}
       </figure>
     </div>
+    <pre class="example"><span class="token class-name">Weierstrass family</span>
+<span class="token variable">y</span>² = <span class="token variable">x</span>³ + (7 + <span class="token variable">z</span>)   ·  slices Δ<span class="token variable">z</span> = <span class="token number">1</span>
+<span class="token variable">z</span> = <span class="token number">0</span>  →  secp256k1: <span class="token variable">y</span>² = <span class="token variable">x</span>³ + <span class="token number">7</span>
+<span class="token variable">z</span> &lt; <span class="token number">0</span>  →  smaller <span class="token variable">b</span> (cyan)   ·  <span class="token variable">z</span> &gt; <span class="token number">0</span>  →  larger <span class="token variable">b</span> (orange)</pre>
     <p>
       In real cryptography the coordinates are not arbitrary-precision reals: they live
       in a <strong>finite field</strong> <span class="token variable">𝔽<sub>p</sub></span>
@@ -1516,10 +1788,17 @@ Hard:    3^? mod 17 = 6       (which exponent gives 6?)</pre>
       pair below satisfies <span class="token variable">y</span>² ≡ <span class="token variable">x</span>³ + 7 (mod 17):
     </p>
     <div class="ecc-block">
+      <p class="ecc-caption"><strong>𝔽<sub>17</sub> schematic grid:</strong>
+        each ● is an integer pair (<span class="token variable">x</span>, <span class="token variable">y</span>) with
+        <span class="token variable">y</span>² ≡ <span class="token variable">x</span>³ + 7 (mod 17).
+        Orange midline = <span class="token variable">y</span> = <span class="token variable">p</span>/2 (negation mirror).</p>
       <figure class="ecc-figure ecc-figure--wide" aria-label="Toy elliptic curve points over the field with seventeen elements">
         ${eccFigs.finiteFieldToy}
       </figure>
     </div>
+    <pre class="example"><span class="token class-name">Modular picture</span> (toy field)
+Prime <span class="token variable">p</span> = <span class="token number">17</span>. Integer pairs (<span class="token variable">x</span>, <span class="token variable">y</span>) with <span class="token variable">y</span>² ≡ <span class="token variable">x</span>³ + <span class="token number">7</span> (mod <span class="token variable">p</span>).
+Negation (<span class="token variable">x</span>, <span class="token variable">y</span>) ↦ (<span class="token variable">x</span>, −<span class="token variable">y</span>) reflects across <span class="token variable">y</span> = <span class="token variable">p</span>/<span class="token number">2</span> (orange).</pre>
     <p>
       The scatter plot looks nothing like the smooth curve over ℝ — and that is
       the point. The wrapping of coordinates modulo <span class="token variable">p</span>
@@ -1532,11 +1811,16 @@ Hard:    3^? mod 17 = 6       (which exponent gives 6?)</pre>
       the topology of a torus — and the curve points live on its surface.
     </p>
     <div class="ecc-block">
+      <p class="ecc-caption"><strong>From flat square to torus:</strong> identifying opposite edges.
+        <span class="token variable">a</span> = top/bottom (orange) · <span class="token variable">b</span> = left/right (cyan) — same as the 𝔽<sub>p</sub> grid.</p>
       <figure class="ecc-figure ecc-figure--wide" aria-label="Step-by-step: flat square to torus by identifying opposite edges">
         ${eccFigs.planeToTorus}
       </figure>
     </div>
     <div class="ecc-block">
+      <p class="ecc-caption"><strong>From flat grid to torus:</strong> modular wrapping in both axes.
+        𝔽<sub>17</sub> (<span class="token variable">p</span> = 17); ● = <span class="token variable">y</span>² ≡ <span class="token variable">x</span>³ + 7 (mod 17).
+        Torus maps the same curve points — secp256k1 uses <span class="token variable">p</span> ≈ 2²⁵⁶ (same topology, vastly larger).</p>
       <figure class="ecc-figure ecc-figure--wide" aria-label="How the flat finite field grid wraps into a torus">
         ${eccFigs.torus}
       </figure>
@@ -1548,28 +1832,26 @@ Hard:    3^? mod 17 = 6       (which exponent gives 6?)</pre>
       Addition still follows chord-and-tangent — but now the "line" wraps modulo <span class="token variable">p</span>.
     </p>
     <p>
-      Points on the curve can be "added" together using the same geometric rule as over ℝ.
-      To add points <span class="token variable">P</span> and <span class="token variable">Q</span>:
+      The points on an elliptic curve form a group under a geometric operation
+      called <strong>point addition</strong> (chord-and-tangent).{{cite:song-programming-bitcoin}}
+      Over ℝ the picture is easy to draw; over 𝔽<sub>p</sub> the same algebra holds with
+      modular arithmetic. The rules in brief:
     </p>
-    <ol>
-      <li>Draw the line through <span class="token variable">P</span> and <span class="token variable">Q</span> (modulo <span class="token variable">p</span>)</li>
-      <li>Find the third curve intersection <span class="token variable">R′</span></li>
-      <li>Reflect <span class="token variable">R′</span> across the x-axis to get <span class="token variable">R</span> = <span class="token variable">P</span> ⊕ <span class="token variable">Q</span></li>
-    </ol>
+    <ul>
+      <li><strong>Identity</strong> 𝒪 (the point at infinity): <span class="token variable">P</span> ⊕ 𝒪 = <span class="token variable">P</span>.</li>
+      <li><strong>Negation</strong>: −<span class="token variable">P</span> = (<span class="token variable">x</span>, −<span class="token variable">y</span>). The vertical line through <span class="token variable">P</span> and −<span class="token variable">P</span> meets the curve at 𝒪, so <span class="token variable">P</span> ⊕ (−<span class="token variable">P</span>) = 𝒪.</li>
+      <li><strong>Addition</strong> <span class="token variable">P</span> ⊕ <span class="token variable">Q</span> (<span class="token variable">P</span> ≠ <span class="token variable">Q</span>): draw the line through both points; it hits the curve again at <span class="token variable">R′</span>; reflect across the x-axis to get <span class="token variable">R</span> = <span class="token variable">P</span> ⊕ <span class="token variable">Q</span>.</li>
+      <li><strong>Doubling</strong> 2<span class="token variable">P</span> = <span class="token variable">P</span> ⊕ <span class="token variable">P</span>: same idea with the <em>tangent</em> at <span class="token variable">P</span>.</li>
+      <li><strong>Subtraction</strong>: <span class="token variable">P</span> − <span class="token variable">Q</span> := <span class="token variable">P</span> ⊕ (−<span class="token variable">Q</span>).</li>
+    </ul>
     <div class="ecc-block">
-      <p class="ecc-caption"><span class="token class-name">Point addition</span> (<span class="token variable">P</span> ⊕ <span class="token variable">Q</span>): the dashed secant meets the curve at <span class="token variable">P</span>, <span class="token variable">Q</span>, and a third point <span class="token variable">R′</span>; reflecting <span class="token variable">R′</span> across the <span class="token variable">x</span>-axis gives <span class="token variable">R</span> = <span class="token variable">P</span> ⊕ <span class="token variable">Q</span>.</p>
-      <figure class="ecc-figure" aria-label="Point addition on the elliptic curve">
-        ${eccFigs.pointAdd}
-      </figure>
-    </div>
-    <p>
-      To <strong>double</strong> a point (add it to itself), draw the 
-      <strong>tangent line</strong> at P, find where it intersects, and reflect:
-    </p>
-    <div class="ecc-block">
-      <p class="ecc-caption"><span class="token class-name">Point doubling</span>: <span class="token variable">P</span> ⊕ <span class="token variable">P</span> = 2<span class="token variable">P</span>. The tangent at <span class="token variable">P</span> meets the curve again at <span class="token variable">R′</span>; reflect across the <span class="token variable">x</span>-axis to get 2<span class="token variable">P</span>.</p>
-      <figure class="ecc-figure" aria-label="Point doubling on the elliptic curve">
-        ${eccFigs.pointDouble}
+      <p class="ecc-caption"><strong>Group law on y² = x³ + 7:</strong>
+        (a) chord through <span class="token variable">P</span>, <span class="token variable">Q</span> → reflect <span class="token variable">R′</span> → <span class="token variable">R</span>;
+        (b) tangent at <span class="token variable">P</span> → 2<span class="token variable">P</span>;
+        (c) vertical line → identity 𝒪;
+        (d) subtract by adding −<span class="token variable">Q</span>.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Elliptic curve group law: addition, doubling, inverse, and subtraction">
+        ${eccFigs.pointOpsGrid}
       </figure>
     </div>
     <p>
@@ -1603,9 +1885,9 @@ Hard:    3^? mod 17 = 6       (which exponent gives 6?)</pre>
     <p>
       These coordinates look random but are actually derived from a simple formula,
       making them "nothing up my sleeve" numbers—verifiably not chosen to hide a
-      backdoor. Satoshi didn't define G in Bitcoin's code; he used OpenSSL's built-in
+      backdoor.{{cite:dual-ec-drbg}} Satoshi didn't define G in Bitcoin's code; he used OpenSSL's built-in
       <code class="token variable">NID_secp256k1</code> curve identifier, which includes G and all other
-      curve parameters.
+      curve parameters.{{cite:openssl-license}}
     </p>
     <p>
       When you generate a Bitcoin key pair:
@@ -1628,7 +1910,7 @@ Hard:    3^? mod 17 = 6       (which exponent gives 6?)</pre>
     <h3>A Note on the Source Code</h3>
     <p>
       You won't find elliptic curve math in Bitcoin's source code. Satoshi 
-      delegated <strong>all</strong> cryptography to <strong>OpenSSL</strong>, 
+      delegated <strong>all</strong> cryptography to <strong>OpenSSL</strong>,{{cite:openssl-license}}
       a battle-tested library. In <code>key.h</code>, the entire CKey class 
       is a thin wrapper around OpenSSL functions:
     </p>
@@ -1672,7 +1954,7 @@ Verification (public key P, message m, signature):
     
     <h3>SHA-256 (Secure Hash Algorithm)</h3>
     <p>
-      The primary hash function. Takes any input and produces a 256-bit output.
+      The primary hash function.{{cite:fips-180-2}} Takes any input and produces a 256-bit output.
       Used for:
     </p>
     <ul>
@@ -1759,7 +2041,7 @@ Then rotate: h=g, g=f, f=e, e=d+T1, d=c, c=b, b=a, a=T1+T2</pre>
       Notice how changing just one digit (2009→2008) or one letter's case (T→t)
       produces a hash that shares virtually nothing with the original. This is why
       Satoshi embedded the Times headline in the genesis block—it proves the block
-      couldn't have been created before that specific date.
+      couldn't have been created before that specific date.{{cite:times-bailout-2009}}{{cite:genesis-block}}
     </p>
     
     <h3>RIPEMD-160</h3>
@@ -1782,7 +2064,7 @@ Bitcoin Address (e.g., 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa)</pre>
     <h2>Merkle Trees</h2>
     <p>
       A <strong>Merkle tree</strong> is a data structure that efficiently 
-      summarizes many items into a single hash. Each Bitcoin block contains 
+      summarizes many items into a single hash.{{cite:merkle-1980}} Each Bitcoin block contains 
       a Merkle root that commits to all transactions in the block.
     </p>
     <pre class="example">        Merkle Root
@@ -1800,7 +2082,7 @@ Bitcoin Address (e.g., 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa)</pre>
     
     <h2>Proof of Work</h2>
     <p>
-      Mining is a cryptographic lottery. Miners must find a number (nonce) 
+      Mining is a cryptographic lottery.{{cite:back-hashcash}} Miners must find a number (nonce) 
       such that the block's hash starts with many zeros:
     </p>
     <pre class="example">Target: Hash must be less than 
@@ -1939,7 +2221,7 @@ uint256 <span class="token class-name">CBlock</span><span class="token punctuati
         </tr>
         <tr>
           <td>db.cpp / db.h</td>
-          <td>Berkeley DB persistence layer</td>
+          <td>Berkeley DB persistence layer{{cite:bdb-license}}</td>
         </tr>
         <tr>
           <td><strong>Cryptography</strong></td>
@@ -1991,7 +2273,7 @@ uint256 <span class="token class-name">CBlock</span><span class="token punctuati
         </tr>
         <tr>
           <td>ui.cpp / ui.h</td>
-          <td>wxWidgets GUI application code</td>
+          <td>wxWidgets GUI application code{{cite:wxwidgets-license}}</td>
         </tr>
         <tr>
           <td>uibase.cpp / uibase.h</td>
@@ -2054,7 +2336,7 @@ bitcoin: main.o net.o db.o script.o ...
       Bitcoin v0.01 includes two makefiles: <code>makefile</code> for Unix/Linux
       (using g++) and <code>makefile.vc</code> for Windows (using Visual C++).
       Satoshi initially developed on Windows, so both platforms were supported
-      from day one.
+      from day one.{{cite:nakamoto-windows-only}}
     </p>
 
     <h3>Resource and Project Files</h3>
@@ -2357,7 +2639,7 @@ balances<span class="token punctuation">[</span><span class="token string">"Bob"
     
     <h2>Common Bitcoin Patterns</h2>
     <p>
-      Patterns you'll see throughout the code:
+      Patterns you'll see throughout the code{{cite:boost-license}}:
     </p>
     <pre class="example"><span class="token comment">// CRITICAL_BLOCK: Thread-safe access</span>
 <span class="token function">CRITICAL_BLOCK</span><span class="token punctuation">(</span>cs_main<span class="token punctuation">)</span> <span class="token punctuation">{</span>
@@ -2419,7 +2701,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     
     <p class="lead">
       You've now studied Bitcoin at its origin—the pristine v0.01 code that launched
-      a monetary revolution. But Bitcoin didn't stop evolving on January 9, 2009.
+      a monetary revolution. But Bitcoin didn't stop evolving on January 9, 2009.{{cite:bitcoin-core-history}}{{cite:nakamoto-windows-only}}
       Over seventeen years, the codebase has grown from ~15,000 lines to over 200,000,
       with hundreds of contributors refining Satoshi's vision. Here's a chronological
       guide to what came next, so you know which versions to study for specific improvements.
@@ -2429,7 +2711,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     
     <p>
       Satoshi personally maintained Bitcoin for its first two years, releasing incremental
-      improvements while communicating with early adopters on forums and mailing lists.
+      improvements while communicating with early adopters on forums and mailing lists.{{cite:bitcoin-core-history}}
     </p>
 
     <table class="version-history">
@@ -2437,47 +2719,47 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v0.1.0</strong></td>
           <td>Jan 9, 2009</td>
-          <td>First public release (this book). Windows only. IRC-based peer discovery.</td>
+          <td>First public release (this book). Windows only.{{cite:nakamoto-windows-only}} IRC-based peer discovery.{{cite:nakamoto-irc-temporary}}</td>
         </tr>
         <tr>
           <td><strong>v0.1.5</strong></td>
           <td>Feb 4, 2009</td>
-          <td>Bug fixes. First transaction between Satoshi and Hal Finney (Jan 12).</td>
+          <td>Bug fixes. First transaction between Satoshi and Hal Finney (Jan 12).{{cite:finney-first-tx}}</td>
         </tr>
         <tr>
           <td><strong>v0.2.0</strong></td>
           <td>Dec 16, 2009</td>
-          <td><strong>Linux support</strong>. Command-line daemon mode. Numerous optimizations.</td>
+          <td><strong>Linux support</strong>. Command-line daemon mode. Numerous optimizations.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.0</strong></td>
           <td>Jul 6, 2010</td>
-          <td><strong>Mac OS X support</strong>. JSON-RPC API begins. Safer database writes.</td>
+          <td><strong>Mac OS X support</strong>. JSON-RPC API begins. Safer database writes.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.1</strong></td>
           <td>Jul 15, 2010</td>
-          <td><strong>1 MB block size limit</strong> added by Satoshi as anti-spam measure. Originally temporary, became contentious years later.</td>
+          <td><strong>1 MB block size limit</strong> added by Satoshi as anti-spam measure. Originally temporary, became contentious years later.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.6</strong></td>
           <td>Aug 15, 2010</td>
-          <td><strong>Testnet</strong> introduced for development testing without real value.</td>
+          <td><strong>Testnet</strong> introduced for development testing without real value.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.9</strong></td>
           <td>Aug 16, 2010</td>
-          <td><strong>OP_RETURN disabled</strong> after discovery of a critical script bug allowing anyone to spend any coins. Satoshi's emergency soft fork.</td>
+          <td><strong>OP_RETURN disabled</strong> after discovery of a critical script bug allowing anyone to spend any coins. Satoshi's emergency soft fork.{{cite:opcode-disable-2010}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.10</strong></td>
           <td>Aug 17, 2010</td>
-          <td><strong>Value overflow fix</strong>. Block 74638 exploited integer overflow to create 184 billion BTC. Chain reorganized to remove it.</td>
+          <td><strong>Value overflow fix</strong>. Block 74638 exploited integer overflow to create 184 billion BTC. Chain reorganized to remove it.{{cite:overflow-bug-2010}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.21</strong></td>
           <td>Apr 27, 2011</td>
-          <td>Satoshi's final release. He disappeared shortly after, leaving Bitcoin to the community.</td>
+          <td>Satoshi's final release. He disappeared shortly after, leaving Bitcoin to the community.{{cite:nakamoto-farewell-2011}}{{cite:nakamoto-bitcointalk-set-in-stone}}</td>
         </tr>
       </tbody>
     </table>
@@ -2491,8 +2773,8 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     <h2>Early Community Development (2011–2013)</h2>
 
     <p>
-      After Satoshi's departure, Gavin Andresen became lead maintainer. The project
-      moved to GitHub, adopted a more formal release process, and began professionalizing.
+      After Satoshi's departure,{{cite:nakamoto-farewell-2011}} Gavin Andresen became lead maintainer. The project
+      moved to GitHub, adopted a more formal release process, and began professionalizing.{{cite:bitcoin-core-history}}
     </p>
 
     <table class="version-history">
@@ -2500,39 +2782,39 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v0.4.0</strong></td>
           <td>Sep 23, 2011</td>
-          <td><strong>Encrypted wallets</strong>. AES-256-CBC encryption protects private keys.</td>
+          <td><strong>Encrypted wallets</strong>. AES-256-CBC encryption protects private keys.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.5.0</strong></td>
           <td>Nov 21, 2011</td>
-          <td><strong>New Qt GUI</strong>. Better address book. "Bitcoin-Qt" naming begins.</td>
+          <td><strong>New Qt GUI</strong>. Better address book. "Bitcoin-Qt" naming begins.{{cite:bitcoin-core-history}}{{cite:qt-lgpl-2009}}</td>
         </tr>
         <tr>
           <td><strong>v0.6.0</strong></td>
           <td>Mar 30, 2012</td>
-          <td><strong>Bloom filters</strong> (BIP 37) for lightweight SPV clients.</td>
+          <td><strong>Bloom filters</strong> (BIP 37) for lightweight SPV clients.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.7.0</strong></td>
           <td>Sep 17, 2012</td>
-          <td>Reduced memory usage. Better fee handling. Prepare for BIP 16 (P2SH).</td>
+          <td>Reduced memory usage. Better fee handling. Prepare for BIP 16 (P2SH).{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.8.0</strong></td>
           <td>Feb 18, 2013</td>
-          <td><strong>LevelDB</strong> replaces Berkeley DB for UTXO set. 10x sync speed improvement.</td>
+          <td><strong>LevelDB</strong> replaces Berkeley DB for UTXO set. 10x sync speed improvement.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.8.1</strong></td>
           <td>Mar 18, 2013</td>
-          <td><strong>Chain split fix</strong>. BerkeleyDB lock limit caused v0.7 nodes to reject valid blocks that v0.8 accepted. 6-hour fork resolved by emergency downgrade.</td>
+          <td><strong>Chain split fix</strong>. BerkeleyDB lock limit caused v0.7 nodes to reject valid blocks that v0.8 accepted. 6-hour fork resolved by emergency downgrade.{{cite:bip-50}}</td>
         </tr>
       </tbody>
     </table>
 
     <p>
       <strong>Study these versions if:</strong> You're interested in wallet encryption (v0.4),
-      SPV/light clients (v0.6), or the database architecture (v0.8). The March 2013 chain split
+      SPV/light clients (v0.6), or the database architecture (v0.8). The March 2013 chain split{{cite:bip-50}}
       is a critical lesson in consensus-critical code changes—even "non-consensus" changes can break consensus.
     </p>
 
@@ -2540,7 +2822,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     <p>
       The project rebranded to "Bitcoin Core" to distinguish it from the broader
-      Bitcoin ecosystem. Development became more rigorous, with extensive review
+      Bitcoin ecosystem.{{cite:bitcoin-core-history}} Development became more rigorous, with extensive review
       processes and a focus on security.
     </p>
 
@@ -2549,27 +2831,27 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v0.9.0</strong></td>
           <td>Mar 19, 2014</td>
-          <td><strong>Rebranded to "Bitcoin Core"</strong>. OP_RETURN outputs allowed (40-byte data limit). Payment protocol (BIP 70).</td>
+          <td><strong>Rebranded to "Bitcoin Core"</strong>. OP_RETURN outputs allowed (40-byte data limit). Payment protocol (BIP 70).{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.10.0</strong></td>
           <td>Feb 16, 2015</td>
-          <td><strong>Headers-first sync</strong>. Download block headers before blocks for faster IBD.</td>
+          <td><strong>Headers-first sync</strong>. Download block headers before blocks for faster IBD.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.11.0</strong></td>
           <td>Jul 12, 2015</td>
-          <td><strong>Block pruning</strong>. <strong>libsecp256k1</strong> replaces OpenSSL for ECDSA—7x faster. OP_RETURN limit raised to 80 bytes.</td>
+          <td><strong>Block pruning</strong>. <strong>libsecp256k1</strong> replaces OpenSSL for ECDSA—7x faster. OP_RETURN limit raised to 80 bytes.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.12.0</strong></td>
           <td>Feb 23, 2016</td>
-          <td><strong>Opt-in RBF</strong> (Replace-By-Fee). Memory pool limiting. Faster signature validation.</td>
+          <td><strong>Opt-in RBF</strong> (Replace-By-Fee). Memory pool limiting. Faster signature validation.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.13.0</strong></td>
           <td>Aug 23, 2016</td>
-          <td><strong>SegWit preparation</strong> (BIPs 141, 143, 144). Compact blocks (BIP 152).</td>
+          <td><strong>SegWit preparation</strong> (BIPs 141, 143, 144). Compact blocks (BIP 152).{{cite:bitcoin-core-history}}</td>
         </tr>
       </tbody>
     </table>
@@ -2584,7 +2866,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     <p>
       Segregated Witness (SegWit) was the most significant protocol upgrade since
-      the beginning. It fixed transaction malleability, enabled the Lightning Network,
+      the beginning.{{cite:bitcoin-core-history}} It fixed transaction malleability, enabled the Lightning Network,
       and increased effective block capacity—all through a soft fork.
     </p>
 
@@ -2593,32 +2875,32 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v0.14.0</strong></td>
           <td>Mar 8, 2017</td>
-          <td>Performance optimizations. Manual pruning. Improved fee estimation.</td>
+          <td>Performance optimizations. Manual pruning. Improved fee estimation.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.15.0</strong></td>
           <td>Sep 14, 2017</td>
-          <td><strong>Better fee estimation</strong>. Multi-wallet support. Script caching.</td>
+          <td><strong>Better fee estimation</strong>. Multi-wallet support. Script caching.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.16.0</strong></td>
           <td>Feb 26, 2018</td>
-          <td><strong>Full SegWit wallet support</strong>. Native bech32 addresses (bc1...).</td>
+          <td><strong>Full SegWit wallet support</strong>. Native bech32 addresses (bc1...).{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.17.0</strong></td>
           <td>Oct 3, 2018</td>
-          <td><strong>Partial Spend Avoidance</strong>. Branch and Bound coin selection. Scantxoutset RPC.</td>
+          <td><strong>Partial Spend Avoidance</strong>. Branch and Bound coin selection. Scantxoutset RPC.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.18.0</strong></td>
           <td>May 2, 2019</td>
-          <td><strong>Output descriptors</strong>. Hardware wallet support via HWI.</td>
+          <td><strong>Output descriptors</strong>. Hardware wallet support via HWI.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.19.0</strong></td>
           <td>Nov 24, 2019</td>
-          <td><strong>BIP 158 block filters</strong> (Neutrino). CPFP carve-out for Lightning.</td>
+          <td><strong>BIP 158 block filters</strong> (Neutrino). CPFP carve-out for Lightning.{{cite:bitcoin-core-history}}</td>
         </tr>
       </tbody>
     </table>
@@ -2632,7 +2914,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     <h2>Modern Bitcoin Core (2020–Present)</h2>
 
     <p>
-      Recent development has focused on Taproot (the largest upgrade since SegWit),
+      Recent development has focused on Taproot (the largest upgrade since SegWit),{{cite:bitcoin-core-history}}
       privacy improvements, and hardening against sophisticated attacks.
     </p>
 
@@ -2641,47 +2923,47 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v0.20.0</strong></td>
           <td>Jun 3, 2020</td>
-          <td><strong>ASMap</strong> for BGP attack resistance. Remove BIP 70 payment protocol.</td>
+          <td><strong>ASMap</strong> for BGP attack resistance. Remove BIP 70 payment protocol.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.21.0</strong></td>
           <td>Jan 14, 2021</td>
-          <td><strong>Descriptor wallets default</strong>. Tor V3 support. Signet test network.</td>
+          <td><strong>Descriptor wallets default</strong>. Tor V3 support. Signet test network.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v22.0</strong></td>
           <td>Sep 13, 2021</td>
-          <td><strong>Taproot activation</strong> (BIPs 340, 341, 342). Version numbering change.</td>
+          <td><strong>Taproot activation</strong> (BIPs 340, 341, 342). Version numbering change.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v23.0</strong></td>
           <td>Apr 25, 2022</td>
-          <td>Taproot multisig (MuSig). CJDNS network support. Tracepoints for debugging.</td>
+          <td>Taproot multisig (MuSig). CJDNS network support. Tracepoints for debugging.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v24.0</strong></td>
           <td>Nov 25, 2022</td>
-          <td><strong>Full RBF option</strong> (mempoolfullrbf). Watch-only descriptor wallets.</td>
+          <td><strong>Full RBF option</strong> (mempoolfullrbf). Watch-only descriptor wallets.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v25.0</strong></td>
           <td>May 26, 2023</td>
-          <td><strong>Miniscript</strong> for complex spending conditions. Improved coin selection.</td>
+          <td><strong>Miniscript</strong> for complex spending conditions. Improved coin selection.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v26.0</strong></td>
           <td>Dec 6, 2023</td>
-          <td><strong>V2 transport protocol</strong> (BIP 324). Encrypted P2P connections.</td>
+          <td><strong>V2 transport protocol</strong> (BIP 324). Encrypted P2P connections.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v27.0</strong></td>
           <td>Apr 17, 2024</td>
-          <td>libbitcoinkernel progress. Improved assumeUTXO. Fee estimation improvements.</td>
+          <td>libbitcoinkernel progress. Improved assumeUTXO. Fee estimation improvements.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v28.0</strong></td>
           <td>Oct 2, 2024</td>
-          <td>Testnet4. Package relay groundwork (1P1C). Full TRUC/V3 transaction support.</td>
+          <td>Testnet4. Package relay groundwork (1P1C). Full TRUC/V3 transaction support.{{cite:bitcoin-core-history}}</td>
         </tr>
       </tbody>
     </table>
@@ -2704,27 +2986,27 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>Aug 2010</strong></td>
           <td>OP_RETURN Bug</td>
-          <td><em>Introduced by: Satoshi (v0.1)</em> — A flaw in script evaluation let anyone spend anyone's coins using OP_RETURN. Present since day one but undiscovered. Satoshi disabled multiple opcodes via emergency soft fork within hours of disclosure.</td>
+          <td><em>Introduced by: Satoshi (v0.1)</em> — A flaw in script evaluation let anyone spend anyone's coins using OP_RETURN. Present since day one but undiscovered. Satoshi disabled multiple opcodes via emergency soft fork within hours of disclosure.{{cite:opcode-disable-2010}}</td>
         </tr>
         <tr>
           <td><strong>Aug 2010</strong></td>
           <td>Value Overflow</td>
-          <td><em>Introduced by: Satoshi (v0.1)</em> — Integer overflow created 184 billion BTC in block 74638. Missing overflow check in transaction validation. Community coordinated to orphan the block within 5 hours.</td>
+          <td><em>Introduced by: Satoshi (v0.1)</em> — Integer overflow created 184 billion BTC in block 74638. Missing overflow check in transaction validation. Community coordinated to orphan the block within 5 hours.{{cite:overflow-bug-2010}}</td>
         </tr>
         <tr>
           <td><strong>Mar 2013</strong></td>
           <td>BDB Lock Crisis</td>
-          <td><em>Introduced by: Pieter Wuille (v0.8)</em> — LevelDB migration inadvertently changed consensus behavior. BerkeleyDB's lock limits caused v0.7 nodes to reject blocks v0.8 accepted. 6-hour chain split resolved by emergency downgrade.</td>
+          <td><em>Introduced by: Pieter Wuille (v0.8)</em> — LevelDB migration inadvertently changed consensus behavior. BerkeleyDB's lock limits caused v0.7 nodes to reject blocks v0.8 accepted. 6-hour chain split resolved by emergency downgrade.{{cite:bip-50}}</td>
         </tr>
         <tr>
           <td><strong>Jul 2015</strong></td>
           <td>BIP 66 Fork</td>
-          <td><em>Introduced by: miners (SPV mining)</em> — Miners signaling BIP 66 (strict DER) weren't actually validating blocks. Brief fork when an invalid block was extended. Exposed risks of mining on headers without full validation.</td>
+          <td><em>Introduced by: miners (SPV mining)</em> — Miners signaling BIP 66 (strict DER) weren't actually validating blocks. Brief fork when an invalid block was extended. Exposed risks of mining on headers without full validation.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>Sep 2018</strong></td>
           <td>CVE-2018-17144</td>
-          <td><em>Introduced by: Core developers (v0.14)</em> — Optimization to skip duplicate input checking inadvertently allowed double-spends within a single block. Silently patched in v0.16.3. Most critical vulnerability since 2010.</td>
+          <td><em>Introduced by: Core developers (v0.14)</em> — Optimization to skip duplicate input checking inadvertently allowed double-spends within a single block. Silently patched in v0.16.3. Most critical vulnerability since 2010.{{cite:cve-2018-17144}}</td>
         </tr>
       </tbody>
     </table>
@@ -2784,8 +3066,8 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         </tr>
         <tr>
           <td>GUI</td>
-          <td>wxWidgets</td>
-          <td>Qt Framework</td>
+          <td>wxWidgets{{cite:wxwidgets-license}}</td>
+          <td>Qt Framework{{cite:qt-lgpl-2009}}</td>
         </tr>
         <tr>
           <td>Build System</td>
@@ -2813,7 +3095,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
       <li><strong>Networking:</strong> v0.2.0 (daemon) → v0.6.0 (Bloom) → v26.0 (encrypted P2P)</li>
       <li><strong>Script/Smart Contracts:</strong> v0.6.0 (P2SH) → v0.13.0 (SegWit) → v22.0 (Tapscript) → v25.0 (Miniscript)</li>
       <li><strong>Lightning Prerequisites:</strong> v0.13.0 (SegWit) → v0.19.0 (CPFP carve-out) → v24.0 (full RBF)</li>
-      <li><strong>Security & Bugs:</strong> v0.3.9 (OP_RETURN) → v0.3.10 (overflow) → v0.8.1 (BDB) → v0.16.3 (CVE-2018-17144)</li>
+      <li><strong>Security & Bugs:</strong> v0.3.9 (OP_RETURN){{cite:opcode-disable-2010}} → v0.3.10 (overflow){{cite:overflow-bug-2010}} → v0.8.1 (BDB){{cite:bip-50}} → v0.16.3 (CVE-2018-17144){{cite:cve-2018-17144}}</li>
     </ul>
 
     <h2>Resources for Continued Study</h2>
@@ -2831,7 +3113,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
       The code you've studied in this book is where it all began. Every feature,
       every optimization, every security fix in modern Bitcoin Core traces back
       to these 15,000 lines. Satoshi wrote: "I'm sure that in 20 years there will
-      either be very large transaction volume or no volume." Seventeen years in,
+      either be very large transaction volume or no volume."{{cite:nakamoto-20-years-volume}} Seventeen years in,
       the code keeps evolving—and now you know where to look.
     </p>
   </section>
@@ -2866,8 +3148,8 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     <p>
       <strong>Typography.</strong>
-      Body and annotations are set in <strong>Inter</strong>. Code listings, headings, and UI
-      labels use <strong>Basis Grotesque Mono Pro</strong> (with a monospaced fallback stack for print).
+      Body and annotations are set in <strong>${typefaceMeta.body}</strong>. Code listings, headings, and UI
+      labels use <strong>${typefaceMeta.code}</strong> (with a monospaced fallback stack for print).
     </p>
 
     <p>
@@ -2886,7 +3168,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     <p>
       <strong>Credits.</strong>
-      Annotations were initially generated by Claude Sonnet 4.6 and revised by Claude Opus 4.6.
+      ${ANNOTATIONS_CREDIT}.
       Publisher mark: <strong>PirateHash</strong>.
     </p>
 
@@ -2898,8 +3180,55 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
   </section>
 
   <section class="blank-page"></section>
+
+  <script>
+  /* When ?section=<id> is present, keep only that chapter so Paged.js
+     paginates a single section (used by home page chapter cards). */
+  (function () {
+    var params = new URLSearchParams(window.location.search);
+    var id = params.get('section');
+    if (!id || !/^[a-z0-9-]+$/.test(id)) return;
+
+    // Front matter: everything before the Introduction chapter
+    if (id === 'front-matter') {
+      var pastFront = false;
+      Array.from(document.body.children).forEach(function (el) {
+        if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'LINK') return;
+        if (el.id === 'introduction') pastFront = true;
+        if (pastFront) el.remove();
+      });
+      document.title = 'Front Matter — Bitcoin v0.01 Alpha';
+      return;
+    }
+
+    var keep = document.getElementById(id);
+    if (!keep) return;
+
+    var keepSet = new Set([keep]);
+    var sources = document.getElementById(id + '-sources');
+    if (sources) keepSet.add(sources);
+    if (id === 'rc-resources') {
+      document.querySelectorAll('section.rc-resources-grid').forEach(function (el) {
+        keepSet.add(el);
+      });
+    }
+
+    Array.from(document.body.children).forEach(function (el) {
+      if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'LINK') return;
+      if (keepSet.has(el)) return;
+      el.remove();
+    });
+
+    var titleEl = keep.querySelector('h1.chapter-title, h1');
+    if (titleEl) {
+      document.title = titleEl.textContent.trim() + ' — Bitcoin v0.01 Alpha';
+    }
+  })();
+  </script>
 </body>
 </html>`;
+
+  return injectPrimerCitations(bookHtml);
 }
 
 /**
@@ -2908,45 +3237,12 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 function generateResourcesChapter() {
   const rcAnnotation = loadAnnotation('rc');
   const rcDir = join(SOURCE_DIR, 'rc');
+  const ctx = createCitationContext('rc-resources', GLOBAL_REFERENCES, rcAnnotation || {});
+  const introduction = rcAnnotation?.introduction ? ctx.process(rcAnnotation.introduction) : '';
+  const conclusion = rcAnnotation?.conclusion ? ctx.process(rcAnnotation.conclusion) : '';
+  const footnotesHtml = ctx.renderFootnotes();
 
-  // List of resource files in the rc directory
-  const resourceFiles = [
-    { name: 'bitcoin.ico', description: 'Main application icon (multi-resolution: 16x16, 32x32, 48x48)' },
-    { name: 'check.ico', description: 'Checkmark icon for confirmations' },
-    { name: 'addressbook16.bmp', description: 'Address book toolbar icon (16x16)' },
-    { name: 'addressbook16mask.bmp', description: 'Address book icon transparency mask' },
-    { name: 'addressbook20.bmp', description: 'Address book toolbar icon (20x20)' },
-    { name: 'addressbook20mask.bmp', description: 'Address book icon transparency mask' },
-    { name: 'send16.bmp', description: 'Send payment toolbar icon (16x16)' },
-    { name: 'send16mask.bmp', description: 'Send icon transparency mask' },
-    { name: 'send16masknoshadow.bmp', description: 'Send icon mask without shadow' },
-    { name: 'send20.bmp', description: 'Send payment toolbar icon (20x20)' },
-    { name: 'send20mask.bmp', description: 'Send icon transparency mask' }
-  ];
-
-  // Generate the resource gallery HTML
-  let resourcesHtml = '<div class="resources-gallery">';
-  for (const file of resourceFiles) {
-    const filePath = join(rcDir, file.name);
-    if (existsSync(filePath)) {
-      // Read file and convert to base64 for embedding
-      const fileData = readFileSync(filePath);
-      const base64 = fileData.toString('base64');
-      const mimeType = file.name.endsWith('.ico') ? 'image/x-icon' : 'image/bmp';
-
-      resourcesHtml += `
-        <div class="resource-item">
-          <div class="resource-preview">
-            <img src="data:${mimeType};base64,${base64}" alt="${file.name}" />
-          </div>
-          <div class="resource-info">
-            <code class="resource-filename">${file.name}</code>
-            <span class="resource-description">${file.description}</span>
-          </div>
-        </div>`;
-    }
-  }
-  resourcesHtml += '</div>';
+  const resourcesHtml = renderRcGalleryHtml(rcDir);
 
   return `
     <section class="chapter" id="rc-resources">
@@ -2964,7 +3260,7 @@ function generateResourcesChapter() {
 
           ${rcAnnotation?.title ? `<h2 class="intro-title">${rcAnnotation.title}</h2>` : ''}
 
-          ${rcAnnotation?.introduction ? `<div class="description">${rcAnnotation.introduction}</div>` : ''}
+          ${introduction ? `<div class="description">${introduction}</div>` : ''}
         </div>
       </header>
     </section>
@@ -2977,11 +3273,12 @@ function generateResourcesChapter() {
 
       ${resourcesHtml}
 
-      ${rcAnnotation?.conclusion ? `
+      ${conclusion ? `
       <div class="annotation-block chapter-conclusion">
         <h4>Summary</h4>
-        ${rcAnnotation.conclusion}
+        ${conclusion}
       </div>` : ''}
+      ${footnotesHtml}
     </section>`;
 }
 
@@ -3051,6 +3348,11 @@ async function build() {
   if (!existsSync(OUTPUT_DIR)) {
     mkdirSync(OUTPUT_DIR, { recursive: true });
   }
+
+  // Load shared citation registry
+  console.log('📖 Loading references...');
+  GLOBAL_REFERENCES = loadReferences();
+  console.log(`   ${Object.keys(GLOBAL_REFERENCES).length} references in registry\n`);
   
   // Get source files
   console.log('📁 Reading source files...');
@@ -3075,7 +3377,8 @@ async function build() {
     const annotation = loadAnnotation(filename);
     const lineCount = code.split('\n').length;
     
-    // Generate highlighted code HTML
+    // Highlighted code HTML is rendered with citations in generateBookHtml
+    // so chapter footnote numbers stay ordered (intro → lines → conclusion).
     const codeHtml = generateCodeBlockHtml(
       filename,
       code,
@@ -3089,6 +3392,7 @@ async function build() {
       language,
       lineCount,
       annotation,
+      code,
       codeHtml
     });
     

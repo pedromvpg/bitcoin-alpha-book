@@ -20,7 +20,7 @@
   /* Page number - centered at bottom */
   @bottom-center {
     content: counter(page);
-    font-family: 'Basis Grotesque Mono Pro', monospace;
+    font-family: var(--font-code);
     font-size: 8pt;
     color: #333;
   }
@@ -32,7 +32,7 @@
   
   @top-left {
     content: string(current-section, first);
-    font-family: 'Basis Grotesque Mono Pro', monospace;
+    font-family: var(--font-code);
     font-size: 7pt;
     color: #666;
     text-transform: uppercase;
@@ -45,7 +45,7 @@
   
   @bottom-left {
     content: counter(page);
-    font-family: 'Basis Grotesque Mono Pro', monospace;
+    font-family: var(--font-code);
     font-size: 8pt;
     color: #333;
   }
@@ -61,7 +61,7 @@
   
   @top-right {
     content: 'BITCOIN v0.01 ALPHA';
-    font-family: 'Basis Grotesque Mono Pro', monospace;
+    font-family: var(--font-code);
     font-size: 7pt;
     color: #666;
     text-transform: uppercase;
@@ -74,7 +74,7 @@
   
   @bottom-right {
     content: counter(page);
-    font-family: 'Basis Grotesque Mono Pro', monospace;
+    font-family: var(--font-code);
     font-size: 8pt;
     color: #333;
   }
@@ -221,6 +221,25 @@ p, .code-line {
 .annotation-block {
   break-inside: avoid;
   break-after: avoid;
+}
+
+/* Keep chapter Sources with the chapter when possible */
+.footnotes {
+  break-before: avoid;
+  break-inside: auto;
+}
+
+.footnotes-title {
+  break-after: avoid;
+}
+
+.footnote {
+  break-inside: avoid;
+}
+
+.footnote a.footnote-url {
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 /* Keep function headers with their first few lines */

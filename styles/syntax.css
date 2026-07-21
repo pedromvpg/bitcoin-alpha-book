@@ -20,7 +20,7 @@
   margin: 0;
   overflow: visible;
   break-inside: auto;
-  font-family: 'Basis Grotesque Mono Pro', monospace;
+  font-family: var(--font-code);
   font-size: 6pt;
   line-height: 1.4;
   background-color: #ffffff;
@@ -94,7 +94,7 @@
 
 .annotation-content {
   padding: 0.3em 0.5em;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-body);
   font-size: 8pt;
   line-height: 1.4;
   color: #000000;
@@ -102,7 +102,7 @@
 
 /* Inline code in annotations - matches syntax highlighting */
 .annotation-content code {
-  font-family: 'Basis Grotesque Mono Pro', monospace;
+  font-family: var(--font-code);
   font-size: 7pt;
 }
 
@@ -308,7 +308,7 @@
 code.inline {
   background-color: #2d2d35;
   color: #e0e0e0;
-  font-family: 'Basis Grotesque Mono Pro', monospace;
+  font-family: var(--font-code);
   font-size: 0.9em;
   padding: 0.15em 0.4em;
   border-radius: 3px;

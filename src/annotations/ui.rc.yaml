@@ -9,7 +9,7 @@ introduction: |
     resource script (<code>.rc</code> file) tells the Microsoft resource compiler
     which icons and bitmaps to embed into the <code>bitcoin.exe</code> executable.
     When a user double-clicked the Bitcoin application on their Windows desktop in
-    January 2009, these were the graphics they saw: the application icon in the
+    January 2009,{{cite:nakamoto-windows-only}} these were the graphics they saw: the application icon in the
     taskbar, the toolbar buttons for sending coins and managing the address book,
     and the small checkmark that appeared next to confirmed transactions.
   </p>
@@ -27,7 +27,7 @@ introduction: |
     on it, designed by Satoshi himself. This early design would be replaced in
     February 2010 when the community adopted the now-iconic orange circle with the
     slanted "B" and two vertical strokes, designed by a user known as "bitboy" on
-    the BitcoinTalk forums. But for the first year of Bitcoin's existence, the icon
+    the BitcoinTalk forums.{{cite:bitcoin-logo-2010}} But for the first year of Bitcoin's existence, the icon
     compiled into this resource script was the only symbol the cryptocurrency had.
   </p>
   <p>
@@ -82,8 +82,8 @@ conclusion: |
   </p>
   <p>
     The visual identity defined here lasted just over a year. The "BC" gold coin
-    was replaced by the community-designed orange B logo in February 2010, and the
-    wxWidgets GUI was replaced by Qt in 2011. But the design principle -- that
+    was replaced by the community-designed orange B logo in February 2010,{{cite:bitcoin-logo-2010}} and the
+    wxWidgets GUI was replaced by Qt in 2011.{{cite:qt-lgpl-2009}}{{cite:bitcoin-core-history}} But the design principle -- that
     Bitcoin needs a polished, approachable visual identity -- originated in these
     fifteen lines. Every wallet app, exchange interface, and cryptocurrency logo
     that followed is a descendant of Satoshi's decision to ship an icon.

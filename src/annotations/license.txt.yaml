@@ -7,7 +7,7 @@ introduction: |
   <p>
     Twenty lines of legal text that shaped the future of money. Satoshi Nakamoto released
     Bitcoin under the <strong>MIT License</strong> — also known as the X11 License — one
-    of the most permissive open-source licenses ever written. This was not an accident.
+    of the most permissive open-source licenses ever written.{{cite:mit-license}} This was not an accident.
     It was a deliberate architectural decision as important as any line of C++ in the system.
   </p>
   <p>
@@ -27,8 +27,8 @@ introduction: |
     as widely as possible, by as many types of actors as possible — individuals, corporations,
     governments — without legal friction. As Satoshi wrote on the BitcoinTalk forum: "The nature
     of Bitcoin is such that once version 0.1 was released, the core design was set in stone for
-    the rest of its lifetime." The MIT License ensured that even if Satoshi disappeared — as
-    he eventually did — no one could revoke the right to use, study, or modify the software.
+    the rest of its lifetime."{{cite:nakamoto-bitcointalk-set-in-stone}} The MIT License ensured that even if Satoshi disappeared — as
+    he eventually did{{cite:nakamoto-farewell-2011}} — no one could revoke the right to use, study, or modify the software.{{cite:mit-license}}
   </p>
   <p>
     The copyright is assigned to "Satoshi Nakamoto" — a pseudonym. This raises an interesting
@@ -74,7 +74,7 @@ annotations:
 conclusion: |
   <p>
     The MIT License is often overlooked in discussions of Bitcoin's design, but it is as
-    fundamental as proof-of-work or the UTXO model. By choosing the most permissive widely-used
+    fundamental as proof-of-work or the UTXO model.{{cite:mit-license}} By choosing the most permissive widely-used
     license, Satoshi ensured that Bitcoin could be freely adopted, forked, embedded, and
     commercialized by anyone. The entire cryptocurrency ecosystem — thousands of altcoins,
     hundreds of exchanges, countless wallets and tools — exists within the legal space

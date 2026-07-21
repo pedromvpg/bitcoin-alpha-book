@@ -42,7 +42,7 @@ introduction: |
 annotations:
   - line: 1
     type: margin
-    text: "The same copyright header as every other file — Satoshi Nakamoto, MIT/X11 license. The <code>.vc</code> suffix conventionally indicates a Visual C++ specific file, distinguishing it from the default <code>makefile</code> used by MinGW/GCC."
+    text: "The same copyright header as every other file — Satoshi Nakamoto, MIT/X11 license.{{cite:mit-license}} The <code>.vc</code> suffix conventionally indicates a Visual C++ specific file, distinguishing it from the default <code>makefile</code> used by MinGW/GCC."
 
   - line: 6
     type: margin
@@ -111,7 +111,7 @@ conclusion: |
   </p>
   <p>
     Modern Bitcoin Core has long since dropped MSVC 6.0 support and no longer ships NMAKE
-    files. The build system migrated through autotools to CMake, supporting GCC, Clang, and
+    files.{{cite:bitcoin-core-history}} The build system migrated through autotools to CMake, supporting GCC, Clang, and
     modern MSVC across Linux, macOS, Windows, and various BSDs. But the fundamental build
     structure — compile source files with their dependencies, optimize the cryptographic
     hot path, link against system and third-party libraries, produce a single executable —

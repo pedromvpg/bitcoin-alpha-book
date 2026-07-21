@@ -15,7 +15,7 @@ introduction: |
   <p>
     In a 2011 email to Mike Hearn, Satoshi explained: "I was trying to implement an
     eBay-style marketplace built into the client. Basically, nodes would advertise
-    products for sale and there would be a review/reputation system." The marketplace
+    products for sale and there would be a review/reputation system."{{cite:nakamoto-hearn-emails}} The marketplace
     code uses a novel "atom" propagation system -- a form of trust diffusion where
     reputation flows through a social graph of reviewers. A user who reviews a seller
     gains atoms; those atoms propagate outward through subsequent links, decaying as
@@ -25,12 +25,16 @@ introduction: |
   <p>
     The code was never completed. Commented-out notification callbacks, TODO comments
     about persistence (<code>//// later figure out how these are persisted</code>),
-    and dead code blocks reveal a feature abandoned mid-development. Satoshi ultimately
-    decided to focus on getting the core payment system right before layering commerce
-    on top. The marketplace was stripped from later releases entirely. Projects like
-    OpenBazaar (2014) and Bisq (2019) would independently reinvent this concept years
-    later -- peer-to-peer commerce with decentralized reputation -- without knowing
-    Satoshi had prototyped it in January 2009.
+    and dead code blocks reveal a feature abandoned mid-development. Even the supply of
+    reputation was unfinished: <code>AcceptBlock</code> in <code>main.cpp</code> still
+    contains commented-out logic that would mint a random atom for whoever mined a
+    block — disabled before launch, so atoms never auto-issued from mining.{{cite:rubin-satoshis-version}}
+    Satoshi ultimately decided to focus on getting the core payment system right before
+    layering commerce on top. The marketplace was stripped from later releases
+    entirely.{{cite:bitcoin-core-history}} Projects like OpenBazaar (2014) and Bisq (2019)
+    would independently reinvent this concept years later -- peer-to-peer commerce with
+    decentralized reputation -- without knowing Satoshi had prototyped it in January
+    2009.{{cite:nakamoto-institute-code}}
   </p>
   <p>
     What remains is 265 lines of C++ that reveal a mind thinking far beyond digital

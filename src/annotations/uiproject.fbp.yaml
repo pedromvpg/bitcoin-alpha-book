@@ -38,7 +38,7 @@ annotations:
       <p>
         <strong>The window title: simply "Bitcoin."</strong> No version number,
         no company branding, no "Wallet" or "Client" suffix. Just the name of
-        something that didn't exist before January 2009. This title would appear
+        something that didn't exist before January 2009.{{cite:nakamoto-windows-only}} This title would appear
         in the Windows taskbar as users ran the first cryptocurrency software.
       </p>
 
@@ -122,7 +122,7 @@ annotations:
         directly to someone's IP address for "online transfer with comments and
         confirmation." This peer-to-peer mode allowed sender and receiver to
         exchange messages and required both parties to be online. It was removed
-        in later versions due to security concerns, but shows Satoshi's original
+        in later versions due to security concerns,{{cite:bitcoin-core-history}} but shows Satoshi's original
         vision of interactive payments.
       </p>
 

@@ -11,10 +11,12 @@ introduction: |
     Satoshi's solution: piggyback on existing infrastructure.
   </p>
   <p>
-    Bitcoin nodes join an IRC channel (#bitcoin on irc.lfnet.org) where their
-    nicknames encode their IP addresses. By parsing the channel's user list,
-    a new node discovers other participants. It's bootstrap via a communication
-    medium that already had robust peer discovery: Internet Relay Chat.
+    Bitcoin nodes join an IRC channel (<code>#bitcoin</code> on
+    <code>chat.freenode.net</code> in this v0.01 tree; later builds also used
+    LFNet) where their nicknames encode their IP addresses. By parsing the
+    channel's user list, a new node discovers other participants. It's bootstrap
+    via a communication medium that already had robust peer discovery: Internet
+    Relay Chat.{{cite:waltz-1stbitcoinminer-transcriptions}}
   </p>
   <p>
     The elegance is in the simplicity. IRC servers handle the hard problem
@@ -25,7 +27,7 @@ introduction: |
   </p>
   <p>
     This mechanism was deprecated and removed in later Bitcoin versions (replaced
-    by DNS seeds and hardcoded peer lists), but it served brilliantly in the
+    by DNS seeds and hardcoded peer lists),{{cite:nakamoto-irc-temporary}}{{cite:bitcoin-core-history}} but it served brilliantly in the
     early network when there were few nodes and no established infrastructure.
     The IRC bootstrap helped Bitcoin survive its fragile infancy.
   </p>
@@ -37,7 +39,7 @@ annotations:
 
   - line: 6
     type: margin
-    text: "<code class=\"function\">ThreadIRCSeed()</code>—the IRC bootstrap thread, runs continuously in background. Connects to irc.lfnet.org port 6667, joins #bitcoin channel, sets nickname encoding our IP address. Periodically sends WHO requests to get user lists, decodes other users' nicknames to extract their IP addresses, and feeds those addresses into the peer discovery system. If the connection drops, retries automatically."
+    text: "<code class=\"function\">ThreadIRCSeed()</code>—the IRC bootstrap thread, runs continuously in background. Connects to <code>chat.freenode.net</code> port 6667, joins <code>#bitcoin</code>, sets a nickname encoding our IP address. Periodically sends WHO requests to get user lists, decodes other users' nicknames to extract their IP addresses, and feeds those addresses into the peer discovery system. If the connection drops, retries automatically."
 
   - line: 7
     type: margin
@@ -64,5 +66,5 @@ conclusion: |
     concerns—along with LFNet's eventual shutdown—led to IRC bootstrap's
     removal. But in 2009, it was the pragmatic choice that got the network
     running quickly without custom infrastructure. Satoshi knew it was
-    temporary, and he was right.
+    temporary, and he was right.{{cite:nakamoto-irc-temporary}}
   </p>

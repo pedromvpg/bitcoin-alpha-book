@@ -28,7 +28,7 @@ introduction: |
     the system.
   </p>
   <p>
-    This file also reveals that Bitcoin v0.01 was a <em>Windows-only</em> application. The
+    This file also reveals that Bitcoin v0.01 was a <em>Windows-only</em> application.{{cite:nakamoto-windows-only}} The
     <code>windows.h</code>, <code>winsock2.h</code>, and <code>mswsock.h</code> includes are
     unconditional — there is no <code>#ifdef _WIN32</code> guard offering a Linux alternative.
     Satoshi developed and released Bitcoin exclusively for Windows. The Linux port came later,
@@ -39,7 +39,7 @@ introduction: |
 annotations:
   - line: 1
     type: margin
-    text: "The copyright line appears in every source file. Satoshi Nakamoto — a pseudonym never definitively linked to any real person — is the sole credited author. The MIT/X11 license reference points to <code>license.txt</code> in the same directory."
+    text: "The copyright line appears in every source file. Satoshi Nakamoto — a pseudonym never definitively linked to any real person — is the sole credited author. The MIT/X11 license reference points to <code>license.txt</code> in the same directory.{{cite:mit-license}}"
 
   - line: 5
     type: margin
@@ -51,11 +51,11 @@ annotations:
 
   - line: 15
     type: margin
-    text: "<strong>wxWidgets</strong> — the cross-platform GUI framework. <code>wx/wx.h</code> is the master include pulling in windows, dialogs, buttons, and text controls. <code>wx/clipbrd.h</code> adds clipboard support (for copying Bitcoin addresses). <code>wx/snglinst.h</code> provides single-instance checking to prevent running two Bitcoin nodes simultaneously on the same machine, which would corrupt the database."
+    text: "<strong>wxWidgets</strong> — the cross-platform GUI framework.{{cite:wxwidgets-license}} <code>wx/wx.h</code> is the master include pulling in windows, dialogs, buttons, and text controls. <code>wx/clipbrd.h</code> adds clipboard support (for copying Bitcoin addresses). <code>wx/snglinst.h</code> provides single-instance checking to prevent running two Bitcoin nodes simultaneously on the same machine, which would corrupt the database."
 
   - line: 18
     type: margin
-    text: "<strong>OpenSSL</strong> — the cryptographic foundation. Five headers, five capabilities: <code>ecdsa.h</code> for elliptic curve signatures (transaction signing/verification), <code>evp.h</code> for the high-level digest interface, <code>rand.h</code> for cryptographically secure random number generation (key creation), <code>sha.h</code> for SHA-256 (block hashing, transaction IDs), and <code>ripemd.h</code> for RIPEMD-160 (Bitcoin address generation). These five algorithms are the entire cryptographic surface area of Bitcoin."
+    text: "<strong>OpenSSL</strong> — the cryptographic foundation.{{cite:openssl-license}} Five headers, five capabilities: <code>ecdsa.h</code> for elliptic curve signatures (transaction signing/verification), <code>evp.h</code> for the high-level digest interface, <code>rand.h</code> for cryptographically secure random number generation (key creation), <code>sha.h</code> for SHA-256 (block hashing, transaction IDs), and <code>ripemd.h</code> for RIPEMD-160 (Bitcoin address generation). These five algorithms are the entire cryptographic surface area of Bitcoin."
 
   - line: 23
     type: margin
@@ -75,7 +75,7 @@ annotations:
 
   - line: 46
     type: margin
-    text: "<strong>Boost</strong> — the 'standard library extension' of C++. <code>BOOST_FOREACH</code> provides range-based for loops (years before C++11's range-for). <code class=\"function\">lexical_cast</code> converts between strings and numbers. <code class=\"type\">tuple</code> bundles multiple return values. <code class=\"type\">array</code> provides fixed-size arrays with bounds checking. Satoshi used Boost heavily — it was the idiomatic C++ choice in 2009, before C++11 absorbed many of its features into the standard."
+    text: "<strong>Boost</strong> — the 'standard library extension' of C++.{{cite:boost-license}} <code>BOOST_FOREACH</code> provides range-based for loops (years before C++11's range-for). <code class=\"function\">lexical_cast</code> converts between strings and numbers. <code class=\"type\">tuple</code> bundles multiple return values. <code class=\"type\">array</code> provides fixed-size arrays with bounds checking. Satoshi used Boost heavily — it was the idiomatic C++ choice in 2009, before C++11 absorbed many of its features into the standard."
 
   - line: 52
     type: margin
@@ -103,7 +103,7 @@ conclusion: |
   </p>
   <p>
     The Windows-only nature of this file is historically significant. When Satoshi released
-    Bitcoin on January 9, 2009, it could only be compiled and run on Windows. The Linux port
+    Bitcoin on January 9, 2009, it could only be compiled and run on Windows.{{cite:nakamoto-windows-only}} The Linux port
     required community effort — replacing <code>windows.h</code> with POSIX equivalents,
     <code>winsock2.h</code> with <code>sys/socket.h</code>, and <code>process.h</code> with
     <code>pthread.h</code>. The fact that Satoshi chose Windows as the initial platform
@@ -111,8 +111,8 @@ conclusion: |
     wanted Bitcoin to be accessible to as many people as possible.
   </p>
   <p>
-    Today, Bitcoin Core has replaced every dependency listed here. wxWidgets gave way to Qt.
-    Berkeley DB was replaced by LevelDB. The custom SHA-256 implementation was optimized with
+    Today, Bitcoin Core has replaced every dependency listed here.{{cite:bitcoin-core-history}} wxWidgets gave way to Qt.{{cite:qt-lgpl-2009}}
+    Berkeley DB was replaced by LevelDB.{{cite:bdb-license}} The custom SHA-256 implementation was optimized with
     hardware intrinsics. Even the precompiled header pattern itself was eventually abandoned
     in favor of modern build systems. But the layered architecture visible in this include
     ordering — serialization, cryptography, scripting, storage, networking, consensus, UI —

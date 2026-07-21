@@ -14,7 +14,7 @@ introduction: |
   </p>
   <p>
     Satoshi extracted this code from Crypto++, a well-respected open-source
-    cryptography library by Wei Dai (who also invented b-money, a Bitcoin precursor).
+    cryptography library by Wei Dai (who also invented b-money, a Bitcoin precursor).{{cite:crypto-pp-wei-dai}}{{cite:dai-bmoney}}
     The file is public domain, allowing unrestricted use. Rather than depending on
     the full Crypto++ library, Satoshi extracted just the SHA routines—keeping
     Bitcoin's dependencies minimal and auditable.
@@ -36,7 +36,7 @@ introduction: |
 annotations:
   - line: 1
     type: margin
-    text: "Public domain dedication—no license restrictions. Satoshi borrowed from Wei Dai's Crypto++ library. Wei Dai is also the creator of b-money (1998), which Satoshi cited in the Bitcoin whitepaper. The cryptographic community is small; influences interconnect."
+    text: "Public domain dedication—no license restrictions. Satoshi borrowed from Wei Dai's Crypto++ library.{{cite:crypto-pp-wei-dai}} Wei Dai is also the creator of b-money (1998), which Satoshi cited in the Bitcoin whitepaper.{{cite:dai-bmoney}}{{cite:nakamoto-whitepaper}} The cryptographic community is small; influences interconnect."
 
   - line: 17
     type: margin
@@ -56,11 +56,11 @@ annotations:
 
   - line: 120
     type: margin
-    text: "<code class=\"class\">SHA1</code>—160-bit hash, predecessor to SHA-256. Bitcoin uses SHA1 indirectly via RIPEMD160—addresses are RIPEMD160(SHA256(pubkey)). SHA1 is considered cryptographically weak (Google demonstrated a collision in 2017), but Bitcoin doesn't rely on SHA1's collision resistance—only SHA256's."
+    text: "<code class=\"class\">SHA1</code>—160-bit hash, predecessor to SHA-256. Bitcoin uses SHA1 indirectly via RIPEMD160—addresses are RIPEMD160(SHA256(pubkey)). SHA1 is considered cryptographically weak (Google demonstrated a collision in 2017),{{cite:wang-sha1-2005}} but Bitcoin doesn't rely on SHA1's collision resistance—only SHA256's."
 
   - line: 132
     type: margin
-    text: "<code class=\"class\">SHA256</code>—the cryptographic heart of Bitcoin. The <code>Transform()</code> method processes 512-bit blocks through 64 rounds of mixing, producing 256-bit output. <code>InitState()</code> sets the initial hash values (derived from the fractional parts of square roots of the first 8 primes). This is NIST FIPS 180-4's SHA-256, unchanged since standardization in 2001."
+    text: "<code class=\"class\">SHA256</code>—the cryptographic heart of Bitcoin. The <code>Transform()</code> method processes 512-bit blocks through 64 rounds of mixing, producing 256-bit output. <code>InitState()</code> sets the initial hash values (derived from the fractional parts of square roots of the first 8 primes). This is NIST FIPS 180-4's SHA-256, unchanged since standardization in 2001.{{cite:fips-180-2}}"
 
   - line: 137
     type: margin

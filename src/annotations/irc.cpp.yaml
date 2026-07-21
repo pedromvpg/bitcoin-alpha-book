@@ -24,9 +24,9 @@ introduction: |
     Satoshi on this design (BitcoinTalk, 2010): "We only needed IRC because nobody
     had a static IP. In the early days there were some steady supporters, but they
     all had pool-allocated IPs that change every few days. IRC was only intended
-    as a temporary solution." He added: "Bitcoin's built-in addr system is the
+    as a temporary solution."{{cite:nakamoto-irc-temporary}} He added: "Bitcoin's built-in addr system is the
     main solution" and "We don't want to overstay our welcome. If we get too
-    big...we'll get off."
+    big...we'll get off."{{cite:nakamoto-irc-temporary}}
   </p>
   <p>
     This code reveals Satoshi's pragmatism: rather than building custom infrastructure,
@@ -34,7 +34,7 @@ introduction: |
     friendly (port 6667 was commonly allowed). The temporary solution worked perfectly
     for Bitcoin's first four years until the network was large enough that addr
     propagation alone sufficed for peer discovery. The IRC bootstrap was deprecated
-    in v0.6.x and removed entirely in v0.8.2 (February 2013).
+    in v0.6.x and removed entirely in v0.8.2 (February 2013).{{cite:bitcoin-core-history}}
   </p>
 
 annotations:
@@ -96,7 +96,7 @@ annotations:
 
   - line: 179
     type: margin
-    text: "<code>JOIN #bitcoin</code> and <code>WHO #bitcoin</code> — the two commands that make the bootstrap work. <code>JOIN</code> subscribes to the channel (and announces this node's presence to everyone already there), while <code>WHO</code> requests the complete user list. Every user in the channel whose nickname starts with <code>'u'</code> is a Bitcoin node advertising its IP address. In the early days of Bitcoin, the entire network — sometimes fewer than a dozen nodes — was visible in this single IRC channel."
+    text: "<code>JOIN #bitcoin</code> and <code>WHO #bitcoin</code> — the two commands that make the bootstrap work. <code>JOIN</code> subscribes to the channel (and announces this node's presence to everyone already there), while <code>WHO</code> requests the complete user list. Every user in the channel whose nickname starts with <code>'u'</code> is a Bitcoin node advertising its IP address. In the earliest days the entire network was visible here: Hal Finney's January 10, 2009 <code>debug.log</code> shows he discovered peers via this channel near block 49, when only two other nodes answered — both consistent with Satoshi.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer}}"
 
   - line: 182
     type: margin
@@ -125,7 +125,7 @@ annotations:
 conclusion: |
   <p>
     The IRC bootstrap was deprecated in v0.6.x and removed entirely in v0.8.2
-    (February 2013). When LFNet (one of the IRC servers used) eventually shut down,
+    (February 2013).{{cite:bitcoin-core-history}} When LFNet (one of the IRC servers used) eventually shut down,
     it temporarily broke peer discovery for old clients — validating Satoshi's
     foresight in building redundant discovery systems. The addr message protocol,
     which propagates peer addresses through the P2P network itself, proved to be
@@ -141,7 +141,7 @@ conclusion: |
     no flood protection beyond the basic PING/PONG handler. When asked about
     alternatives on BitcoinTalk, Satoshi noted: "I really like the complementary
     redundant attributes of the two different systems" — referring to IRC discovery
-    and addr propagation working together.
+    and addr propagation working together.{{cite:nakamoto-irc-temporary}}
   </p>
   <p>
     The security implications are worth noting. IRC traffic was unencrypted,
@@ -153,4 +153,11 @@ conclusion: |
     in value and attracted adversarial attention, the plaintext discovery
     mechanism became a liability — one of several reasons it was eventually
     removed.
+  </p>
+  <p>
+    That same transparency is why Hal Finney's crash report still matters: the
+    IRC-derived peer list and block requests in his attached <code>debug.log</code>
+    let later researchers reconstruct who was online when he first joined —
+    contradicting the folklore that he was the second node after Satoshi at
+    launch.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer-transcriptions}}
   </p>

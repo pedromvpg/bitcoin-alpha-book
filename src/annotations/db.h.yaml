@@ -12,7 +12,7 @@ introduction: |
     access.
   </p>
   <p>
-    Satoshi chose Berkeley DB for its reliability and simplicity. Unlike
+    Satoshi chose Berkeley DB for its reliability and simplicity.{{cite:bdb-license}} Unlike
     client-server databases (MySQL, PostgreSQL), Berkeley DB runs in-process
     with no network overhead. It's battle-tested in mission-critical systems
     and provides the transaction guarantees Bitcoin needs: if you crash
@@ -107,7 +107,7 @@ annotations:
 
   - line: 280
     type: margin
-    text: "<code class=\"class\">CReviewDB</code>—Satoshi's marketplace feature. Stores user reviews and ratings in <code>reviews.dat</code>. This hints at a more ambitious vision where Bitcoin supported reputation systems for commerce. The feature was never fully developed and was removed in later versions, but the infrastructure shows Satoshi thinking about trust in pseudonymous commerce."
+    text: "<code class=\"class\">CReviewDB</code>—Satoshi's marketplace feature. Stores user reviews and ratings in <code>reviews.dat</code>. This hints at a more ambitious vision where Bitcoin supported reputation systems for commerce. The feature was never fully developed and was removed in later versions,{{cite:bitcoin-core-history}} but the infrastructure shows Satoshi thinking about trust in pseudonymous commerce."
 
   - line: 306
     type: margin

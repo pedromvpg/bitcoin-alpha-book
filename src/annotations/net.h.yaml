@@ -140,7 +140,7 @@ annotations:
 
   - line: 818
     type: margin
-    text: "Publish/subscribe system—Satoshi's marketplace feature. <code class=\"function\">AdvertStartPublish()</code> and related functions implement a pub/sub mechanism for <code class=\"class\">CTable</code> and <code class=\"class\">CProduct</code> objects. Nodes could subscribe to channels and receive product listings. This code was largely unused and removed in later versions, but hints at Satoshi's vision of Bitcoin as a platform for decentralized commerce."
+    text: "Publish/subscribe system—Satoshi's marketplace feature. <code class=\"function\">AdvertStartPublish()</code> and related functions implement a pub/sub mechanism for <code class=\"class\">CTable</code> and <code class=\"class\">CProduct</code> objects. Nodes could subscribe to channels and receive product listings. This code was largely unused and removed in later versions,{{cite:bitcoin-core-history}} but hints at Satoshi's vision of Bitcoin as a platform for decentralized commerce."
 
 conclusion: |
   <p>
@@ -157,7 +157,7 @@ conclusion: |
     gossip enables organic network growth without any central directory. The
     version handshake allows protocol evolution without flag days. These patterns
     have proven extraordinarily robust: Bitcoin's peer-to-peer layer has operated
-    continuously since January 2009, surviving attacks, bugs, and growth from a
+    continuously since January 2009,{{cite:genesis-block}} surviving attacks, bugs, and growth from a
     handful of nodes to tens of thousands worldwide.
   </p>
   <p>

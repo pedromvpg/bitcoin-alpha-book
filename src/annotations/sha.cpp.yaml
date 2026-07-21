@@ -6,7 +6,7 @@ title: "The Hash That Secures Trillions"
 introduction: |
   <p>
     This file is not Satoshi's code. It is Crypto++ 5.5.2, written by Wei Dai,
-    who adapted it from Steve Reid's public domain SHA-1 implementation. Three
+    who adapted it from Steve Reid's public domain SHA-1 implementation.{{cite:crypto-pp-wei-dai}} Three
     authors, two algorithms, one file — and Bitcoin depends on every byte being
     correct. <code>sha.cpp</code> is the implementation of the cryptographic
     hash functions that underpin every transaction ID, every block, and every
@@ -33,15 +33,15 @@ introduction: |
   </p>
   <p>
     SHA-1 appears here because Crypto++ included it, not because Bitcoin uses it.
-    Satoshi used SHA-256 exclusively. SHA-1 was already known to be weakening in
-    2009 — Wang Xiaoyun had demonstrated theoretical collision attacks in 2005.
+    Satoshi used SHA-256 exclusively.{{cite:fips-180-2}} SHA-1 was already known to be weakening in
+    2009 — Wang Xiaoyun had demonstrated theoretical collision attacks in 2005.{{cite:wang-sha1-2005}}
     Its presence in the file is historical artifact, not design.
   </p>
 
 annotations:
   - line: 7
     type: margin
-    text: "Three authorship layers. Steve Reid wrote the original SHA-1 in C (sha1.c), public domain. Wei Dai ported it to C++ for Crypto++ and added SHA-256. Satoshi included Crypto++ 5.5.2 verbatim rather than writing hash functions from scratch — the same delegation strategy he used with OpenSSL for elliptic curve arithmetic. The comment attributing Reid and Wei Dai is doing important work: it documents the provenance of code that secures billions of dollars."
+    text: "Three authorship layers. Steve Reid wrote the original SHA-1 in C (sha1.c), public domain. Wei Dai ported it to C++ for Crypto++ and added SHA-256.{{cite:crypto-pp-wei-dai}} Satoshi included Crypto++ 5.5.2 verbatim rather than writing hash functions from scratch — the same delegation strategy he used with OpenSSL for elliptic curve arithmetic. The comment attributing Reid and Wei Dai is doing important work: it documents the provenance of code that secures billions of dollars."
 
   - line: 24
     type: margin
@@ -137,7 +137,7 @@ conclusion: |
   </p>
   <p>
     The file's structure reveals the engineering pragmatism of the era. Satoshi
-    did not write hash functions; he imported Crypto++ 5.5.2. Wei Dai did not
+    did not write hash functions; he imported Crypto++ 5.5.2.{{cite:crypto-pp-wei-dai}} Wei Dai did not
     write SHA-1; he adapted Steve Reid's public domain C. The dependency chain
     extends back to 1995, when Reid published his implementation. Bitcoin's
     cryptographic foundation rests on this accumulated public-domain work.
@@ -152,7 +152,7 @@ conclusion: |
     are, wherever possible, publicly verifiable.
   </p>
   <p>
-    SHA-256 has held since its publication in 2001. No practical preimage,
+    SHA-256 has held since its publication in 2001.{{cite:fips-180-2}} No practical preimage,
     second-preimage, or collision attack exists. The best known attacks reduce
     the effective round count from 64 to roughly 31—still 33 rounds of security
     margin. For Bitcoin, where a SHA-256 collision would enable double-spending

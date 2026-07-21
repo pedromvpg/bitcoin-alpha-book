@@ -35,17 +35,21 @@ introduction: |
   </p>
 
 annotations:
+  - line: 17
+    type: margin
+    text: "<code class=\"function\">win32_locking_callback</code> — maps OpenSSL's internal lock array onto Windows mutexes. Network, mining, and UI threads all call into OpenSSL concurrently; without this hook, OpenSSL 0.9.x is not thread-safe.{{cite:openssl-license}}"
+
   - line: 26
     type: margin
     text: "<code class=\"class\">CInit</code>—the static initialization class. C++ guarantees that global objects are constructed before main() runs. Satoshi uses this pattern to initialize OpenSSL's thread safety and seed the random number generator at startup. The <code>instance_of_cinit</code> object at line 52 triggers this constructor automatically when Bitcoin launches. This is a common C++ idiom for initialization that must happen exactly once, before any other code runs."
 
   - line: 38
     type: margin
-    text: "<code class=\"function\">RAND_screen()</code>—Windows-specific entropy harvesting. This OpenSSL function captures screen pixels, mouse position, and other visual data as randomness sources. The idea: screen content is unpredictable and attacker-unobservable. On non-Windows systems, OpenSSL uses /dev/urandom instead. Satoshi's paranoia about entropy was justified—weak RNG caused the 2013 Android Bitcoin wallet vulnerability that drained users' funds."
+    text: "<code class=\"function\">RAND_screen()</code>—Windows-specific entropy harvesting. This OpenSSL function captures screen pixels, mouse position, and other visual data as randomness sources. The idea: screen content is unpredictable and attacker-unobservable. On non-Windows systems, OpenSSL uses /dev/urandom instead. Satoshi's paranoia about entropy was justified—weak RNG caused the 2013 Android Bitcoin wallet vulnerability that drained users' funds.{{cite:android-securerandom-2013}}"
 
   - line: 57
     type: margin
-    text: "<code class=\"function\">RandAddSeed()</code>—Satoshi's defense-in-depth for randomness. Even though OpenSSL seeds from system entropy, this function adds more: CPU performance counters (nanosecond-precision timing) and Windows performance monitor data (250KB of system metrics). The <code class=\"variable\">fPerfmon</code> parameter controls whether to harvest the expensive perfmon data—only done every 5 minutes or at startup. Why so paranoid? Private key generation calls this. If an attacker could predict the RNG output, they could reconstruct private keys and steal all coins. The 2010 PlayStation 3 ECDSA key leak happened because Sony reused a 'random' value—Satoshi clearly understood this risk."
+    text: "<code class=\"function\">RandAddSeed()</code>—Satoshi's defense-in-depth for randomness. Even though OpenSSL seeds from system entropy, this function adds more: CPU performance counters (nanosecond-precision timing) and Windows performance monitor data (250KB of system metrics). The <code class=\"variable\">fPerfmon</code> parameter controls whether to harvest the expensive perfmon data—only done every 5 minutes or at startup. Why so paranoid? Private key generation calls this. If an attacker could predict the RNG output, they could reconstruct private keys and steal all coins. The 2010 PlayStation 3 ECDSA key leak happened because Sony reused a 'random' value—Satoshi clearly understood this risk.{{cite:ps3-ecdsa-2010}}"
 
   - line: 62
     type: margin
@@ -113,9 +117,9 @@ conclusion: |
   <p>
     Satoshi's paranoid approach to randomness proved prescient. In 2013, a weak
     RNG in Android's Java SecureRandom class allowed attackers to derive private
-    keys from signed transactions, draining wallets. In 2010, Sony's PlayStation 3
+    keys from signed transactions, draining wallets.{{cite:android-securerandom-2013}} In 2010, Sony's PlayStation 3
     signing key was compromised because they used a static 'random' value in
-    ECDSA signatures. Bitcoin's defense-in-depth—multiple entropy sources,
+    ECDSA signatures.{{cite:ps3-ecdsa-2010}} Bitcoin's defense-in-depth—multiple entropy sources,
     conservative estimates, rejection sampling—has prevented similar disasters.
   </p>
   <p>

@@ -14,7 +14,7 @@ introduction: |
   <p>
     Satoshi's design goal from the whitepaper's opening line: "A purely peer-to-peer
     version of electronic cash would allow online payments to be sent directly from
-    one party to another without going through a financial institution." This file
+    one party to another without going through a financial institution."{{cite:nakamoto-whitepaper}} This file
     makes that vision technically possible. There's no Bitcoin Inc. server—just
     a mesh of equal peers, each running the same rules.
   </p>
@@ -42,6 +42,10 @@ annotations:
   - line: 21
     type: margin
     text: "<code>nLocalServices</code> — bitmask of capabilities advertised to peers. NODE_NETWORK (bit 0) means the node stores and serves the full blockchain. Nodes use this to decide which peers to ask for block data."
+
+  - line: 26
+    type: margin
+    text: "<code class=\"variable\">vfThreadRunning</code> — status flags for the four worker threads (0 socket, 1 open-connections, 2 message-handler, 3 miner). Plain <code>bool</code>s, not atomics — fine on the single-writer pattern Satoshi used, fragile by modern standards.{{cite:rubin-satoshis-version}}"
 
   - line: 27
     type: margin
@@ -73,7 +77,7 @@ annotations:
 
   - line: 92
     type: margin
-    text: "<code>GetMyExternalIP</code> — discovers the node's public IP by making an HTTP GET to whatismyip.com. The response is a bare IP string (e.g. \"1.2.3.4\"). Needed because NAT routers hide the local IP; peers must know the public address to accept inbound connections."
+    text: "<code>GetMyExternalIP</code> — discovers the node's public IP by HTTP GET to whatismyip.com. Needed behind NAT so peers can dial inbound. The service has no obligation to reply faithfully — a quiet trust dependency on a third party for identity.{{cite:rubin-satoshis-version}}"
 
   - line: 136
     type: margin
@@ -101,7 +105,7 @@ annotations:
 
   - line: 410
     type: margin
-    text: "Duplicate connection resolution: if two nodes connect to each other simultaneously (a race condition in a symmetric P2P network), both ends would have duplicate entries. The rule is: the node with the lower IP disconnects its outbound side. This deterministically breaks ties without coordination."
+    text: "Duplicate connection resolution: if two nodes connect to each other simultaneously, both would keep a duplicate. Only the lower-IP node runs the dedup; it keeps the better-connected <code class=\"type\">CNode</code> and marks the extra for disconnect — anti-symmetric, so both sides do not fight.{{cite:rubin-satoshis-version}}"
 
   - line: 444
     type: margin
@@ -165,7 +169,7 @@ annotations:
 
   - line: 968
     type: margin
-    text: "<code>ThreadIRCSeed</code> — connects to IRC chat server to bootstrap peer discovery. Early Bitcoin nodes joined #bitcoin on irc.lfnet.org and encoded their IP in their IRC nickname. Satoshi's elegant hack: use an existing global directory (IRC) as a decentralized peer discovery mechanism before the network was large enough to self-sustain."
+    text: "<code>ThreadIRCSeed</code> — connects to IRC to bootstrap peer discovery. Early nodes joined <code>#bitcoin</code> (v0.01 uses <code>chat.freenode.net</code>) and encoded their IP in the nickname. Satoshi's elegant hack: reuse a global chat directory before the network could self-sustain. Hal Finney's attached <code>debug.log</code> from January 10, 2009 is a snapshot of that path working — and of how tiny the network still was.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer}}"
 
   - line: 974
     type: margin

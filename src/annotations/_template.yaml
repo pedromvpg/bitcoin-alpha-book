@@ -9,18 +9,30 @@ title: "Chapter Title"
 
 # Introduction text shown before the code
 # Use | for multi-line text, supports basic HTML
+# Cite claims with {{cite:key}} — keys come from src/references.yaml
 introduction: |
   This is the introduction that appears before the source code.
   
   You can use multiple paragraphs and basic formatting like
   <strong>bold</strong> and <em>italic</em> text.
 
+  Example citation after a claim.{{cite:nakamoto-whitepaper}}
+
+# Optional chapter-local sources (merged on top of src/references.yaml)
+# Use for one-off primary sources that don't belong in the global registry.
+# sources:
+#   my-local-key:
+#     author: "Satoshi Nakamoto"
+#     title: "example.cpp, line 42"
+#     date: "January 2009"
+#     note: "Primary source in this file"
+
 # Line-specific annotations
 annotations:
   # Margin note - appears in the margin next to the line
   - line: 10
     type: margin
-    text: "Short note explaining this line"
+    text: "Short note explaining this line{{cite:nakamoto-whitepaper}}"
   
   # Block annotation - appears as a highlighted box
   - lines: [25, 50]

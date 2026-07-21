@@ -14,24 +14,25 @@ introduction: |
     Satoshi Nakamoto spent roughly two years developing this code in secrecy before
     the January 2009 release. In an email to Hal Finney, he explained: "I had to write
     all the code before I could convince myself that I could solve every problem, then
-    I wrote the paper." Every design choice in this file reflects sustained thinking about
-    game theory, cryptography, and distributed systems—the work of someone who understood
-    that a single flaw would be fatal.
+    I wrote the paper."{{cite:nakamoto-finney-email}} Every design choice in this file
+    reflects sustained thinking about game theory, cryptography, and distributed
+    systems—the work of someone who understood that a single flaw would be fatal.
   </p>
   <p>
     The file solves what cryptographers called the "Byzantine Generals Problem"—how
-    can distributed nodes agree on truth without trusting each other? Satoshi's insight
-    was to make lying expensive: proof-of-work forces nodes to spend real energy, and
-    the longest chain (most cumulative work) wins. As he wrote on the cryptography
-    mailing list: "The proof-of-work chain is the solution to the synchronisation
-    problem, and to knowing what the globally shared view is without having to trust
-    anyone."
+    can distributed nodes agree on truth without trusting each other?{{cite:lamport-byzantine}}
+    Satoshi's insight was to make lying expensive: proof-of-work forces nodes to spend
+    real energy, and the longest chain wins.{{cite:nakamoto-whitepaper}} In this release that means greatest <code>nHeight</code>; selecting by cumulative work came later.
+    As he wrote on the cryptography mailing list: "The proof-of-work chain is the
+    solution to the synchronisation problem, and to knowing what the globally shared
+    view is without having to trust anyone."{{cite:nakamoto-mailing-list-sync}}
   </p>
   <p>
     What you are reading is essentially unchanged from Satoshi's original design. Later
     developers optimized performance and patched vulnerabilities, but the fundamental
     architecture—UTXO model, ten-minute blocks, difficulty adjustment, halving schedule,
-    longest-chain consensus—remains exactly as conceived in this first release. More than
+    longest-chain tip selection—still follows this first release. Tip choice later moved
+    from block height to cumulative work; the economic rules did not. More than
     seventeen years later, this is still the DNA of every block that gets mined.
   </p>
 
@@ -114,7 +115,7 @@ annotations:
 
   - line: 286
     type: margin
-    text: "<code class=\"function\">CMerkleTx::SetMerkleBranch()</code> — links a transaction to its containing block via a merkle proof. Stores the block hash, the transaction's index within the block, and the sibling hashes needed to reconstruct the path from this transaction up to the block's merkle root. Returns the confirmation depth (how many blocks have been built on top). The SPV protocol Satoshi described in the whitepaper uses exactly these merkle branches — a lightweight client can verify a transaction is included in a block without downloading the full block."
+    text: "<code class=\"function\">CMerkleTx::SetMerkleBranch()</code> — links a transaction to its containing block via a merkle proof. Stores the block hash, the transaction's index within the block, and the sibling hashes needed to reconstruct the path from this transaction up to the block's merkle root. Returns the confirmation depth (how many blocks have been built on top). The SPV protocol Satoshi described in the whitepaper uses exactly these merkle branches — a lightweight client can verify a transaction is included in a block without downloading the full block.{{cite:nakamoto-whitepaper}}"
 
   - line: 339
     type: margin
@@ -137,11 +138,11 @@ annotations:
   # Block reward economics
   - line: 677
     type: margin
-    text: "50 BTC—the original block reward, equivalent to 5 billion satoshis. Satoshi explained to Mike Hearn in a 2009 email: 'The number of coins and distribution schedule was an educated guess. It was a difficult choice, because once the network is going it's locked in and we're stuck with it.' He chose 50 as a round number that would produce approximately 21 million total coins via geometric series."
+    text: "50 BTC—the original block reward, equivalent to 5 billion satoshis. Satoshi explained to Mike Hearn in a 2009 email: 'The number of coins and distribution schedule was an educated guess. It was a difficult choice, because once the network is going it's locked in and we're stuck with it.'{{cite:nakamoto-hearn-emails}} He chose 50 as a round number that would produce approximately 21 million total coins via geometric series."
 
   - line: 680
     type: margin
-    text: "The halving formula: <code>nSubsidy >>= (nBestHeight / 210000)</code>. Every 210,000 blocks (approximately 4 years at 10 minutes per block), the reward halves. This creates a geometric series: 50 + 25 + 12.5 + ... converging to 21 million BTC. The 210,000 block interval was calculated as: 4 years × 365 days × 24 hours × 6 blocks/hour ≈ 210,240. Satoshi rounded to 210,000. This predetermined, transparent monetary policy—unlike central banks—cannot be changed by any authority."
+    text: "The halving formula: <code>nSubsidy >>= (nBestHeight / 210000)</code>. Every 210,000 blocks (~4 years), the reward halves — a geometric series converging on 21 million BTC. There is a subtle bug: once the shift count exceeds the integer width, C++ right-shift behaviour is undefined and the subsidy could reinflate. BIP 42 documented this and soft-forked a finite number of halvings.{{cite:bip-42}}{{cite:rubin-satoshis-version}}"
 
   # Difficulty adjustment - critical for stability
   - line: 685
@@ -150,20 +151,36 @@ annotations:
 
   - line: 687
     type: margin
-    text: "<code class=\"variable\">nTargetTimespan</code> = 14 days (1,209,600 seconds). Difficulty recalculates every 2016 blocks. Why 2 weeks? Satoshi explained on BitcoinTalk: long enough to smooth out variance (a lucky streak of fast blocks shouldn't dramatically lower difficulty), yet short enough to adapt to major hash power changes. The formula: <code>new_difficulty = old_difficulty × (actual_time / target_time)</code>. If blocks came 20% too fast, difficulty increases 20%."
+    text: "<code class=\"variable\">nTargetTimespan</code> = 14 days (1,209,600 seconds). Difficulty recalculates every 2016 blocks. Why 2 weeks? Satoshi explained on BitcoinTalk: long enough to smooth out variance (a lucky streak of fast blocks shouldn't swing the retarget too hard), yet short enough to adapt to major hash power changes.{{cite:nakamoto-block-interval}} The code retargets the <em>target</em>: <code>new_target = old_target × (actual_time / target_time)</code>. Difficulty is the inverse, so <code>new_difficulty = old_difficulty × (target_time / actual_time)</code>. If blocks came in 80% of the expected time, difficulty rises 25%."
 
   - line: 688
     type: margin
-    text: "<code class=\"variable\">nTargetSpacing</code> = 10 minutes (600 seconds). Why 10 minutes? Satoshi explained the trade-off: 'Shorter intervals would waste bandwidth and get too hard to keep up downloading all the blocks. Longer intervals would make initial sync faster but increase latency.' He also noted that faster blocks cause more 'orphan races' where miners waste work on blocks that get superseded. 10 minutes allows time for blocks to propagate globally before the next is found."
+    text: "<code class=\"variable\">nTargetSpacing</code> = 10 minutes (600 seconds). Why 10 minutes? Satoshi explained the trade-off: 'Shorter intervals would waste bandwidth and get too hard to keep up downloading all the blocks. Longer intervals would make initial sync faster but increase latency.'{{cite:nakamoto-block-interval}} He also noted that faster blocks cause more 'orphan races' where miners waste work on blocks that get superseded. 10 minutes allows time for blocks to propagate globally before the next is found."
 
   # Double-spend prevention
   - line: 772
     type: margin
     text: "<code class=\"function\">ConnectInputs()</code> - the double-spend prevention engine. Verifies each input references an unspent output. This is Bitcoin's core innovation."
 
+  - line: 829
+    type: margin
+    text: "<code class=\"function\">VerifySignature()</code> — script validation call site inside <code class=\"function\">ConnectInputs</code>. After loading the previous tx and enforcing coinbase maturity, each input's <code>scriptSig</code> must satisfy the prior <code>scriptPubKey</code> or the block/tx is rejected."
+
   - line: 834
     type: margin
     text: "<code>'prev tx already used'</code> - double-spend detected! The transaction tries to spend coins already spent elsewhere. Rejected."
+
+  - line: 918
+    type: margin
+    text: "<code class=\"function\">DisconnectBlock()</code> — undo a block on reorg: disconnect inputs in reverse order, clear the previous index's <code class=\"variable\">hashNext</code>. The chain can walk backward without rewriting history files."
+
+  - line: 937
+    type: margin
+    text: "<code class=\"function\">ConnectBlock()</code> — apply a block: assign each tx a disk position, call <code class=\"function\">ConnectInputs</code> (marks UTXOs spent, verifies scripts), enforce coinbase ≤ subsidy+fees. This is where a valid header becomes economic state."
+
+  - line: 953
+    type: margin
+    text: "Coinbase value check — miner reward cannot exceed <code class=\"function\">GetBlockValue(nFees)</code>. The overflow bug of August 2010 slipped past related value checks elsewhere; this line is the local subsidy cap for a connected block.{{cite:overflow-bug-2010}}"
 
   # Chain reorganization
   - line: 974
@@ -185,15 +202,100 @@ annotations:
 
   - line: 1180
     type: margin
-    text: "<code class=\"variable\">bnProofOfWorkLimit</code> check - ensures difficulty isn't impossibly easy. The target hash must be below maximum difficulty (all 1s would be trivial)."
+    text: "<code class=\"variable\">bnProofOfWorkLimit</code> check — rejects a claimed <code class=\"variable\">nBits</code> easier than the minimum difficulty. The target must not exceed <code>~uint256(0) >> 32</code> (all-1s would make proof-of-work trivial)."
 
   - line: 1192
     type: margin
-    text: "<code class=\"function\">AcceptBlock()</code> - adds validated block to chain. Updates indexes, checks difficulty matches expected, writes to disk. Point of no return."
+    text: "<code class=\"function\">AcceptBlock()</code> - adds a validated block to the index. Checks <code class=\"variable\">nBits</code> matches <code class=\"function\">GetNextWorkRequired()</code>, then writes to disk. Reorgs can still disconnect it later."
+
+  - line: 1224
+    type: margin
+    text: "Commented-out atom minting — before launch, AcceptBlock would extract the coinbase pubkey and grant a random reputation atom to the miner. Collisions were likely in the <code>USHRT_MAX</code> range, and atoms were local-only. Disabled here, the marketplace reputation graph never auto-funded from mining.{{cite:rubin-satoshis-version}}"
 
   - line: 1236
     type: margin
     text: "<code class=\"function\">ProcessBlock()</code> - main entry point for new blocks. First checks if we've seen it, validates with <code class=\"function\">CheckBlock()</code>, then <code class=\"function\">AcceptBlock()</code> or orphan it."
+
+  - line: 1256
+    type: margin
+    text: "Orphan storage — if the parent is unknown, park the block in <code class=\"variable\">mapOrphanBlocks</code> / <code class=\"variable\">mapOrphanBlocksByPrev</code> and ask for the missing ancestor. Out-of-order gossip is normal; orphans stitch the DAG until parents arrive."
+
+  - line: 1655
+    type: margin
+    text: "Partial-message wait — if the declared payload is larger than bytes received, rewind the header and sleep. A peer can advertise a huge <code class=\"variable\">nMessageSize</code> and trickle data, pinning memory in <code class=\"variable\">vRecv</code>. Later versions harden this; v0.01 mostly trusts peers.{{cite:rubin-satoshis-version}}"
+
+  # P2P message handlers
+  - line: 1705
+    type: margin
+    text: "<code>\"version\"</code> handshake — first message on a connection; anything else is rejected until this succeeds. Negotiates protocol version, services bits, and peer time.{{cite:rubin-satoshis-version}}"
+
+  - line: 1720
+    type: margin
+    text: "<code class=\"variable\">fClient</code> / <code class=\"constant\">SER_BLOCKHEADERONLY</code> — peers without <code>NODE_NETWORK</code> are treated as lightweight clients and only receive block headers, not full blocks.{{cite:rubin-satoshis-version}}"
+
+  - line: 1727
+    type: margin
+    text: "<code class=\"function\">AddTimeData()</code> — peer clocks influence our adjusted network time. A minority of dishonest peers cannot easily skew the median, but the design still trusts the peer set for time.{{cite:rubin-satoshis-version}}"
+
+  - line: 1729
+    type: margin
+    text: "<code class=\"variable\">fAskedForBlocks</code> — ask the <em>first</em> full node for <code>getblocks</code>, then never again. Satoshi noted (via later annotation) we should cross-check other peers in case this one lies — but v0.01 does not.{{cite:rubin-satoshis-version}}"
+
+  - line: 1748
+    type: margin
+    text: "<code>\"addr\"</code> — peer gossip. Incoming addresses are stored via <code class=\"function\">AddAddress</code> so the node can reconnect after IRC or restart without rediscovering the whole network."
+
+  - line: 1772
+    type: margin
+    text: "<code>\"inv\"</code> — inventory advertisement. For each unknown <code class=\"type\">CInv</code>, call <code class=\"function\">AskFor</code>; if we already have an orphan block, request the parent chain with <code>getblocks</code>. This is how transactions and blocks flood the mesh without flooding full payloads first."
+
+  - line: 1795
+    type: margin
+    text: "<code>\"getdata\"</code> — fetch request. Serve blocks from disk (headers-only for lightweight clients) or relayed objects from <code class=\"variable\">mapRelay</code>. Peers pull after <code>inv</code>; they are never pushed full blocks unsolicited in this design."
+
+  - line: 1832
+    type: margin
+    text: "<code>\"getblocks\"</code> — sync handshake. Locator finds a common ancestor; we queue <code>inv</code> entries for subsequent best-chain blocks until <code class=\"variable\">hashStop</code>. Exponential locator spacing keeps the message small even for long histories."
+
+  - line: 1868
+    type: margin
+    text: "<code>\"tx\"</code> — full transaction payload. Validate, accept into the memory pool / wallet paths, relay to peers, and recursively process any orphan txs that were waiting on this one's outputs."
+
+  - line: 1921
+    type: margin
+    text: "<code>\"review\"</code> — marketplace reputation message. Signed attestations with stars and atoms for the unfinished eBay-style system; relayed if <code class=\"function\">AcceptReview()</code> succeeds.{{cite:rubin-satoshis-version}}"
+
+  - line: 1939
+    type: margin
+    text: "<code>\"block\"</code> — full block payload. Deserialized then handed to <code class=\"function\">ProcessBlock</code>. Debug <code>print()</code> of every received block is left in — early-network forensics gold."
+
+  - line: 1955
+    type: margin
+    text: "<code>\"getaddr\"</code> — request recent peer addresses (last hour). Keeps the addr database fresh without relying solely on IRC."
+
+  - line: 1974
+    type: margin
+    text: "<code>\"checkorder\"</code> — IP-to-IP payment handshake. Peer proposes an order; we return approval plus a fresh pubkey (reused per IP until spent). Deprecated with the marketplace/payment UX.{{cite:rubin-satoshis-version}}"
+
+  - line: 1993
+    type: margin
+    text: "<code>\"submitorder\"</code> — after checkorder, the payer sends the signed wallet tx. We accept into the wallet, relay, and <code>\"reply\"</code> success or failure.{{cite:rubin-satoshis-version}}"
+
+  - line: 2015
+    type: margin
+    text: "<code>\"reply\"</code> — dynamic dispatch: a nonce routes the payload to a pending <code class=\"type\">CRequestTracker</code> callback. Request/response over the P2P socket without a separate RPC channel.{{cite:rubin-satoshis-version}}"
+
+  - line: 2410
+    type: margin
+    text: "<code class=\"function\">SelectCoins()</code> — coin selection. Prefer a combination of smaller unspent credits that sum to the target; fall back to the smallest larger coin. Stochastic subset search appears below — the ancestor of every modern coin-selection algorithm."
+
+  - line: 2514
+    type: margin
+    text: "<code class=\"function\">CreateTransaction()</code> — build a payment: select coins, add change back to <code class=\"variable\">keyUser</code>, sign inputs, compute fee. Returns the fee required if the first attempt underpays — the GUI can retry."
+
+  - line: 2625
+    type: margin
+    text: "<code class=\"function\">SendMoney()</code> — end-to-end spend: create, commit spent flags, accept into wallet, relay. The function every \"Send\" button ultimately calls."
 
   # Genesis block - the beginning
   - line: 1439
@@ -205,13 +307,13 @@ annotations:
     title: "Satoshi's Debug Output"
     text: "These comments are Satoshi's own debug output, preserved as documentation. The format <code>CBlock(hash=000000000019d6...)</code> matches the <code>print()</code> method output. This archaeological artifact reveals several things:
 
-      <p><strong>The block hash:</strong> <code>000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f</code>—note how it starts with many zeros. This is proof-of-work in action: Satoshi had to try ~2 billion nonces before finding one that produced a hash this small. The leading zeros aren't just formatting; they represent the computational work that secures the block.</p>
+      <p><strong>The block hash:</strong> <code>000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f</code>—note how it starts with many zeros. This is proof-of-work in action: the winning <code>nNonce</code> is ~2.08×10⁹, and at this target expected work is on the order of 2³² hashes. The leading zeros aren't just formatting; they represent the computational work that secures the block.</p>
 
       <p><strong>The merkle root:</strong> <code>4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b</code>—a hash of all transactions in the block (just the one coinbase transaction here). Every transaction ID in Bitcoin begins with this same merkle tree construction.</p>
 
       <p><strong>The timestamp:</strong> <code>nTime=1231006505</code> is Unix epoch time for Saturday, January 3, 2009, 6:15:05 PM GMT. This was approximately 6 days after the whitepaper's timestamp and likely when Satoshi successfully mined this block after days of testing.</p>
 
-      <p><strong>The coinbase hex:</strong> In the CTxIn line, <code>04ffff001d0104455468652054696d6573...</code> is the scriptSig. Decoding: <code>04ffff001d</code> pushes the difficulty bits, <code>01</code> pushes length 4, <code>04</code> pushes the extra nonce, then <code>45</code> (69 in decimal) indicates 69 bytes follow—the ASCII encoding of 'The Times 03/Jan/2009...' headline. You can verify: <code>54686520</code> = 'The ' in ASCII.</p>
+      <p><strong>The coinbase hex:</strong> In the CTxIn line, <code>04ffff001d0104455468652054696d6573...</code> is the scriptSig. Decoding: <code>04ffff001d</code> pushes <code>nBits</code> (<code>0x1d00ffff</code>), <code>01 04</code> pushes the script integer <code>4</code> (from <code>CBigNum(4)</code> in the genesis constructor—not an ExtraNonce), then <code>45</code> (69 in decimal) pushes 69 bytes—the ASCII 'The Times 03/Jan/2009...' headline. You can verify: <code>54686520</code> = 'The ' in ASCII.</p>
 
       <p><strong>The unspendable output:</strong> The 50 BTC sent to scriptPubKey <code>0x5F1DF16B2B704C8A578D0B...</code> has never moved and never will. The genesis block's coinbase wasn't added to the UTXO database—possibly a bug, possibly intentional. Those 50 BTC are cryptographic ghosts, visible on the chain but impossible to spend.</p>"
 
@@ -221,7 +323,7 @@ annotations:
     text: "'The Times 03/Jan/2009 Chancellor on brink of second bailout for banks'—Satoshi's timestamp proof embedded in the coinbase. This headline from the Times of London serves two purposes: (1) it proves the genesis block wasn't pre-mined before January 3, 2009, and (2) it's a political statement about why Bitcoin exists. The 2008 financial crisis, bank bailouts, and quantitative easing motivated Satoshi to create an alternative: 'The root problem with conventional currency is all the trust that's required to make it work.'
 
       <p style=\"margin-top: 1em;\"><strong>Genesis Block Hex Dump (285 bytes):</strong></p>
-      <pre style=\"font-size: 0.75em; word-break: break-all; white-space: pre-wrap;\">0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac00000000</pre>
+      <pre style=\"font-size: 0.75em; word-break: break-all; white-space: pre-wrap;\">0100000000000000000000000000000000000000000000000000000000000000000000003ba3edfd7a7b12b27ac72c3e67768f617fc81bc3888a51323a9fb8aa4b1e5e4a29ab5f49ffff001d1dac2b7c0101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff4d04ffff001d0104455468652054696d65732030332f4a616e2f32303039204368616e63656c6c6f72206f6e206272696e6b206f66207365636f6e64206261696c6f757420666f722062616e6b73ffffffff0100f2052a01000000434104678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea711f61de6a9694cbfbfc3f4cef4385f3374c3fe4b3b5c8b4ba0bd78d578d0b8a4c704b2bac00000000</pre>
 
       <p style=\"margin-top: 0.5em;\"><strong>Decoded structure:</strong></p>
       <pre style=\"font-size: 0.7em;\">
@@ -232,7 +334,7 @@ annotations:
         3ba3edfd7a7b12b27ac72c3e67768f61
         7fc81bc3888a51323a9fb8aa4b1e5e4a ... Merkle root
         29ab5f49 ........................... Time: 1231006505 (Jan 3, 2009 18:15:05 UTC)
-        ffff001d ........................... Bits (difficulty)
+        ffff001d ........................... Bits (compact target)
         1dac2b7c ........................... Nonce: 2083236893
 
       Transaction:
@@ -258,7 +360,7 @@ annotations:
 
   - line: 1465
     type: margin
-    text: "<code class=\"variable\">hashPrevBlock</code> = 0—the genesis block's defining characteristic. Every other block must reference a valid previous block; this is the only block that points to nothing. The all-zeros hash is Bitcoin's 'Big Bang moment'—the chain has to start somewhere. Validation code explicitly checks for this: if a block claims <code>hashPrevBlock = 0</code> but isn't the known genesis block, it's rejected. This single zero anchors the entire blockchain's integrity."
+    text: "<code class=\"variable\">hashPrevBlock</code> = 0—the genesis block's defining characteristic. Every other block must reference a valid previous block; this is the only block that points to nothing. The all-zeros hash is Bitcoin's 'Big Bang moment'—the chain has to start somewhere. Genesis is loaded specially in <code class=\"function\">LoadBlockIndex</code>; any later block with an unknown parent (including <code>hashPrevBlock = 0</code>) fails <code class=\"function\">AcceptBlock</code> with 'prev block not found.'"
 
   - line: 1469
     type: margin
@@ -266,20 +368,28 @@ annotations:
 
   - line: 1470
     type: margin
-    text: "<code class=\"variable\">nNonce</code> = <code>2083236893</code>—the magic number Satoshi discovered that makes the genesis block hash valid. He had to try approximately 2 billion nonces before finding this one (nonce means 'number used once'). The resulting hash <code>000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f</code> starts with the required zeros, proving work was done. This specific nonce is now immortalized in every Bitcoin client."
+    text: "<code class=\"variable\">nNonce</code> = <code>2083236893</code>—the winning nonce hardcoded into every client (nonce means 'number used once'). At this target, expected work is ~2³² hashes; the nonce value itself is not a proven attempt count. The resulting hash <code>000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f</code> starts with the required zeros, proving work was done."
 
   # Mining
   - line: 2183
     type: margin
-    text: "<code class=\"function\">BitcoinMiner()</code> - the mining function. Satoshi envisioned 'one-CPU-one-vote' democracy. In 2009, anyone's laptop could mine blocks."
+    text: "<code class=\"function\">BitcoinMiner()</code> - the mining function. Satoshi envisioned 'one-CPU-one-vote' democracy. In 2009, anyone's laptop could mine blocks. Forensics of the first ~170 blocks show how fragile that democracy was: long gaps between blocks imply the network sometimes halted entirely when Satoshi stopped mining.{{cite:waltz-1stbitcoinminer}}{{cite:waltz-1stbitcoinminer-transcriptions}}"
 
   - line: 2186
     type: margin
     text: "<code class=\"constant\">THREAD_PRIORITY_LOWEST</code> - mining runs in background. Satoshi wanted mining to not interfere with normal computer use."
 
+  - line: 2190
+    type: margin
+    text: "<code class=\"variable\">bnExtraNonce = 0</code> — initialized <em>once</em>, outside the <code>while (fGenerateBitcoins)</code> loop. It does not reset after a block is found; only a client restart zeroes it. Lerner’s Patoshi analysis treats that free-running counter as privacy flaw #1: consecutive coinbases from the same process form a rising ExtraNonce timeline that links ~22k early blocks to one miner.{{cite:bitslog-patoshi}}{{cite:waltz-1stbitcoinminer}}{{cite:rubin-satoshis-version}}"
+
+  - line: 2195
+    type: margin
+    text: "<code>while (vNodes.empty())</code> — the miner refuses to work until at least one peer is connected. Alone, a node would mine an orphan chain nobody else sees. In the first days that check mattered: Hal Finney's <code>debug.log</code> shows he joined near block 49 and saw only two other peers — both consistent with Satoshi running multiple nodes.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer}}"
+
   - line: 2203
     type: margin
-    text: "<code class=\"function\">GetNextWorkRequired()</code> - fetches current difficulty target. Miner must find hash below this. Higher difficulty = smaller target = harder."
+    text: "<code class=\"function\">GetNextWorkRequired()</code> - fetches the current compact target (<code class=\"variable\">nBits</code>). Miner must find <code>hash ≤ target</code>. Higher difficulty = smaller target = harder."
 
   - line: 2211
     type: margin
@@ -287,11 +397,15 @@ annotations:
 
   - line: 2212
     type: margin
-    text: "<code class=\"variable\">bnExtraNonce</code> - incremented each block attempt. Combined with <code class=\"variable\">nNonce</code>, gives 2^96 possible hashes per second timestamp."
+    text: "<code class=\"variable\">++bnExtraNonce</code> in the coinbase <code>scriptSig</code> — runs whenever this process builds a new template: after <code class=\"variable\">nNonce</code> overflow, after the tip moves, or when the mempool changes enough to rebuild. Fresh ExtraNonce entropy changes the merkle root and expands the search space beyond 2³² header nonces. For stock v0.1 miners, each new network tip forces a rebuild, so ExtraNonce often advances roughly once per block seen (Lerner’s privacy flaw #3)—which is why non-Patoshi slopes track the chain, while Patoshi’s denser slope stands out.{{cite:bitslog-patoshi}}{{cite:waltz-1stbitcoinminer-transcriptions}}"
+
+  - line: 2237
+    type: margin
+    text: "Template packing loop stops around <code>MAX_SIZE/2</code> (~16 MB). Size is checked before each add, but a single oversized transaction can still push <code class=\"variable\">nBlockSize</code> past <code>MAX_SIZE</code> — a latent packing bug noted in annotated v0.01 walkthroughs.{{cite:rubin-satoshis-version}}"
 
   - line: 2252
     type: margin
-    text: "Satoshi's fee discount for early transactions. The boolean <code>pblock->vtx.size() < 100</code> grants a discount to the first 100 transactions in a block: if under 10KB, they're free. After 100 transactions, everyone pays 0.01 BTC/KB. This was flood control—allow normal usage for free, but charge when blocks fill up. Satoshi wrote: 'Free transactions are nice...until we get slashdotted.' The threshold of 100 transactions and 10KB were educated guesses; modern Bitcoin uses more sophisticated fee markets where users bid for block space."
+    text: "Satoshi's fee discount for early transactions. The boolean <code>pblock->vtx.size() < 100</code> grants a discount to the first 100 transactions in a block: if under 10KB, they're free. After 100 transactions, everyone pays 0.01 BTC/KB. This was flood control—allow normal usage for free, but charge when blocks fill up. Satoshi wrote: 'Free transactions are nice...until we get slashdotted.'{{cite:nakamoto-free-transactions}} The threshold of 100 transactions and 10KB were educated guesses; modern Bitcoin uses more sophisticated fee markets where users bid for block space."
 
   - line: 2267
     type: margin
@@ -299,11 +413,11 @@ annotations:
 
   - line: 2307
     type: margin
-    text: "<code class=\"variable\">hashTarget</code> - the difficulty threshold. Hash must be numerically less than this 256-bit number. Lower target = harder puzzle."
+    text: "<code class=\"variable\">hashTarget</code> - the PoW threshold decoded from <code class=\"variable\">nBits</code>. Hash must be ≤ this 256-bit number. Lower target = harder puzzle."
 
   - line: 2309
     type: margin
-    text: "The mining loop. Increment <code class=\"variable\">nNonce</code>, double-SHA256 the header, compare to target. Repeat billions of times until valid hash found."
+    text: "The mining loop. Increment <code class=\"variable\">nNonce</code>, double-SHA256 the header, compare to target. Every <code>0x40000</code> nonces (~every few seconds on a 2009 CPU) the inner loop also refreshes <code class=\"variable\">nTime</code> and checks whether the tip moved—see below."
 
   - line: 2311
     type: margin
@@ -311,11 +425,27 @@ annotations:
 
   - line: 2315
     type: margin
-    text: "<code>hash <= hashTarget</code> - FOUND IT! This comparison is why mining works: finding a hash below target is rare and proves work was done."
+    text: "<code>hash <= hashTarget</code> - FOUND IT! This comparison is why mining works: finding a hash ≤ target is rare and proves work was done."
 
   - line: 2322
     type: margin
     text: "'proof-of-work found' - victory message. Satoshi: 'The proof-of-work also solves the problem of determining representation in majority decision making.'"
+
+  - line: 2344
+    type: margin
+    text: "<code>(++nNonce &amp; 0x3ffff) == 0</code> — throttle: only every 2¹⁸ nonces does the miner leave the hot path. That cadence (~10s on period hardware) is where timestamps catch up and where tip/mempool abort checks run. Lerner uses these lagged timestamps in the clock-inversion argument: a single machine almost never publishes a child with an earlier <code class=\"variable\">nTime</code> than its own parent—and across the first 50k blocks, Patoshi→Patoshi inversions are zero.{{cite:bitslog-patoshi}}"
+
+  - line: 2347
+    type: margin
+    text: "<code>nNonce == 0</code> after the increment — 32-bit overflow. Break, rebuild the template, and <code>++bnExtraNonce</code>. At the initial target (~2³² expected hashes per block), overflow was uncommon but real; ExtraNonce exists so mining can continue past a full nonce sweep."
+
+  - line: 2349
+    type: margin
+    text: "<code>pindexPrev != pindexBest</code> — another miner’s block (or our own, after <code class=\"function\">ProcessBlock</code>) moved the tip. Abort this template; the outer loop will mint a fresh coinbase and bump ExtraNonce. That tip-driven rebuild is how stock clients imprint “blocks seen” onto ExtraNonce slopes.{{cite:bitslog-patoshi}}"
+
+  - line: 2355
+    type: margin
+    text: "Refresh <code class=\"variable\">nTime</code> from <code class=\"function\">GetAdjustedTime()</code> (floored by median-time-past+1). Timestamps are <em>not</em> updated every hash—only on this throttle—so a slow parent can leave a child looking slightly “early.” Combined with peer median-time adjustment, that explains most observed timestamp inversions between <em>different</em> miners.{{cite:bitslog-patoshi}}"
 
   - lines: [675, 683]
     type: highlight
@@ -336,8 +466,8 @@ annotations:
 conclusion: |
   <p>
     This file embodies Satoshi's central insight: proof-of-work is not merely a
-    rate-limiter (as in Adam Back's Hashcash) but the foundation of distributed
-    consensus itself. Every predecessor—DigiCash, b-money, Bit Gold, RPOW—stumbled
+    rate-limiter (as in Adam Back's Hashcash){{cite:back-hashcash}} but the foundation of distributed
+    consensus itself. Every predecessor—DigiCash,{{cite:chaum-digicash}} b-money,{{cite:dai-bmoney}} Bit Gold,{{cite:szabo-bit-gold}} RPOW{{cite:finney-rpow}}—stumbled
     on the same problem: how to prevent double-spending without a trusted third party.
     Satoshi solved it by making dishonesty more expensive than honesty.
   </p>
@@ -346,19 +476,22 @@ conclusion: |
     rules and extending the longest chain. Rewriting history requires outspending
     all honest miners combined—an attack that becomes exponentially harder with each
     confirmation. Satoshi calculated in the whitepaper that an attacker controlling
-    10% of network hashrate has only a 0.0006% chance of catching up after six blocks.
+    10% of network hashrate has only a 0.0006% chance of catching up after six blocks.{{cite:nakamoto-whitepaper}}
     This is why "six confirmations" became the industry standard for settlement finality.
   </p>
   <p>
     This code has been stress-tested under the most adversarial conditions imaginable:
     nation-state pressure, hundreds of billions of dollars at stake, and relentless
-    scrutiny from security researchers worldwide. That it continues to function—
-    producing a block approximately every ten minutes without interruption since
-    January 3, 2009—is a testament to the depth of Satoshi's engineering.
+    scrutiny from security researchers worldwide. Continuity was not automatic at birth:
+    forensic work on early block times and ExtraNonce sequences shows the chain halted
+    for many hours in the first ~170 blocks when nobody was mining—then recovered as
+    Hal Finney, Dustin Trammell, and others joined.{{cite:waltz-1stbitcoinminer}}{{cite:waltz-1stbitcoinminer-transcriptions}}
+    That it still produces a block approximately every ten minutes is a testament to
+    Satoshi's engineering—and to those first operators who kept the experiment alive.{{cite:genesis-block}}
   </p>
   <p>
     Satoshi's final public message before vanishing (April 2011): "I've moved on to
-    other things. It's in good hands with Gavin and everyone." These 2,300 lines of
+    other things. It's in good hands with Gavin and everyone."{{cite:nakamoto-farewell-2011}} These 2,300 lines of
     C++ launched a monetary system that has operated continuously for over seventeen
     years, securing over a trillion dollars in value, without a CEO, a board of
     directors, or a single hour of planned downtime.

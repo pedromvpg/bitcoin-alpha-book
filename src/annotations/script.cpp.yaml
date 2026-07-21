@@ -25,12 +25,12 @@ introduction: |
     language that expresses arbitrary conditions. Multi-signature escrow, hash locks,
     time-locked payments — all possible without protocol changes, just different
     scripts. This foresight enabled P2SH, SegWit, Taproot, and Lightning without
-    ever replacing the core spending mechanism.
+    ever replacing the core spending mechanism.{{cite:bitcoin-core-history}}
   </p>
   <p>
     The script system is also why Bitcoin survived its early bugs. When critical
     vulnerabilities were found (like the OP_CAT memory explosion in August 2010),
-    Satoshi could disable individual opcodes without breaking the entire system.
+    Satoshi could disable individual opcodes without breaking the entire system.{{cite:opcode-disable-2010}}
     Scripts using disabled opcodes simply fail; everything else continues working.
   </p>
 
@@ -93,11 +93,11 @@ annotations:
 
   - line: 377
     type: margin
-    text: "<code>OP_CAT</code> — concatenates the top two stack elements. This opcode was present in v0.01 but disabled in August 2010 after a vulnerability was discovered: repeatedly concatenating elements could create exponentially large byte vectors, exhausting memory. A single transaction could crash nodes. Satoshi pushed a patch disabling it within hours of the report."
+    text: "<code>OP_CAT</code> — concatenates the top two stack elements. This opcode was present in v0.01 but disabled in August 2010 after a vulnerability was discovered: repeatedly concatenating elements could create exponentially large byte vectors, exhausting memory.{{cite:opcode-disable-2010}} A single transaction could crash nodes. Satoshi pushed a patch disabling it within hours of the report."
 
   - line: 444
     type: margin
-    text: "Bitwise opcodes: OP_INVERT flips all bits; OP_AND/OP_OR/OP_XOR operate bitwise on equal-length byte vectors (MakeSameSize pads the shorter one with zeros). These are powerful for bitmask operations but were disabled along with OP_CAT. Current Bitcoin scripts cannot use bitwise logic."
+    text: "Bitwise opcodes: OP_INVERT flips all bits; OP_AND/OP_OR/OP_XOR operate bitwise on equal-length byte vectors (MakeSameSize pads the shorter one with zeros). These are powerful for bitmask operations but were disabled along with OP_CAT.{{cite:opcode-disable-2010}} Current Bitcoin scripts cannot use bitwise logic."
 
   - line: 484
     type: margin
@@ -109,7 +109,7 @@ annotations:
 
   - line: 545
     type: margin
-    text: "Binary arithmetic opcodes: OP_MUL and OP_DIV use OpenSSL BN_mul/BN_div for arbitrary precision. OP_MOD uses BN_mod. These were disabled in 2010 because arbitrary-precision multiplication of untrusted inputs is a DoS vector — a transaction could force validators to multiply 512-byte numbers millions of times."
+    text: "Binary arithmetic opcodes: OP_MUL and OP_DIV use OpenSSL BN_mul/BN_div for arbitrary precision. OP_MOD uses BN_mod. These were disabled in 2010 because arbitrary-precision multiplication of untrusted inputs is a DoS vector — a transaction could force validators to multiply 512-byte numbers millions of times.{{cite:opcode-disable-2010}}"
 
   - line: 653
     type: margin
@@ -200,5 +200,5 @@ conclusion: |
     secured, and multiple generations of protocol upgrades without replacement.
     Every complex Bitcoin feature built since—multisig wallets, payment channels,
     Lightning Network, Taproot—is ultimately an extension of these same opcodes
-    operating on this same stack machine.
+    operating on this same stack machine.{{cite:bitcoin-core-history}}
   </p>

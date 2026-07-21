@@ -8,28 +8,30 @@ introduction: |
     This is the original README file distributed with Bitcoin v0.01 ALPHA — a primary
     historical document from the birth of cryptocurrency. Written by Satoshi Nakamoto
     himself, it is part build instructions, part architectural overview, and part window
-    into the mind of Bitcoin's creator. Every sentence reveals something about the design
-    decisions, constraints, and priorities of the project in January 2009.
+    into the mind of Bitcoin's creator.{{cite:readme-v001}} Every sentence reveals something
+    about the design decisions, constraints, and priorities of the project in January 2009.
   </p>
   <p>
     The document is striking for what it emphasizes and what it omits. There is no
     explanation of what Bitcoin <em>is</em> — no mention of digital cash, peer-to-peer
     payments, or decentralized consensus. Satoshi had already published the whitepaper
-    on the cryptography mailing list in October 2008; by the time this README was written,
-    the audience was assumed to already understand the concept. Instead, the focus is
-    entirely practical: how to obtain the dependencies, how to configure OpenSSL, and
-    how to compile the code. This is a builder's document, not a manifesto.
+    on the cryptography mailing list in October 2008;{{cite:nakamoto-mailing-list-announcement}}{{cite:nakamoto-whitepaper}}
+    by the time this README was written, the audience was assumed to already understand
+    the concept. Instead, the focus is entirely practical: how to obtain the dependencies,
+    how to configure OpenSSL, and how to compile the code. This is a builder's document,
+    not a manifesto.
   </p>
   <p>
-    Perhaps the most remarkable line is on line 36: "Bitcoin does not use any encryption."
+    Perhaps the most remarkable line is on line 36: "Bitcoin does not use any encryption."{{cite:readme-v001}}
     This single sentence distinguishes Bitcoin from every cypherpunk project that came before
     it. Systems like PGP, Tor, and the earlier digital cash schemes (DigiCash, e-gold) relied
-    on encryption to protect privacy. Bitcoin uses cryptography — specifically digital
-    signatures and hash functions — but never encrypts data. All transactions are broadcast
-    in the clear. All blocks are publicly readable. Privacy comes not from secrecy but from
-    pseudonymity: your identity is hidden behind a cryptographic public key, but your
-    transactions are visible to everyone. This design choice avoided the legal minefield of
-    encryption export controls that had hindered earlier cypherpunk projects.
+    on encryption to protect privacy.{{cite:chaum-digicash}} Bitcoin uses cryptography —
+    specifically digital signatures and hash functions — but never encrypts data. All
+    transactions are broadcast in the clear. All blocks are publicly readable. Privacy comes
+    not from secrecy but from pseudonymity: your identity is hidden behind a cryptographic
+    public key, but your transactions are visible to everyone. This design choice avoided
+    the legal minefield of encryption export controls that had hindered earlier cypherpunk
+    projects.{{cite:itar-ear-crypto}}
   </p>
   <p>
     The build instructions also reveal that Bitcoin v0.01 was a <em>Windows desktop
@@ -59,19 +61,19 @@ annotations:
 
   - line: 22
     type: margin
-    text: "<strong>wxWidgets</strong> — a cross-platform C++ GUI framework. Satoshi chose it over alternatives like Qt (which had licensing concerns at the time — Qt was GPL, not LGPL, until 2009) and FLTK (too minimal). wxWidgets' LGPL license with liberal exceptions meant Bitcoin could use it without being forced into GPL copyleft. Bitcoin Core eventually switched to Qt in 2011 after Qt adopted the LGPL."
+    text: "<strong>wxWidgets</strong> — a cross-platform C++ GUI framework. Satoshi chose it over alternatives like Qt (which had licensing concerns at the time — Qt was GPL, not LGPL, until 2009){{cite:qt-lgpl-2009}} and FLTK (too minimal). wxWidgets' LGPL license with liberal exceptions meant Bitcoin could use it without being forced into GPL copyleft.{{cite:wxwidgets-license}} Bitcoin Core eventually switched to Qt in 2011 after Qt adopted the LGPL.{{cite:bitcoin-core-history}}"
 
   - line: 23
     type: margin
-    text: "<strong>OpenSSL</strong> — provides ECDSA (transaction signing), SHA-256 (proof-of-work hashing), and RIPEMD-160 (address generation). In 2009, OpenSSL was the de facto standard cryptographic library for C/C++. Its 'Old BSD license with the problematic advertising requirement' refers to the original BSD clause requiring all advertising mentioning the software to credit the University of California — a clause widely considered a nuisance."
+    text: "<strong>OpenSSL</strong> — provides ECDSA (transaction signing), SHA-256 (proof-of-work hashing), and RIPEMD-160 (address generation). In 2009, OpenSSL was the de facto standard cryptographic library for C/C++.{{cite:openssl-license}} Its 'Old BSD license with the problematic advertising requirement' refers to the original BSD clause requiring all advertising mentioning the software to credit the University of California — a clause widely considered a nuisance."
 
   - line: 24
     type: margin
-    text: "<strong>Berkeley DB</strong> — the embedded database storing blocks, transactions, and wallet data. Its license required that 'linked software must be free open source' — a significant constraint. This effectively prevented anyone from building a proprietary Bitcoin node. Later versions of Bitcoin Core replaced Berkeley DB with LevelDB (for the block index) to avoid this licensing restriction, though <code>wallet.dat</code> continued using BDB for years."
+    text: "<strong>Berkeley DB</strong> — the embedded database storing blocks, transactions, and wallet data. Its license required that 'linked software must be free open source' — a significant constraint.{{cite:bdb-license}} This effectively prevented anyone from building a proprietary Bitcoin node. Later versions of Bitcoin Core replaced Berkeley DB with LevelDB (for the block index) to avoid this licensing restriction, though <code>wallet.dat</code> continued using BDB for years.{{cite:bitcoin-core-history}}"
 
   - line: 25
     type: margin
-    text: "<strong>Boost</strong> — the Swiss Army knife of C++ libraries. Satoshi used it for <code>BOOST_FOREACH</code> (range iteration), <code>lexical_cast</code> (string conversion), <code>tuple</code> (multiple return values), and <code>array</code> (fixed-size containers). The 'MIT-like license' made it the least legally complicated dependency. Many Boost features were later absorbed into C++11, and Bitcoin Core gradually removed Boost dependencies over the following decade."
+    text: "<strong>Boost</strong> — the Swiss Army knife of C++ libraries. Satoshi used it for <code>BOOST_FOREACH</code> (range iteration), <code>lexical_cast</code> (string conversion), <code>tuple</code> (multiple return values), and <code>array</code> (fixed-size containers). The 'MIT-like license' made it the least legally complicated dependency.{{cite:boost-license}} Many Boost features were later absorbed into C++11, and Bitcoin Core gradually removed Boost dependencies over the following decade."
 
   - line: 34
     type: margin
@@ -79,7 +81,7 @@ annotations:
 
   - line: 36
     type: margin
-    text: "'Bitcoin does not use any encryption.' A profound statement. Every prior digital cash system — from David Chaum's DigiCash (1990) to Wei Dai's b-money proposal (1998) — relied on encryption for privacy. Satoshi took a fundamentally different approach: all data is public, all transactions are broadcast in cleartext, and privacy comes from pseudonymous keys rather than encrypted channels. This sidestepped the U.S. encryption export regulations (ITAR/EAR) that had hamstrung earlier cypherpunk tools like PGP."
+    text: "'Bitcoin does not use any encryption.' A profound statement.{{cite:readme-v001}} Every prior digital cash system — from David Chaum's DigiCash (1990){{cite:chaum-digicash}} to Wei Dai's b-money proposal (1998){{cite:dai-bmoney}} — relied on encryption for privacy. Satoshi took a fundamentally different approach: all data is public, all transactions are broadcast in cleartext, and privacy comes from pseudonymous keys rather than encrypted channels. This sidestepped the U.S. encryption export regulations (ITAR/EAR) that had hamstrung earlier cypherpunk tools like PGP.{{cite:itar-ear-crypto}}"
 
   - line: 40
     type: margin
@@ -115,7 +117,7 @@ conclusion: |
     OpenSSL, Berkeley DB, and Boost — define the four pillars of Bitcoin v0.01: a graphical
     user interface, cryptographic primitives, persistent storage, and C++ utility support.
     Every one of these dependencies would eventually be replaced (Qt, libsecp256k1, LevelDB,
-    C++11/17 standard library), but the four-pillar architecture — presentation, cryptography,
+    C++11/17 standard library),{{cite:qt-lgpl-2009}}{{cite:bitcoin-core-history}} but the four-pillar architecture — presentation, cryptography,
     storage, utilities — endures in Bitcoin Core today.
   </p>
   <p>

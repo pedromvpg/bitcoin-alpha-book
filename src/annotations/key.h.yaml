@@ -23,7 +23,7 @@ introduction: |
   <p>
     The Snowden revelations of 2013 vindicated this paranoia. NSA documents showed
     the agency had deliberately weakened Dual_EC_DRBG, a NIST-blessed random number
-    generator. Security researchers immediately questioned whether NIST's elliptic
+    generator.{{cite:dual-ec-drbg}} Security researchers immediately questioned whether NIST's elliptic
     curves had been similarly compromised. Bitcoin was immune — it had never used them.
   </p>
   <p>
@@ -70,7 +70,7 @@ annotations:
 
   - line: 75
     type: margin
-    text: "Key generation. EC_KEY_generate_key asks OpenSSL to generate a cryptographically secure random 256-bit private key and derive the corresponding public key. OpenSSL seeds its CSPRNG from the operating system entropy pool — /dev/urandom on Linux, CryptGenRandom on Windows — which aggregates CPU jitter, hardware interrupts, and other unpredictable sources. The entire security of every bitcoin created at this moment rests on these 256 bits being genuinely unpredictable. A 2013 Android flaw in SecureRandom caused thousands of wallets to generate weak keys; attackers systematically drained them."
+    text: "Key generation. EC_KEY_generate_key asks OpenSSL to generate a cryptographically secure random 256-bit private key and derive the corresponding public key. OpenSSL seeds its CSPRNG from the operating system entropy pool — /dev/urandom on Linux, CryptGenRandom on Windows — which aggregates CPU jitter, hardware interrupts, and other unpredictable sources. The entire security of every bitcoin created at this moment rests on these 256 bits being genuinely unpredictable. A 2013 Android flaw in SecureRandom caused thousands of wallets to generate weak keys; attackers systematically drained them.{{cite:android-securerandom-2013}}"
 
   - line: 81
     type: margin
@@ -98,7 +98,7 @@ annotations:
 
   - line: 126
     type: margin
-    text: "Nonce reuse is catastrophic. If the same k is ever used to sign two different messages, the private key can be algebraically recovered from the two signatures: privKey = (s1·hash2 - s2·hash1) / (r·(s1-s2)) mod n. This is not theoretical — it has happened. The PlayStation 3 team used a fixed k when signing firmware, allowing George Hotz to extract Sony's master key in 2010. Bitcoin's OpenSSL ECDSA always generates a fresh random k per signature."
+    text: "Nonce reuse is catastrophic. If the same k is ever used to sign two different messages, the private key can be algebraically recovered from the two signatures: privKey = (s1·hash2 - s2·hash1) / (r·(s1-s2)) mod n. This is not theoretical — it has happened. The PlayStation 3 team used a fixed k when signing firmware, allowing George Hotz to extract Sony's master key in 2010.{{cite:ps3-ecdsa-2010}} Bitcoin's OpenSSL ECDSA always generates a fresh random k per signature."
 
   - line: 133
     type: margin
@@ -131,11 +131,11 @@ conclusion: |
   </p>
   <p>
     The one meaningful weakness in this implementation is the absence of
-    deterministic nonce generation (RFC 6979, published in 2013). Each signature
+    deterministic nonce generation (RFC 6979, published in 2013).{{cite:rfc-6979}} Each signature
     requires a fresh random <em>k</em> value, and reusing <em>k</em> across two
     signatures leaks the private key algebraically. Deterministic ECDSA removes
     this dependency by deriving <em>k</em> from the private key and message hash,
     making signatures reproducible and eliminating the catastrophic nonce-reuse
     failure mode entirely. This was added to Bitcoin Core years after v0.01—one
-    of the few genuine security improvements to the cryptographic layer.
+    of the few genuine security improvements to the cryptographic layer.{{cite:bitcoin-core-history}}
   </p>

@@ -16,12 +16,12 @@ introduction: |
   <p>
     Satoshi's choice of wxWidgets was pragmatic. In 2008, the main cross-platform GUI
     options were Qt, GTK+, and wxWidgets. Qt required a commercial license for proprietary
-    use at the time (Nokia would not release it under LGPL until January 2009), and GTK+
+    use at the time (Nokia would not release it under LGPL until January 2009),{{cite:qt-lgpl-2009}} and GTK+
     had poor Windows support. wxWidgets was free, open source, and used native controls
     on each platform — meaning the Bitcoin window on Windows looked like a proper Windows
-    application, not a foreign transplant. When Satoshi posted the first release on the
+    application, not a foreign transplant.{{cite:wxwidgets-license}} When Satoshi posted the first release on the
     cryptography mailing list on January 9, 2009, he noted: "Windows only for now. Open
-    source C++ code is included." The wxWidgets foundation made the later Linux and Mac
+    source C++ code is included."{{cite:nakamoto-windows-only}} The wxWidgets foundation made the later Linux and Mac
     ports possible, though they came after Satoshi's active period.
   </p>
   <p>
@@ -46,7 +46,7 @@ introduction: |
 annotations:
   - line: 6
     type: margin
-    text: "wxFormBuilder version April 16, 2008 — this timestamp predates the Bitcoin whitepaper (October 31, 2008) by six months, confirming that Satoshi was actively developing the GUI well before the public announcement. The whitepaper described the protocol; the code was already taking shape."
+    text: "wxFormBuilder version April 16, 2008 — this timestamp predates the Bitcoin whitepaper (October 31, 2008) by six months, confirming that Satoshi was actively developing the GUI well before the public announcement.{{cite:nakamoto-mailing-list-announcement}}{{cite:nakamoto-whitepaper}} The whitepaper described the protocol; the code was already taking shape."
 
   - line: 16
     type: margin
@@ -58,7 +58,7 @@ annotations:
 
   - line: 33
     type: margin
-    text: "<code>'&amp;Generate Coins'</code> — the ampersand creates a keyboard accelerator (Alt+G). This is the mining toggle that Satoshi expected ordinary users to enable. On the cryptography mailing list he wrote: 'At first, most users would run network nodes, but as the network grows beyond a certain point, it would be left more and more to specialists with server farms.' The checkbox proved prophetic — CPU mining became obsolete by 2010."
+    text: "<code>'&amp;Generate Coins'</code> — the ampersand creates a keyboard accelerator (Alt+G). This is the mining toggle that Satoshi expected ordinary users to enable. On the cryptography mailing list he wrote: 'At first, most users would run network nodes, but as the network grows beyond a certain point, it would be left more and more to specialists with server farms.'{{cite:nakamoto-specialists-quote}} The checkbox proved prophetic — CPU mining became obsolete by 2010."
 
   - line: 51
     type: margin
@@ -135,7 +135,7 @@ conclusion: |
     technical debts. The framework was adequate for a Windows prototype but made
     cross-platform builds difficult and the codebase harder to maintain. Bitcoin Core
     finally migrated to Qt in version 0.5 (November 2011), two years after the initial
-    release. The Qt interface, designed by Wladimir van der Laan, was cleaner and more
+    release.{{cite:bitcoin-core-history}}{{cite:qt-lgpl-2009}} The Qt interface, designed by Wladimir van der Laan, was cleaner and more
     portable — but it dropped the marketplace, poker, and escrow interfaces entirely.
     Those features existed only here, in Satoshi's original wxFormBuilder project file
     (<code>uiproject.fbp</code>), preserved as archaeological evidence of what Bitcoin

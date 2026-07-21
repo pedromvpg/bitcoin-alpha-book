@@ -68,7 +68,7 @@ annotations:
 
   - line: 110
     type: margin
-    text: "<code class=\"function\">operator&lt;&lt;=()</code>—left bit shift. Shifts the entire 256-bit value left by <code class=\"variable\">shift</code> positions. The implementation handles cross-word shifts: if shifting by 40 bits, some bits move from word 0 to word 1, others from word 1 to word 2. The calculation <code>k = shift / 32</code> gives whole-word shift; <code>shift % 32</code> gives within-word shift. Critical for difficulty adjustments and halving calculations."
+    text: "<code class=\"function\">operator&lt;&lt;=()</code>—left bit shift. Shifts the entire 256-bit value left by <code class=\"variable\">shift</code> positions. The implementation handles cross-word shifts: if shifting by 40 bits, some bits move from word 0 to word 1, others from word 1 to word 2. The calculation <code>k = shift / 32</code> gives whole-word shift; <code>shift % 32</code> gives within-word shift. Used in constructions like <code>bnProofOfWorkLimit</code>; retargeting uses multiply/divide on <code class=\"class\">CBigNum</code>, not these shifts."
 
   - line: 127
     type: margin
@@ -88,7 +88,7 @@ annotations:
 
   - line: 262
     type: margin
-    text: "<code class=\"function\">operator==()</code>—equality comparison. Compares all words; if any differ, returns <code>false</code>. Used to check for specific hashes: <code>if (hash == hashGenesisBlock)</code> identifies the genesis block. Note this is a bitwise comparison—there's no concept of 'approximately equal' for cryptographic hashes."
+    text: "<code class=\"function\">operator==()</code>—equality comparison. Compares all words; if any differ, returns <code>false</code>. Used to check for specific hashes: <code>if (hash == hashGenesisBlock)</code> identifies the genesis block.{{cite:genesis-block}} Note this is a bitwise comparison—there's no concept of 'approximately equal' for cryptographic hashes."
 
   - line: 294
     type: margin
@@ -96,7 +96,7 @@ annotations:
 
   - line: 302
     type: margin
-    text: "<code class=\"function\">SetHex()</code>—parses hexadecimal string. The inverse of <code class=\"function\">GetHex()</code>: takes a string like <code>'000000000019d6...'</code> and populates the <code class=\"class\">uint256</code>. Handles optional <code>0x</code> prefix and leading whitespace. The <code>phexdigit[]</code> lookup table provides fast hex-to-value conversion. Used when loading hardcoded hashes (like genesis block) from source code."
+    text: "<code class=\"function\">SetHex()</code>—parses hexadecimal string. The inverse of <code class=\"function\">GetHex()</code>: takes a string like <code>'000000000019d6...'</code> and populates the <code class=\"class\">uint256</code>. Handles optional <code>0x</code> prefix and leading whitespace. The <code>phexdigit[]</code> lookup table provides fast hex-to-value conversion. Used when loading hardcoded hashes (like genesis block) from source code.{{cite:genesis-block}}"
 
   - line: 356
     type: margin

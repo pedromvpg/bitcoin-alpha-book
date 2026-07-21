@@ -21,8 +21,8 @@ introduction: |
   </p>
   <p>
     The makefile reveals Bitcoin's complete dependency graph. Four external libraries are
-    linked: Berkeley DB for persistent storage, OpenSSL (as <code>libeay32</code>) for
-    cryptography, wxWidgets for the GUI, and twelve Windows system libraries for networking,
+    linked: Berkeley DB for persistent storage,{{cite:bdb-license}} OpenSSL (as <code>libeay32</code>) for
+    cryptography,{{cite:openssl-license}} wxWidgets for the GUI,{{cite:wxwidgets-license}} and twelve Windows system libraries for networking,
     graphics, and COM. Eleven source files are compiled into object files, each with
     explicitly declared header dependencies. A precompiled header (<code>headers.h.gch</code>)
     accelerates compilation. The entire project compiles into a single Windows GUI executable.
@@ -41,7 +41,7 @@ introduction: |
 annotations:
   - line: 1
     type: margin
-    text: "The standard copyright and license header. Every file in Bitcoin v0.01 carries this three-line attribution to Satoshi Nakamoto under the MIT/X11 license."
+    text: "The standard copyright and license header. Every file in Bitcoin v0.01 carries this three-line attribution to Satoshi Nakamoto under the MIT/X11 license.{{cite:mit-license}}"
 
   - line: 6
     type: margin
@@ -119,7 +119,7 @@ conclusion: |
   <p>
     Bitcoin Core's modern build system uses autotools, has a <code>./configure</code> script
     with hundreds of options, supports dozens of platforms, and produces optimized binaries
-    with link-time optimization and hardware-accelerated SHA-256. But it still compiles
+    with link-time optimization and hardware-accelerated SHA-256.{{cite:bitcoin-core-history}} But it still compiles
     roughly the same logical components — consensus, networking, storage, scripting, and
     a user interface — that Satoshi laid out in these 84 lines.
   </p>

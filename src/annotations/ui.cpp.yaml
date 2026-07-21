@@ -7,7 +7,7 @@ introduction: |
   <p>
     At 3,228 lines, ui.cpp is the largest file in Bitcoin v0.01. It implements
     the entire graphical user interface using wxWidgets — a cross-platform GUI
-    toolkit that lets the same C++ code run on Windows, macOS, and Linux.
+    toolkit that lets the same C++ code run on Windows, macOS, and Linux.{{cite:wxwidgets-license}}
     This is where the abstract machinery of cryptography, networking, and
     consensus becomes a window a person can interact with.
   </p>
@@ -92,7 +92,7 @@ annotations:
 
   - line: 420
     type: margin
-    text: "<code>FormatTxStatus</code> — converts confirmation depth to a human-readable status string. Unconfirmed transactions show \"0/unconfirmed\". Transactions with fewer than 6 confirmations show \"N/unconfirmed\". At 6+ confirmations the block depth is shown. This 6-confirmation threshold reflects the probabilistic finality argument in Satoshi's whitepaper."
+    text: "<code>FormatTxStatus</code> — converts confirmation depth to a human-readable status string. Unconfirmed transactions show \"0/unconfirmed\". Transactions with fewer than 6 confirmations show \"N/unconfirmed\". At 6+ confirmations the block depth is shown. This 6-confirmation threshold reflects the probabilistic finality argument in Satoshi's whitepaper.{{cite:nakamoto-whitepaper}}"
 
   - line: 432
     type: margin
@@ -198,6 +198,22 @@ annotations:
     type: margin
     text: "<code>CommitTransactionSpent</code> — marks the inputs as spent in the wallet database, making them unavailable for other transactions. This is irreversible locally. AcceptTransaction() then validates the transaction against the current mempool, and RelayWalletTransaction() broadcasts it to all connected peers."
 
+  - line: 2850
+    type: margin
+    text: "<code class=\"function\">CMyApp::OnInit()</code> — wxWidgets entry point (this is <code>main</code>). Catches exceptions around <code class=\"function\">OnInit2</code> so a startup failure prints instead of silently dying."
+
+  - line: 2885
+    type: margin
+    text: "<code class=\"function\">OnInit2()</code> — real startup: parse argv, single-instance check, load wallet/block index, call <code class=\"function\">StartNode</code>, optionally spawn the miner, then show the main frame. Bitcoin boots as a desktop app, not a daemon."
+
+  - line: 3008
+    type: margin
+    text: "<code class=\"function\">ReacceptWalletTransactions()</code> — after loading the wallet, re-submit txs that are not yet in a block into the local mempool. Without this, a restart would drop unconfirmed sends from the node's view."
+
+  - line: 3036
+    type: margin
+    text: "<code class=\"function\">StartNode()</code> — bring up sockets, IRC seed, and message threads. If this fails, the UI shows the error string and exits; without peers or listen capability the node is useless."
+
 conclusion: |
   <p>
     The UI reveals what Bitcoin v0.01 was designed to be: not just a protocol,
@@ -208,7 +224,7 @@ conclusion: |
   </p>
   <p>
     Much of this vision was shed as Bitcoin evolved. IP-to-IP payments were
-    removed in 2012 (privacy and NAT problems proved insurmountable). The
+    removed in 2012 (privacy and NAT problems proved insurmountable).{{cite:bitcoin-core-history}} The
     marketplace features—products, orders, reviews—were never completed.
     What survived is the simple, elegant core: a transaction list, a balance,
     an address to receive, a button to send. That minimal interface—connecting

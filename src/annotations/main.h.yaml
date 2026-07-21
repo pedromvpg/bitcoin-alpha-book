@@ -14,7 +14,7 @@ introduction: |
   <p>
     Satoshi described the core structure in Section 2 of the whitepaper: "We define
     an electronic coin as a chain of digital signatures. Each owner transfers the
-    coin to the next by digitally signing a hash of the previous transaction."
+    coin to the next by digitally signing a hash of the previous transaction."{{cite:nakamoto-whitepaper}}
     The classes here—<code>CTransaction</code>, <code>CTxIn</code>, <code>CTxOut</code>—implement
     that vision in C++, turning abstract cryptographic concepts into working code.
   </p>
@@ -27,10 +27,11 @@ introduction: |
     follow Satoshi's UTXO design.
   </p>
   <p>
-    Every constant in this file encodes economic policy: the 21 million coin limit,
-    the 100-block maturity for mined coins, the fee structure. Unlike fiat currencies
-    where these parameters change at the whim of central banks, Bitcoin's parameters
-    are enforced by code that every participant runs. Change requires global consensus—
+    Economic policy shows up as constants here — <code>COIN</code>, coinbase maturity,
+    proof-of-work limit — while the ~21 million supply cap emerges from the halving
+    formula in <code>GetBlockValue()</code> (declared below, implemented in
+    <code>main.cpp</code>). Unlike fiat parameters set by central banks, these rules
+    are enforced by code every participant runs. Change requires global consensus —
     a feature, not a bug.
   </p>
 
@@ -57,6 +58,14 @@ annotations:
     text: "<code>bnProofOfWorkLimit</code>—the easiest possible difficulty, used for the genesis block. Expressed as <code>~uint256(0) >> 32</code>, meaning valid hashes must have at least 32 leading zero bits. This was trivially easy by modern standards: Satoshi's personal computer could find valid blocks in minutes. As more miners joined, difficulty automatically increased. Today's difficulty requires ~80+ leading zeros—approximately 10 trillion times harder than this initial value."
 
   # Global state declarations
+  - line: 30
+    type: margin
+    text: "<code class=\"variable\">mapBlockIndex</code> — in-memory block tree: every known hash → <code class=\"type\">CBlockIndex</code> with height, disk location, and chain links. Loaded from BDB at startup; walking the best chain is O(1) per hop.{{cite:nakamoto-whitepaper}}"
+
+  - line: 31
+    type: margin
+    text: "<code class=\"variable\">hashGenesisBlock</code> — hard-coded hash of block 0. Startup verifies the reconstructed genesis matches this constant; every later block links back through <code class=\"variable\">hashPrevBlock</code>.{{cite:genesis-block}}"
+
   - line: 33
     type: margin
     text: "<code>nBestHeight</code> - current chain height. This simple integer represents humanity's consensus on Bitcoin's state. Elegant simplicity."
@@ -69,14 +78,34 @@ annotations:
     type: margin
     text: "<code>fGenerateBitcoins</code> - mining flag. Satoshi's 'one-CPU-one-vote' vision. In 2009, turning this on meant your laptop joined the mining democracy."
 
+  - line: 42
+    type: margin
+    text: "<code class=\"variable\">nTransactionFee</code> — default fee setting (satoshis). Extern here; the Options dialog and wallet.dat persist it. Miners still collect whatever inputs−outputs leaves behind."
+
+  - line: 66
+    type: margin
+    text: "Wallet API surface — <code class=\"function\">CreateTransaction</code>, <code class=\"function\">CommitTransactionSpent</code>, <code class=\"function\">SendMoney</code>, <code class=\"function\">GetBalance</code>. The GUI and IP-payment paths call these; consensus validation stays in the <code class=\"class\">CTransaction</code> / <code class=\"class\">CBlock</code> methods below."
+
   # Transaction building blocks
+  - line: 80
+    type: margin
+    text: "<code class=\"class\">CDiskTxPos</code> — where a transaction lives on disk: file number, block offset, tx offset inside the block. The UTXO index stores these so <code class=\"function\">ConnectInputs()</code> can seek straight to the previous output without scanning the whole chain."
+
+  - line: 132
+    type: margin
+    text: "<code class=\"class\">CInPoint</code> — in-memory pointer to a transaction input (<code class=\"type\">CTransaction*</code> + index). Counterpart to <code class=\"class\">COutPoint</code>, but not serialized — used while building and validating transactions in RAM."
+
   - line: 147
     type: margin
     text: "<code>COutPoint</code>—a pointer to a specific coin in the UTXO set. Just two fields: a transaction hash and an output index. Together they uniquely identify any output ever created. This simple structure is the foundation of Bitcoin's ownership model: you don't own 'bitcoin in an account,' you own the right to spend specific outputs. When you check your balance, your wallet scans the blockchain for COutPoints that your keys can spend."
 
   - line: 193
     type: margin
-    text: "<code>CTxIn</code>—how coins are consumed. Each input contains: (1) a COutPoint referencing which output to spend, (2) a scriptSig providing proof of ownership (typically a signature), and (3) nSequence for transaction replacement (mostly unused in v0.1). When a transaction is validated, each CTxIn must reference an existing, unspent output, and the scriptSig must satisfy that output's spending conditions. This is the 'chain of digital signatures' from the whitepaper."
+    text: "<code>CTxIn</code>—how coins are consumed. Each input contains: (1) a COutPoint referencing which output to spend, (2) a scriptSig providing proof of ownership (typically a signature), and (3) nSequence for transaction replacement (mostly unused in v0.1). When a transaction is validated, each CTxIn must reference an existing, unspent output, and the scriptSig must satisfy that output's spending conditions. This is the 'chain of digital signatures' from the whitepaper.{{cite:nakamoto-whitepaper}}"
+
+  - line: 198
+    type: margin
+    text: "<code class=\"variable\">nSequence</code> — per-input sequence number. <code>UINT_MAX</code> means final; lower values were reserved for future replacement / relative lock-time. In v0.01 almost everything uses <code>UINT_MAX</code>; later soft forks (BIP 68/112/125) gave this field real consensus meaning."
 
   - line: 274
     type: margin
@@ -85,30 +114,90 @@ annotations:
   # The transaction class
   - line: 357
     type: margin
-    text: "<code>CTransaction</code>—the fundamental unit of value transfer. Every bitcoin movement is a CTransaction: a set of inputs (coins being spent) and outputs (coins being created). The transaction is atomic—either all inputs are spent and all outputs created, or nothing happens. This atomicity enables trustless exchanges: Alice can pay Bob in one indivisible operation. Satoshi's whitepaper Section 2: 'We define an electronic coin as a chain of digital signatures.'"
+    text: "<code>CTransaction</code>—the fundamental unit of value transfer. Every bitcoin movement is a CTransaction: a set of inputs (coins being spent) and outputs (coins being created). The transaction is atomic—either all inputs are spent and all outputs created, or nothing happens. This atomicity enables trustless exchanges: Alice can pay Bob in one indivisible operation. Satoshi's whitepaper Section 2: 'We define an electronic coin as a chain of digital signatures.'{{cite:nakamoto-whitepaper}}"
+
+  - line: 363
+    type: margin
+    text: "<code class=\"variable\">nLockTime</code> — earliest time/height the transaction may enter a block. <code>0</code> means immediate. Combined with non-final <code class=\"variable\">nSequence</code>, this is the primitive behind payment channels and later CLTV — present from day one.{{cite:nakamoto-script-types}}"
+
+  - line: 393
+    type: margin
+    text: "<code class=\"function\">GetHash()</code> — transaction ID: double-SHA256 of the serialized transaction (<code class=\"function\">SerializeHash</code>). This is the txid peers advertise in <code>inv</code> messages and the hash stored in every <code class=\"class\">COutPoint</code>."
+
+  - line: 398
+    type: margin
+    text: "<code class=\"function\">IsFinal()</code> — true when <code class=\"variable\">nLockTime</code> has passed (or is zero) and every input is final. Non-final transactions are kept out of blocks until their lock conditions clear."
+
+  - line: 437
+    type: margin
+    text: "<code class=\"function\">IsCoinBase()</code> — one input whose <code class=\"variable\">prevout</code> is null. That single test distinguishes money creation from money transfer; coinbase outputs still wait <code class=\"constant\">COINBASE_MATURITY</code> blocks before spending."
+
+  - line: 442
+    type: margin
+    text: "<code class=\"function\">CheckTransaction()</code> — context-free sanity: non-empty vin/vout, no negative outputs, coinbase scriptSig size bounds. Full script and double-spend checks happen later in <code class=\"function\">ConnectInputs()</code>."
 
   - line: 504
     type: margin
-    text: "<code>GetMinFee()</code>—calculates the minimum required fee. Transaction fees are implicit: total inputs minus total outputs. Since inputs don't store amounts (only references), nodes must look up each referenced output to calculate the fee. This elegant design means fees don't bloat transaction size. In v0.1, minimum fee was 0.01 BTC per 1000 bytes—optional but encouraged. As Satoshi wrote: 'Free transactions are nice if people don't abuse them.'"
+    text: "<code>GetMinFee()</code>—calculates the minimum required fee. Transaction fees are implicit: total inputs minus total outputs. Since inputs don't store amounts (only references), nodes must look up each referenced output to calculate the fee. This elegant design means fees don't bloat transaction size. In v0.1, minimum fee was 0.01 BTC per 1000 bytes—optional but encouraged. As Satoshi wrote: 'Free transactions are nice if people don't abuse them.'{{cite:nakamoto-free-transactions}}"
+
+  - line: 574
+    type: margin
+    text: "<code class=\"function\">ConnectInputs()</code> — declaration of the UTXO validation engine (implemented in <code>main.cpp</code>). Looks up each prior output, verifies scripts, rejects double-spends, accumulates fees.{{cite:nakamoto-whitepaper}}"
+
+  - line: 577
+    type: margin
+    text: "<code class=\"function\">AcceptTransaction()</code> — mempool admission entry point. Context-free checks, then optional <code class=\"function\">ConnectInputs</code>, then <code class=\"function\">AddToMemoryPool</code>. Every P2P <code>tx</code> and wallet send funnels through here."
 
   # Merkle transactions
   - line: 598
     type: margin
-    text: "<code>CMerkleTx</code> - transaction with merkle proof. Whitepaper Section 8: enables SPV clients to verify inclusion without full blockchain."
+    text: "<code>CMerkleTx</code> - transaction with merkle proof. Whitepaper Section 8: enables SPV clients to verify inclusion without full blockchain.{{cite:nakamoto-whitepaper}}{{cite:merkle-1980}}"
 
   - line: 660
     type: margin
     text: "<code>CWalletTx</code> - your transaction view. Adds wallet metadata (credit, debit, time) to the base transaction. The user-facing layer."
+
+  - line: 738
+    type: margin
+    text: "<code class=\"class\">CTxIndex</code> — disk index entry: where the tx sits (<code class=\"variable\">pos</code>) plus <code class=\"variable\">vSpent</code>, one slot per output recording which later tx spent it (or null if still unspent). This is Bitcoin's spent-output bookkeeping before a dedicated UTXO set database."
 
   # Block structure
   - line: 805
     type: margin
     text: "<code>CBlock</code> - a block of transactions with proof-of-work. The atomic unit of blockchain consensus. Each ~10 minutes, one is added."
 
+  - line: 809
+    type: margin
+    text: "80-byte header fields: <code class=\"variable\">nVersion</code>, <code class=\"variable\">hashPrevBlock</code>, <code class=\"variable\">hashMerkleRoot</code>, <code class=\"variable\">nTime</code>, <code class=\"variable\">nBits</code> (compact target), <code class=\"variable\">nNonce</code>. Only these bytes are hashed for proof-of-work — transactions affect the header solely through the merkle root."
+
+  - line: 862
+    type: margin
+    text: "<code class=\"function\">GetHash()</code> — block ID: double-SHA256 from <code class=\"variable\">nVersion</code> through <code class=\"variable\">nNonce</code> (exactly 80 bytes). Must be ≤ the difficulty target implied by <code class=\"variable\">nBits</code>."
+
+  - line: 868
+    type: margin
+    text: "<code class=\"function\">BuildMerkleTree()</code> — pairwise double-SHA256 of txids up to a single root. Odd nodes duplicate the last hash (Bitcoin's classic merkle quirk). The root commits the entire transaction list into the header.{{cite:merkle-1980}}"
+
+  - line: 903
+    type: margin
+    text: "<code class=\"function\">CheckMerkleBranch()</code> — verify a txid against a merkle branch and root without the full block. Powers <code class=\"type\">CMerkleTx</code> SPV-style inclusion proofs (whitepaper §8).{{cite:nakamoto-whitepaper}}"
+
+  - line: 987
+    type: margin
+    text: "Block lifecycle methods: <code class=\"function\">GetBlockValue</code> (50 BTC subsidy + fees, halving every 210k — the ~21M supply falls out of this schedule), <code class=\"function\">ConnectBlock</code>/<code class=\"function\">DisconnectBlock</code>, <code class=\"function\">CheckBlock</code>/<code class=\"function\">AcceptBlock</code>. Declarations here; bodies in <code>main.cpp</code>.{{cite:nakamoto-bitcointalk-set-in-stone}}"
+
   # Block index
   - line: 1009
     type: margin
     text: "<code>CBlockIndex</code> - in-memory block metadata. Height, work, timestamps. Enables fast chain traversal without reading full blocks from disk."
+
+  - line: 1012
+    type: margin
+    text: "Chain links: <code class=\"variable\">pprev</code>/<code class=\"variable\">pnext</code> walk the tree; only the best chain has a forward <code class=\"variable\">pnext</code>. <code class=\"variable\">nHeight</code>, file position, and a copy of header fields let the node compare work and locate raw blocks without reloading every <code class=\"class\">CBlock</code>."
+
+  - line: 1133
+    type: margin
+    text: "<code class=\"type\">CDiskBlockIndex</code> — BDB-serializable block metadata. In-memory pointers become <code class=\"variable\">hashPrev</code>/<code class=\"variable\">hashNext</code> on disk so the tree rebuilds after restart without holding every <code class=\"class\">CBlock</code> in RAM."
 
   - line: 1212
     type: margin
@@ -125,7 +214,7 @@ annotations:
 conclusion: |
   <p>
     These data structures implement what Satoshi described in the whitepaper's
-    opening line as "a purely peer-to-peer version of electronic cash." The design
+    opening line as "a purely peer-to-peer version of electronic cash."{{cite:nakamoto-whitepaper}} The design
     decisions encoded here have proven remarkably durable—over seventeen years later,
     the core structures remain essentially unchanged despite securing trillions of
     dollars in cumulative value transfer.

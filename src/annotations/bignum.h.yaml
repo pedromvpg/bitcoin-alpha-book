@@ -20,7 +20,7 @@ introduction: |
   </p>
   <p>
     OpenSSL's BIGNUM library has been battle-tested for decades in SSL/TLS—the
-    encryption protecting billions of web connections. Satoshi wisely reused this
+    encryption protecting billions of web connections.{{cite:openssl-license}} Satoshi wisely reused this
     proven code rather than implementing big number arithmetic from scratch.
     Rolling your own crypto is how security vulnerabilities are born.
   </p>
@@ -66,11 +66,11 @@ annotations:
 
   - line: 257
     type: margin
-    text: "<code class=\"function\">SetCompact()</code>—decodes Bitcoin's compact difficulty format. Block headers store difficulty as a 4-byte 'compact' value (<code class=\"variable\">nBits</code> field) rather than a full 256-bit target. Format: first byte is exponent (number of bytes), remaining 3 bytes are mantissa. Example: <code>0x1d00ffff</code> means a <code>0x1d</code> (29) byte number with high bytes <code>00ffff</code>. This encoding saves space in headers while representing any 256-bit target."
+    text: "<code class=\"function\">SetCompact()</code>—decodes Bitcoin's compact target format. Block headers store the proof-of-work <em>target</em> as a 4-byte compact value (<code class=\"variable\">nBits</code>) rather than a full 256-bit number. Format: first byte is exponent (number of bytes), remaining 3 bytes are mantissa. Example: <code>0x1d00ffff</code> means a <code>0x1d</code> (29) byte number with high bytes <code>00ffff</code>. This encoding saves space in headers while representing any 256-bit target."
 
   - line: 269
     type: margin
-    text: "<code class=\"function\">GetCompact()</code>—encodes BIGNUM to compact format. The inverse of SetCompact(). Mining code uses this to store the current difficulty target in block headers. The format sacrifices precision (only 3 significant bytes) but this is acceptable—difficulty only needs to be approximately correct. The slight loss of precision is bounded and predictable."
+    text: "<code class=\"function\">GetCompact()</code>—encodes BIGNUM to compact format. The inverse of SetCompact(). Mining code uses this to store the current target in block headers as <code class=\"variable\">nBits</code>. The format sacrifices precision (only 3 significant bytes) but this is acceptable—the target only needs to be approximately correct. The slight loss of precision is bounded and predictable."
 
   - line: 282
     type: margin
@@ -86,7 +86,7 @@ annotations:
 
   - line: 370
     type: margin
-    text: "Bit shift operators—essential for Bitcoin's difficulty arithmetic. The halving formula <code>subsidy >>= (height/210000)</code> uses right-shift to divide by powers of two. Difficulty adjustments use shifts to multiply/divide targets. OpenSSL's <code class=\"function\">BN_lshift()</code> and <code class=\"function\">BN_rshift()</code> handle arbitrarily large shifts correctly—you can shift a 256-bit number by 200 bits without overflow issues."
+    text: "Bit shift operators—essential for Bitcoin's monetary and PoW-limit arithmetic. The halving formula <code>subsidy >>= (height/210000)</code> uses right-shift to divide by powers of two; <code>bnProofOfWorkLimit</code> is defined with <code>~uint256(0) >> 32</code>. Retargeting itself multiplies/divides the target with <code>*=</code>/<code>/=</code>, not shifts. OpenSSL's <code class=\"function\">BN_lshift()</code> and <code class=\"function\">BN_rshift()</code> handle arbitrarily large shifts correctly—you can shift a 256-bit number by 200 bits without overflow issues."
 
   - line: 427
     type: margin
@@ -122,5 +122,5 @@ conclusion: |
     verify proof-of-work by checking just the header, without downloading
     the full block data. This compression was essential for Bitcoin's
     scalability vision—and for the SPV (Simplified Payment Verification)
-    protocol Satoshi described in Section 8 of the whitepaper.
+    protocol Satoshi described in Section 8 of the whitepaper.{{cite:nakamoto-whitepaper}}
   </p>

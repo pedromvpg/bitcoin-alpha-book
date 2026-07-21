@@ -10,7 +10,7 @@ introduction: |
     disk), and peer addresses (nodes to reconnect to after shutdown). Satoshi chose
     <strong>Berkeley DB</strong> (BDB), a mature embedded key-value database from
     Sleepycat Software—battle-tested since 1991 and used by OpenLDAP, MySQL, and
-    Subversion. It required no separate server process, supported ACID transactions,
+    Subversion.{{cite:bdb-license}} It required no separate server process, supported ACID transactions,
     and shipped with solid C++ bindings.
   </p>
   <p>
@@ -33,13 +33,13 @@ introduction: |
     limit became a consensus bug. BDB imposes a ceiling on concurrent "database locks."
     Block 225,430—a large but perfectly valid block—exceeded that ceiling on BDB-backed
     nodes but not on the new LevelDB-backed ones, causing an unintentional chain split
-    documented as <strong>BIP 50</strong>. Resolution required miners to deliberately
+    documented as <strong>BIP 50</strong>.{{cite:bip-50}} Resolution required miners to deliberately
     orphan the longer (LevelDB) chain and revert to the shorter (BDB-compatible) one—
     a coordinated rollback that cost one pool operator over 24 BTC in reversed coinbases.
     The incident proved that consensus rules extend beyond Bitcoin's source code to
     encompass the database engine, its configuration, and even the operating system.
     After BIP 50, the blockchain index migrated to LevelDB; the wallet retains BDB
-    to this day for backward compatibility with existing <code>wallet.dat</code> files.
+    to this day for backward compatibility with existing <code>wallet.dat</code> files.{{cite:bip-50}}{{cite:bitcoin-core-history}}
   </p>
 
 annotations:
@@ -84,7 +84,7 @@ annotations:
 
   - line: 64
     type: margin
-    text: "<code class=\"function\">set_lk_max_locks(10000)</code> — the configuration that became BIP 50. BDB counts every row-level lock a transaction holds simultaneously. Large blocks with thousands of inputs can exceed this limit on old BDB builds. Nodes that hit the limit refused to validate the block; nodes with newer BDB accepted it — splitting the chain."
+    text: "<code class=\"function\">set_lk_max_locks(10000)</code> — the configuration that became BIP 50.{{cite:bip-50}} BDB counts every row-level lock a transaction holds simultaneously. Large blocks with thousands of inputs can exceed this limit on old BDB builds. Nodes that hit the limit refused to validate the block; nodes with newer BDB accepted it — splitting the chain."
 
   - line: 70
     type: margin
@@ -124,6 +124,10 @@ annotations:
   - line: 173
     type: margin
     text: "<code class=\"function\">ReadTxIndex</code> — given a transaction hash, returns a <code class=\"type\">CTxIndex</code> containing the on-disk position (<code class=\"type\">CDiskTxPos</code>) and the number of outputs. This is the lookup that lets Bitcoin validate new transactions: before accepting a spend, the node checks here that the referenced output actually exists."
+
+  - line: 180
+    type: margin
+    text: "<code class=\"function\">UpdateTxIndex</code> — persists spent-output state. Connecting an input writes the spender's disk position into <code class=\"variable\">vSpent</code>; disconnecting a block clears it. v0.01 does not delete a tx when one output is spent — it updates per-output markers."
 
   - line: 186
     type: margin
@@ -228,11 +232,11 @@ conclusion: |
     directory.
   </p>
   <p>
-    The BIP 50 incident is a reminder that consensus is deeper than code. BDB's
+    The BIP 50 incident is a reminder that consensus is deeper than code.{{cite:bip-50}} BDB's
     lock limit — a tunable constant set to 10,000 at line 66 — became an invisible
     consensus rule. Any node configured differently would diverge on the same block.
     Bitcoin's migration to LevelDB for the chain index, while retaining BDB for
     wallet files, reflects the cost of that lesson: backward compatibility with
     <code>wallet.dat</code> files means BDB cannot be removed without breaking
-    every existing wallet.
+    every existing wallet.{{cite:bitcoin-core-history}}
   </p>

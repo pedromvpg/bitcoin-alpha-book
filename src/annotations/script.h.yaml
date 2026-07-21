@@ -17,7 +17,7 @@ introduction: |
     bonded contracts, third party arbitration, multi-party signature, etc. If
     Bitcoin catches on in a big way, these are things we'll want to explore in
     the future, but they all had to be designed at the beginning to make sure
-    they would be possible later." This prescient design meant Bitcoin could
+    they would be possible later."{{cite:nakamoto-script-types}} This prescient design meant Bitcoin could
     evolve without hard forks—just creative use of existing opcodes.
   </p>
   <p>
@@ -33,14 +33,22 @@ introduction: |
   <p>
     The opcodes defined here represent Satoshi's careful balance between power
     and safety. Each one was included for a reason—and many were later disabled
-    when vulnerabilities emerged. The ghost opcodes (OP_CAT, OP_MUL, etc.) remain
+    when vulnerabilities emerged.{{cite:opcode-disable-2010}} The ghost opcodes (OP_CAT, OP_MUL, etc.) remain
     in the enum as reminders of what not to enable carelessly.
   </p>
 
 annotations:
+  - line: 9
+    type: margin
+    text: "<code class=\"constant\">SIGHASH_*</code> flags — what part of the transaction a signature commits to. <code>ALL</code> (default) signs every input and output; <code>NONE</code>/<code>SINGLE</code> leave room for others to amend outputs; <code>ANYONECANPAY</code> lets others add inputs. These are how multi-party protocols compose without a single signer controlling the whole tx.{{cite:nakamoto-script-types}}"
+
   - line: 17
     type: margin
-    text: "<code>opcodetype</code> enum - the complete instruction set. 256 possible opcodes, though many are disabled or reserved. Each is one byte."
+    text: "<code>opcodetype</code> enum — the complete instruction set (one byte each). Many codes are reserved or later disabled; in August 2010 Satoshi turned off OP_CAT, OP_MUL, OP_DIV and others after DoS bugs.{{cite:opcode-disable-2010}} The names remain as 'ghost opcodes.'"
+
+  - line: 48
+    type: margin
+    text: "<code class=\"constant\">OP_IF</code> / <code class=\"constant\">OP_ELSE</code> / <code class=\"constant\">OP_ENDIF</code> — conditional execution. Enables scripts like \"pay Alice OR (pay Bob after timeout)\" — the building block for escrow and later Lightning-style contracts.{{cite:nakamoto-script-types}}"
 
   - line: 55
     type: margin
@@ -68,15 +76,23 @@ annotations:
 
   - line: 136
     type: margin
-    text: "<code>OP_CHECKMULTISIG</code> - M-of-N multi-signature verification, present from day one. Requires M valid signatures from a set of N public keys. Enables shared custody: a company treasury might require 2-of-3 executives to sign, or an escrow might need 2-of-3 (buyer, seller, arbitrator). Satoshi mentioned 'multi-party signature' in his BitcoinTalk posts as a planned feature. The implementation (script.cpp:727) iterates through signatures and keys, matching each signature to a key in order. A subtle bug existed: an extra unused value was consumed from the stack, fixed years later in BIP 147."
+    text: "<code>OP_CHECKMULTISIG</code> - M-of-N multi-signature verification, present from day one. Requires M valid signatures from a set of N public keys. Enables shared custody: a company treasury might require 2-of-3 executives to sign, or an escrow might need 2-of-3 (buyer, seller, arbitrator). Satoshi mentioned 'multi-party signature' in his BitcoinTalk posts as a planned feature.{{cite:nakamoto-script-types}} The implementation (script.cpp:727) iterates through signatures and keys, matching each signature to a key in order. A subtle bug existed: an extra unused value was consumed from the stack, fixed years later in BIP 147."
 
   - line: 327
     type: margin
     text: "<code>CScript</code> class - a Bitcoin script as bytes. Inherits from vector<unsigned char>. Scripts are data until evaluated."
 
-  - line: 17
+  - line: 590
     type: margin
-    text: "IMPORTANT: In August 2010, Satoshi disabled 15 opcodes including OP_CAT, OP_MUL, OP_DIV due to DoS vulnerabilities. These remain 'ghost opcodes.'"
+    text: "<code class=\"function\">EvalScript()</code> — the interpreter. Runs a script against a stack in the context of the spending transaction and input index. Returns true only if execution finishes with a true top-of-stack — the gate every payment must pass."
+
+  - line: 592
+    type: margin
+    text: "<code class=\"function\">SignatureHash()</code> — builds the hash that ECDSA actually signs: a modified serialization of the tx shaped by the <code class=\"constant\">SIGHASH_*</code> flags. Sign and verify must agree on this exact digest or signatures fail."
+
+  - line: 596
+    type: margin
+    text: "<code class=\"function\">SignSignature()</code> / <code class=\"function\">VerifySignature()</code> — high-level helpers that produce or check a scriptSig for one input. Wallet send paths call Sign; <code class=\"function\">ConnectInputs</code> calls Verify for every non-coinbase input."
 
   - lines: [17, 151]
     type: highlight
@@ -92,5 +108,5 @@ conclusion: |
   <p>
     The August 2010 opcode disabling (commit 4bd188c) is forensically significant:
     Satoshi identified that OP_CAT + OP_DUP could create 1TB stack elements,
-    crashing nodes. His quick response showed active security maintenance.
+    crashing nodes.{{cite:opcode-disable-2010}} His quick response showed active security maintenance.
   </p>

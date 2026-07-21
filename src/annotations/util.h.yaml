@@ -61,7 +61,7 @@ annotations:
 
   - line: 30
     type: margin
-    text: "<code>#define printf OutputDebugStringF</code> -- on Windows, Satoshi <em>redefines printf itself</em>. Every <code>printf()</code> call in the entire codebase is silently redirected to <code class=\"function\">OutputDebugStringF()</code> (defined on line 232), which writes to both the debug log file and the Windows debug output stream. This is why Bitcoin's source is littered with <code>printf()</code> calls that appear to print to the console but actually write to <code>debug.log</code>. It is an audacious macro that would horrify most C++ style guides, but it worked."
+    text: "<code>#define printf OutputDebugStringF</code> -- on Windows, Satoshi <em>redefines printf itself</em>. Every <code>printf()</code> call in the entire codebase is silently redirected to <code class=\"function\">OutputDebugStringF()</code> (defined on line 232), which writes to both the debug log file and the Windows debug output stream. This is why Bitcoin's source is littered with <code>printf()</code> calls that appear to print to the console but actually write to <code>debug.log</code>. It is an audacious macro that would horrify most C++ style guides, but it worked — and left a historical record: Hal Finney's January 10, 2009 crash post attached his <code>debug.log</code>, later used to show he joined near block 49 rather than at launch.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer}}"
 
   - line: 36
     type: margin
@@ -113,7 +113,7 @@ annotations:
 
   - line: 232
     type: margin
-    text: "<code class=\"function\">OutputDebugStringF()</code> -- Bitcoin's actual logging implementation, silently called whenever any code writes <code>printf()</code> (due to the macro on line 30). In debug builds, it writes to both <code>debug.log</code> and the Windows debug output stream (visible in Visual Studio's Output window). It accumulates partial lines in a static 50KB buffer (line 250), flushing only on newlines -- this avoids interleaved output from concurrent threads. The mutex <code class=\"variable\">cs_OutputDebugStringF</code> (line 247) protects the buffer. In release builds without wxWidgets, it falls back to console output (line 290). This function is called thousands of times per minute during normal operation."
+    text: "<code class=\"function\">OutputDebugStringF()</code> -- Bitcoin's actual logging implementation, silently called whenever any code writes <code>printf()</code> (due to the macro on line 30). In debug builds, it writes to both <code>debug.log</code> and the Windows debug output stream (visible in Visual Studio's Output window). It accumulates partial lines in a static 50KB buffer (line 250), flushing only on newlines -- this avoids interleaved output from concurrent threads. The mutex <code class=\"variable\">cs_OutputDebugStringF</code> (line 247) protects the buffer. In release builds without wxWidgets, it falls back to console output (line 290). Those logs are historical artifacts: Finney's attached <code>debug.log</code> still lets researchers reconstruct peer discovery and block sync from day two.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer-transcriptions}}"
 
   - line: 310
     type: margin
@@ -157,7 +157,7 @@ conclusion: |
     The hashing functions at the end of the file are Bitcoin's cryptographic
     identity. Double-SHA256 and SHA256+RIPEMD160 are the two hash constructions
     that every block, every transaction, and every address in the system depends on.
-    They have been computed trillions of times since January 2009, by hardware
+    They have been computed trillions of times since January 2009,{{cite:genesis-block}} by hardware
     ranging from Satoshi's desktop PC to purpose-built ASICs consuming megawatts of
     power. The implementations here -- thin wrappers around OpenSSL -- are among the
     most consequential hundred lines of code ever written.

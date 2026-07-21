@@ -31,7 +31,7 @@ introduction: |
     reproduce it byte for byte. A single-byte divergence causes a consensus fork.
     The core format has not changed since v0.01, making it one of the most stable
     binary protocols in computing history—a testament to Satoshi's foresight in
-    designing for permanence over convenience.
+    designing for permanence over convenience.{{cite:nakamoto-bitcointalk-set-in-stone}}
   </p>
 
 annotations:
@@ -82,6 +82,34 @@ annotations:
   - line: 191
     type: margin
     text: "<code class=\"function\">ReadCompactSize()</code>—decodes a CompactSize integer. Reads one byte; if <code>&lt;253</code>, that's the value. If <code>253</code>/<code>254</code>/<code>255</code>, reads 2/4/8 more bytes for the actual value. The return type is <code>uint64</code>—large enough for any CompactSize. Callers typically cast to appropriate smaller types after validation."
+
+  - line: 226
+    type: margin
+    text: "<code class=\"macro\">FLATDATA(obj)</code> — serialize a POD / array as raw bytes with no CompactSize length prefix. Used for fixed-layout structs like <code class=\"class\">COutPoint</code> and block-header fields where the wire format is exactly the in-memory layout."
+
+  - line: 311
+    type: margin
+    text: "Vector serialization — CompactSize length, then each element. Fundamentally typed vs untyped (byte) vectors use different impls so <code class=\"type\">vector&lt;char&gt;</code> dumps as a blob while <code class=\"type\">vector&lt;CTxIn&gt;</code> recurses into each input's <code class=\"macro\">IMPLEMENT_SERIALIZE</code>."
+
+  - line: 456
+    type: margin
+    text: "Chunked vector unserialize — grow in ~5 MB slices instead of <code>resize(nSize)</code> in one shot. A forged CompactSize claiming billions of elements cannot allocate the whole vector at once — an early memory DoS defense."
+
+  - line: 664
+    type: margin
+    text: "<code class=\"type\">secure_allocator</code> — zeros memory on deallocate before returning it to the heap. <code class=\"class\">CDataStream</code> uses this so transient copies of keys and scripts are less likely to linger in RAM after free."
+
+  - line: 696
+    type: margin
+    text: "<code class=\"class\">CDataStream</code> — Bitcoin's byte buffer: a vector with stream <code>&lt;&lt;</code>/<code>&gt;&gt;</code> that invoke the serialization templates. Network messages, disk records, and hash preimages all pass through this type. Comment notes it fills in linear time unlike some <code class=\"type\">stringstream</code> implementations."
+
+  - line: 705
+    type: margin
+    text: "<code class=\"variable\">nType</code> / <code class=\"variable\">nVersion</code> — every stream carries serialization context (network vs disk vs gethash) and protocol version so the same object can omit fields when hashing or serving headers-only peers."
+
+  - line: 1042
+    type: margin
+    text: "<code class=\"class\">CAutoFile</code> — RAII FILE* wrapper with the same <code>&lt;&lt;</code>/<code>&gt;&gt;</code> serialization interface as <code class=\"class\">CDataStream</code>. Block files and wallet dumps use this so fclose happens even when exceptions abort a read."
 
   - lines: [696, 974]
     type: highlight

@@ -93,6 +93,35 @@ conclusion: |
 - `transaction` - Green highlight for transaction handling
 - `crypto` - Purple highlight for cryptographic operations
 
+### Citations (sources / footnotes)
+
+Place `{{cite:key}}` after factual claims in `introduction`, `conclusion`, or line
+annotation `text`. Keys are defined in [`src/references.yaml`](src/references.yaml).
+
+```yaml
+introduction: |
+  <p>
+    Satoshi published the whitepaper in October 2008.{{cite:nakamoto-whitepaper}}
+  </p>
+```
+
+At build time each chapter expands cites to superscript numbers and appends a
+**Sources** list at the end of the chapter (numbered in order of first appearance).
+Reusing the same key in one chapter reuses the same number.
+
+Optional per-chapter sources override or extend the shared registry:
+
+```yaml
+sources:
+  readme-line-36:
+    author: "Satoshi Nakamoto"
+    title: "readme.txt, line 36"
+    date: "January 2009"
+    note: "Primary source — distributed with Bitcoin v0.01"
+```
+
+Reference fields: `author`, `title`, `date`, `url`, `note`.
+
 ## Customization
 
 ### Page Dimensions

@@ -1,0 +1,444 @@
+# Shared reference registry for Bitcoin Alpha Book footnotes.
+# Cite with {{cite:key}} in annotation HTML (introduction, conclusion, line text)
+# and in Part I primer chapters in scripts/build.js.
+
+# ── Satoshi / Bitcoin primary sources ────────────────────────────────
+
+nakamoto-whitepaper:
+  author: "Satoshi Nakamoto"
+  title: "Bitcoin: A Peer-to-Peer Electronic Cash System"
+  date: "October 2008"
+  url: "https://bitcoin.org/bitcoin.pdf"
+
+nakamoto-finney-email:
+  author: "Satoshi Nakamoto"
+  title: "Email to Hal Finney"
+  date: "March 2009"
+  url: "https://satoshi.nakamotoinstitute.org/emails/hal/6/"
+  note: "On developing the code before writing the paper"
+
+nakamoto-mailing-list-sync:
+  author: "Satoshi Nakamoto"
+  title: "Bitcoin P2P e-cash paper (Cryptography Mailing List)"
+  date: "November 2008"
+  url: "https://satoshi.nakamotoinstitute.org/emails/cryptography/3/"
+  note: "On the proof-of-work chain as the solution to synchronisation"
+
+nakamoto-mailing-list-announcement:
+  author: "Satoshi Nakamoto"
+  title: "Bitcoin P2P e-cash paper (Cryptography Mailing List)"
+  date: "October 31, 2008"
+  url: "https://satoshi.nakamotoinstitute.org/emails/cryptography/1/"
+  note: "Initial announcement of the Bitcoin whitepaper"
+
+nakamoto-dai-email:
+  author: "Satoshi Nakamoto"
+  title: "Email to Wei Dai"
+  date: "2009"
+  url: "https://satoshi.nakamotoinstitute.org/emails/other/1/"
+  note: "On expanding on b-money ideas"
+
+nakamoto-institute-code:
+  author: "Satoshi Nakamoto Institute"
+  title: "Bitcoin v0.01 Alpha Source Code Archive"
+  date: "2009"
+  url: "https://satoshi.nakamotoinstitute.org/code/"
+
+rubin-satoshis-version:
+  author: "Jeremy Rubin"
+  title: "satoshis-version — Annotated Bitcoin v0.01 codebase"
+  date: "2019"
+  url: "https://github.com/JeremyRubin/satoshis-version/"
+  note: "Line-by-line //# comments on Satoshi's original release; best read commit-by-commit"
+
+readme-v001:
+  author: "Satoshi Nakamoto"
+  title: "readme.txt (Bitcoin v0.01 ALPHA)"
+  date: "January 2009"
+  note: "Primary source — distributed with Bitcoin v0.01"
+
+genesis-block:
+  author: "Satoshi Nakamoto"
+  title: "Bitcoin genesis block (block 0)"
+  date: "January 3, 2009"
+  url: "https://mempool.space/block/000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"
+  note: "Coinbase embeds The Times headline as timestamp proof"
+
+times-bailout-2009:
+  author: "The Times"
+  title: "Chancellor on brink of second bailout for banks"
+  date: "January 3, 2009"
+  url: "https://www.thetimes.com/article/chancellor-alistair-darling-on-brink-of-second-bailout-for-banks-n9l382mn62h"
+  note: "Headline embedded in the Bitcoin genesis block"
+
+nakamoto-bitcointalk-set-in-stone:
+  author: "Satoshi Nakamoto"
+  title: "BitcoinTalk — Re: Bitcoin 0.3.21"
+  date: "June 17, 2010"
+  url: "https://bitcointalk.org/index.php?topic=195.msg1611#msg1611"
+  note: "On the core design being set in stone for the rest of its lifetime"
+
+nakamoto-irc-temporary:
+  author: "Satoshi Nakamoto"
+  title: "BitcoinTalk — IRC channel for Bitcoin"
+  date: "2010"
+  url: "https://bitcointalk.org/index.php?topic=14.0"
+  note: "IRC seeding described as a temporary solution"
+
+nakamoto-script-types:
+  author: "Satoshi Nakamoto"
+  title: "BitcoinTalk — Re: Transactions and Scripts"
+  date: "June 2010"
+  url: "https://bitcointalk.org/index.php?topic=195.0"
+  note: "On supporting a tremendous variety of transaction types"
+
+nakamoto-windows-only:
+  author: "Satoshi Nakamoto"
+  title: "Bitcoin v0.1 released (Cryptography Mailing List / BitcoinTalk)"
+  date: "January 9, 2009"
+  url: "https://satoshi.nakamotoinstitute.org/emails/cryptography/15/"
+  note: "Announced Windows-only for the first release"
+
+nakamoto-specialists-quote:
+  author: "Satoshi Nakamoto"
+  title: "Bitcoin P2P e-cash paper (Cryptography Mailing List)"
+  date: "November 2008"
+  url: "https://satoshi.nakamotoinstitute.org/emails/cryptography/2/"
+  note: "On specialists with server farms dominating proof-of-work"
+
+nakamoto-farewell-2011:
+  author: "Satoshi Nakamoto"
+  title: "Final public communications / handover to Gavin Andresen"
+  date: "April 2011"
+  url: "https://satoshi.nakamotoinstitute.org/emails/gavin/"
+  note: "Satoshi stepped away from public development around April 2011"
+
+nakamoto-hearn-emails:
+  author: "Satoshi Nakamoto"
+  title: "Emails to Mike Hearn"
+  date: "2009–2011"
+  url: "https://plan99.net/~mike/satoshi-emails/oct2011.html"
+  note: "Includes coin supply rationale and the abandoned eBay-style marketplace"
+
+nakamoto-central-control-quote:
+  author: "Satoshi Nakamoto"
+  title: "Bitcoin P2P e-cash paper (Cryptography Mailing List)"
+  date: "November 2008"
+  url: "https://satoshi.nakamotoinstitute.org/emails/cryptography/4/"
+  note: "On centrally controlled e-currency systems being doomed"
+
+nakamoto-20-years-volume:
+  author: "Satoshi Nakamoto"
+  title: "BitcoinTalk / email — long-term transaction volume"
+  date: "2010"
+  url: "https://bitcointalk.org/index.php?topic=174.msg1445#msg1445"
+  note: "Either very large transaction volume or no volume in 20 years"
+
+nakamoto-free-transactions:
+  author: "Satoshi Nakamoto"
+  title: "BitcoinTalk — free transactions and fee policy"
+  date: "2010"
+  url: "https://bitcointalk.org/index.php?topic=48.msg254#msg254"
+  note: "Free transactions are nice if people don't abuse them / until slashdotted"
+
+nakamoto-block-interval:
+  author: "Satoshi Nakamoto"
+  title: "BitcoinTalk — block interval and difficulty retarget rationale"
+  date: "2010"
+  url: "https://bitcointalk.org/index.php?topic=43.0"
+  note: "On ~10-minute blocks and ~2-week difficulty adjustment"
+
+nakamoto-logo-approval:
+  author: "Satoshi Nakamoto"
+  title: "BitcoinTalk — Re: New icon/logo for Bitcoin software"
+  date: "February 24, 2010"
+  url: "https://bitcointalk.org/index.php?topic=44.msg268#msg268"
+  note: "Approved bitboy's logo; remarked on not being good with graphics"
+
+bitcoin-logo-2010:
+  author: "bitboy / Sirius"
+  title: "Bitcoin logo adoption on BitcoinTalk"
+  date: "February 2010"
+  url: "https://bitcointalk.org/index.php?topic=44.0"
+  note: "Community logo that became the standard Bitcoin mark"
+
+# ── Predecessors & cryptography foundations ──────────────────────────
+
+lamport-byzantine:
+  author: "Leslie Lamport, Robert Shostak, and Marshall Pease"
+  title: "The Byzantine Generals Problem"
+  date: "1982"
+  url: "https://lamport.azurewebsites.net/pubs/byz.pdf"
+  note: "ACM Transactions on Programming Languages and Systems, 4(3):382–401"
+
+hughes-cypherpunk-manifesto:
+  author: "Eric Hughes"
+  title: "A Cypherpunk's Manifesto"
+  date: "March 9, 1993"
+  url: "https://www.activism.net/cypherpunk/manifesto.html"
+
+diffie-hellman-1976:
+  author: "Whitfield Diffie and Martin Hellman"
+  title: "New Directions in Cryptography"
+  date: "1976"
+  url: "https://ee.stanford.edu/~hellman/publications/24.pdf"
+  note: "IEEE Transactions on Information Theory"
+
+merkle-1980:
+  author: "Ralph C. Merkle"
+  title: "Protocols for Public Key Cryptosystems"
+  date: "1980"
+  url: "https://www.merkle.com/papers/Protocols.pdf"
+  note: "Introduced Merkle trees (hash trees)"
+
+haber-stornetta-1991:
+  author: "Stuart Haber and W. Scott Stornetta"
+  title: "How to Time-Stamp a Digital Document"
+  date: "1991"
+  url: "https://www.anf.es/pdf/Haber_Stornetta.pdf"
+  note: "Journal of Cryptology; cited in the Bitcoin whitepaper"
+
+back-hashcash:
+  author: "Adam Back"
+  title: "Hashcash — A Denial of Service Counter-Measure"
+  date: "August 2002"
+  url: "http://www.hashcash.org/papers/hashcash.pdf"
+
+dai-bmoney:
+  author: "Wei Dai"
+  title: "b-money"
+  date: "1998"
+  url: "http://www.weidai.com/bmoney.txt"
+
+szabo-bit-gold:
+  author: "Nick Szabo"
+  title: "Bit gold"
+  date: "December 2008"
+  url: "https://unenumerated.blogspot.com/2005/12/bit-gold.html"
+  note: "Earlier drafts circulated among cypherpunks; public post dated 2008"
+
+szabo-trusted-third-parties:
+  author: "Nick Szabo"
+  title: "Trusted Third Parties Are Security Holes"
+  date: "2001"
+  url: "https://nakamotoinstitute.org/trusted-third-parties/"
+
+chaum-digicash:
+  author: "David Chaum"
+  title: "Blind Signatures for Untraceable Payments"
+  date: "1983"
+  url: "https://sceweb.sce.uhcl.edu/yang/teaching/csci5234WebSecurityFall2011/Chaum-blind-signatures.PDF"
+  note: "Foundational DigiCash cryptography; Advances in Cryptology"
+
+finney-rpow:
+  author: "Hal Finney"
+  title: "RPOW — Reusable Proofs of Work"
+  date: "2004"
+  url: "https://nakamotoinstitute.org/finney/rpow/"
+
+finney-first-tx:
+  author: "Hal Finney"
+  title: "Bitcoin transaction — first received coins from Satoshi"
+  date: "January 12, 2009"
+  url: "https://bitcointalk.org/index.php?topic=13.msg46#msg46"
+  note: "Block 170; Finney was the first person other than Satoshi to receive bitcoin"
+
+finney-crash-debuglog-2009:
+  author: "Hal Finney"
+  title: "[bitcoin-list] Crash in bitcoin 0.1.0 (with debug.log)"
+  date: "January 10, 2009"
+  url: "https://web.archive.org/web/20141130200234/https://sourceforge.net/p/bitcoin/mailman/message/21295694/"
+  note: "SourceForge post attaching Finney's debug.log; forensic evidence he joined near block 49"
+
+waltz-1stbitcoinminer:
+  author: "Alex Waltz"
+  title: "Who was the 1st Bitcoin Miner?"
+  date: "2026"
+  url: "https://1stbitcoinminer.com/"
+  note: "Forensic reconstruction of Bitcoin's first days from Finney's debug.log, emails, and ExtraNonce patterns"
+
+waltz-1stbitcoinminer-transcriptions:
+  author: "Alex Waltz"
+  title: "Copy-Paste & LLM-friendly transcriptions"
+  date: "2026"
+  url: "https://1stbitcoinminer.com/transcriptions/"
+  note: "Plain-text transcriptions of primary sources used in the 1st Bitcoin Miner investigation"
+
+bitslog-patoshi:
+  author: "Sergio Demian Lerner"
+  title: "The Return of the Deniers and the Revenge of Patoshi"
+  date: "April 16, 2019"
+  url: "https://bitslog.com/2019/04/16/the-return-of-the-deniers-and-the-revenge-of-patoshi/"
+  note: "Three v0.1 ExtraNonce privacy flaws; nonce-LSB range R; zero Patoshi→Patoshi timestamp inversions in first 50k blocks — argues one miner (~22k / ~1.1M BTC)"
+
+fips-180-2:
+  author: "NIST"
+  title: "FIPS PUB 180-2 — Secure Hash Standard (SHA-256)"
+  date: "2002"
+  url: "https://csrc.nist.gov/publications/detail/fips/180/2/archive/2002-08-01"
+  note: "SHA-256 published August 2002 (draft 2001)"
+
+wang-sha1-2005:
+  author: "Xiaoyun Wang, Yiqun Lisa Yin, and Hongbo Yu"
+  title: "Finding Collisions in the Full SHA-1"
+  date: "2005"
+  url: "https://www.iacr.org/archive/crypto2005/36210017/36210017.pdf"
+  note: "CRYPTO 2005; motivated moving away from SHA-1"
+
+crypto-pp-wei-dai:
+  author: "Wei Dai"
+  title: "Crypto++ Library"
+  date: "1995–"
+  url: "https://www.cryptopp.com/"
+  note: "SHA-256 implementation lineage referenced in sha.cpp comments"
+
+rfc-6979:
+  author: "Thomas Pornin"
+  title: "RFC 6979 — Deterministic Usage of DSA and ECDSA"
+  date: "August 2013"
+  url: "https://www.rfc-editor.org/rfc/rfc6979"
+
+dual-ec-drbg:
+  author: "NIST / security research community"
+  title: "Dual_EC_DRBG controversy"
+  date: "2007–2013"
+  url: "https://projectbullrun.org/dual-ec/"
+  note: "Concerns about NIST curve parameter selection; relevant to secp256k1 vs NIST curves"
+
+# ── Licenses & dependencies ──────────────────────────────────────────
+
+wxwidgets-license:
+  author: "wxWidgets Project"
+  title: "wxWidgets Licence"
+  date: "2005"
+  url: "https://www.wxwidgets.org/about/licence/"
+
+openssl-license:
+  author: "OpenSSL Project"
+  title: "OpenSSL License / SSLeay License"
+  date: "1998–2009"
+  url: "https://www.openssl.org/source/license-openssl-ssleay.txt"
+
+bdb-license:
+  author: "Oracle Corporation"
+  title: "Berkeley DB License"
+  date: "2009"
+  note: "Sleepycat-era open-source linking requirements referenced in readme.txt"
+
+boost-license:
+  author: "Boost.org"
+  title: "Boost Software License 1.0"
+  date: "2003"
+  url: "https://www.boost.org/LICENSE_1_0.txt"
+
+mit-license:
+  author: "Massachusetts Institute of Technology"
+  title: "MIT License"
+  date: "1988"
+  url: "https://opensource.org/licenses/MIT"
+  note: "License chosen for Bitcoin v0.01 (license.txt)"
+
+qt-lgpl-2009:
+  author: "Qt Company / Nokia"
+  title: "Qt licensed under LGPL"
+  date: "January 2009"
+  url: "https://blog.qt.io/blog/2009/01/14/nokia-qt-lgpl/"
+  note: "Enabled Bitcoin Core's later migration from wxWidgets to Qt"
+
+itar-ear-crypto:
+  author: "U.S. Department of Commerce / Department of State"
+  title: "Encryption export controls (ITAR/EAR)"
+  date: "1990s–2000s"
+  note: "Historical export regulations that constrained earlier cypherpunk software"
+  url: "https://www.eff.org/deeplinks/2015/06/short-history-crypto-war"
+
+# ── Bitcoin Core history & incidents ─────────────────────────────────
+
+bitcoin-core-history:
+  author: "Bitcoin Core Contributors"
+  title: "Bitcoin Core Release History"
+  date: "2009–present"
+  url: "https://bitcoincore.org/en/releases/"
+
+bip-42:
+  author: "Pieter Wuille"
+  title: "BIP 42 — A finite monetary supply for Bitcoin"
+  date: "2014"
+  url: "https://github.com/bitcoin/bips/blob/master/bip-0042.mediawiki"
+  note: "Right-shifting nSubsidy past bit width would reinflate; soft-fork capped halvings"
+
+bip-50:
+  author: "Pieter Wuille"
+  title: "BIP 50 — Address Delisting Request / March 2013 Chain Fork"
+  date: "2013"
+  url: "https://github.com/bitcoin/bips/blob/master/bip-0050.mediawiki"
+  note: "Berkeley DB lock limit caused a consensus fork around block 225430"
+
+overflow-bug-2010:
+  author: "Bitcoin community"
+  title: "Value overflow incident (block 74638)"
+  date: "August 15, 2010"
+  url: "https://en.bitcoin.it/wiki/Value_overflow_incident"
+  note: "Transaction created ~184 billion BTC; fixed in subsequent soft fork"
+
+opcode-disable-2010:
+  author: "Satoshi Nakamoto / Bitcoin developers"
+  title: "OP_RETURN and dangerous opcodes disabled"
+  date: "August 2010"
+  url: "https://en.bitcoin.it/wiki/Script#Disabled_opcodes"
+  note: "Response to early Script vulnerabilities"
+
+cve-2018-17144:
+  author: "Bitcoin Core"
+  title: "CVE-2018-17144 — Inflation vulnerability"
+  date: "September 2018"
+  url: "https://bitcoincore.org/en/2018/09/20/notice/"
+  note: "Fixed in Bitcoin Core 0.16.3 and 0.17.0rc4"
+
+android-securerandom-2013:
+  author: "Bitcoin developers / Google"
+  title: "Android SecureRandom ECDSA nonce reuse"
+  date: "August 2013"
+  url: "https://bitcoin.org/en/alert/2013-08-11-android"
+  note: "Non-deterministic RNG led to private-key recovery from repeated r values"
+
+ps3-ecdsa-2010:
+  author: "fail0verflow"
+  title: "Console Hacking 2010 — PS3 ECDSA nonce reuse"
+  date: "December 2010"
+  url: "https://events.ccc.de/congress/2010/Fahrplan/events/4087.en.html"
+  note: "Classic demonstration that reusing ECDSA nonces leaks private keys"
+
+# ── Secondary / historical context ───────────────────────────────────
+
+egold-seizure:
+  author: "U.S. Department of Justice"
+  title: "e-gold indictment and seizure"
+  date: "2007"
+  url: "https://www.justice.gov/archive/opa/pr/2007/April/07_crm_301.html"
+
+liberty-reserve:
+  author: "U.S. Department of Justice"
+  title: "Liberty Reserve shut down"
+  date: "May 2013"
+  url: "https://www.justice.gov/opa/pr/acting-manhattan-us-attorney-announces-charges-against-liberty-reserve"
+
+song-programming-bitcoin:
+  author: "Jimmy Song"
+  title: "Programming Bitcoin"
+  date: "2019"
+  url: "https://github.com/jimmysong/programmingbitcoin"
+  note: "O'Reilly"
+
+antonopoulos-mastering-bitcoin:
+  author: "Andreas M. Antonopoulos"
+  title: "Mastering Bitcoin"
+  date: "2014–"
+  url: "https://github.com/bitcoinbook/bitcoinbook"
+
+van-wirdum-genesis-book:
+  author: "Aaron van Wirdum"
+  title: "The Genesis Book"
+  date: "2024"
+  url: "https://thegenesisbook.com"
+  note: "History of the people and projects that inspired Bitcoin"

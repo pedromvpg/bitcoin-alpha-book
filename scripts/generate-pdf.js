@@ -3,7 +3,6 @@
  * Uses Paged.js for proper CSS Paged Media support (running headers, etc.)
  */
 
-import puppeteer from 'puppeteer';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -11,6 +10,12 @@ import {
   SOURCE_FILE_ORDER,
   chapterIdFromFilename,
 } from './source-file-order.mjs';
+import {
+  EDITION,
+  ANNOTATIONS_CREDIT,
+  syncEditionInHtml,
+} from './edition.mjs';
+import { launchBrowser } from './puppeteer-launch.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -27,8 +32,9 @@ async function generatePDF() {
     process.exit(1);
   }
   
-  // Read the HTML
-  let html = readFileSync(htmlPath, 'utf8');
+  // Read the HTML — rewrite edition/credit so PDF matches edition.mjs
+  // even if the last `npm run build` predates an edition bump.
+  let html = syncEditionInHtml(readFileSync(htmlPath, 'utf8'));
   
   // Add print-specific styles that work with Paged.js
   const printStyles = `
@@ -604,15 +610,7 @@ async function generatePDF() {
   
   // Launch browser
   console.log('   Launching browser...');
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage'
-    ],
-    timeout: 120000
-  });
+  const browser = await launchBrowser({ timeout: 120000 });
   
   const page = await browser.newPage();
 
@@ -679,7 +677,12 @@ async function generatePDF() {
       const bookMetaPath = join(OUTPUT_DIR, 'book-meta.json');
       writeFileSync(
         bookMetaPath,
-        JSON.stringify({ pageCount: lastCount, part2SourceToc }, null, 2),
+        JSON.stringify({
+          pageCount: lastCount,
+          part2SourceToc,
+          edition: EDITION,
+          annotationsCredit: ANNOTATIONS_CREDIT,
+        }, null, 2),
         'utf8',
       );
       console.log(`   ✓ Saved page count + Part II TOC (${part2SourceToc.length} rows) to book-meta.json`);

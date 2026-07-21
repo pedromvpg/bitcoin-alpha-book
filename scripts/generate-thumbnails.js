@@ -9,10 +9,10 @@
  * Every rendered page is kept (including blanks). Run after build (and `npm run cover` for cover on contact sheet).
  */
 
-import puppeteer from 'puppeteer';
 import { writeFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { launchBrowser } from './puppeteer-launch.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -494,11 +494,7 @@ async function generateThumbnails() {
   }
 
   console.log('   Launching browser...');
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-    timeout: 120000,
-  });
+  const browser = await launchBrowser({ timeout: 120000 });
 
   let pageCount = 0;
   let coverOnContactSheet = false;

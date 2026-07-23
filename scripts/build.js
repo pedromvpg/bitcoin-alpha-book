@@ -1800,6 +1800,21 @@ Hard:    3^? mod 17 = 6       (which exponent gives 6?)</pre>
 Prime <span class="token variable">p</span> = <span class="token number">17</span>. Integer pairs (<span class="token variable">x</span>, <span class="token variable">y</span>) with <span class="token variable">y</span>² ≡ <span class="token variable">x</span>³ + <span class="token number">7</span> (mod <span class="token variable">p</span>).
 Negation (<span class="token variable">x</span>, <span class="token variable">y</span>) ↦ (<span class="token variable">x</span>, −<span class="token variable">y</span>) reflects across <span class="token variable">y</span> = <span class="token variable">p</span>/<span class="token number">2</span> (orange).</pre>
     <p>
+      Raise the prime and the same equation just plants more dots on a finer lattice—
+      still discrete, still mirrored across <span class="token variable">y</span> = <span class="token variable">p</span>/2.
+      Bitcoin’s field is so large that a literal plot is impossible; the right panel is only a
+      density schematic.
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>Same curve, larger fields:</strong>
+        𝔽<sub>17</sub> → 𝔽<sub>251</sub> (real points) → secp256k1 schematic
+        (<span class="token variable">p</span> ≈ 2²⁵⁶, ~10⁷⁷ points — faked density so the scale jump is visible).
+        Orange midline = negation in every panel.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Scale comparison of elliptic curve points over F17, F251, and secp256k1">
+        ${eccFigs.finiteFieldScale}
+      </figure>
+    </div>
+    <p>
       The scatter plot looks nothing like the smooth curve over ℝ — and that is
       the point. The wrapping of coordinates modulo <span class="token variable">p</span>
       gives the field a hidden topology. Because both <span class="token variable">x</span>
@@ -1812,16 +1827,17 @@ Negation (<span class="token variable">x</span>, <span class="token variable">y<
     </p>
     <div class="ecc-block">
       <p class="ecc-caption"><strong>From flat square to torus:</strong> identifying opposite edges.
-        <span class="token variable">a</span> = top/bottom (orange) · <span class="token variable">b</span> = left/right (cyan) — same as the 𝔽<sub>p</sub> grid.</p>
-      <figure class="ecc-figure ecc-figure--wide" aria-label="Step-by-step: flat square to torus by identifying opposite edges">
+        <span class="token variable">a</span> = cyan · <span class="token variable">b</span> = red — roll the sheet until the <span class="token variable">a</span>-edges meet (cylinder), then bend and glue <span class="token variable">b</span>.</p>
+      <figure class="ecc-figure ecc-figure--xwide" aria-label="Step-by-step: flat square to torus by identifying opposite edges">
         ${eccFigs.planeToTorus}
       </figure>
     </div>
     <div class="ecc-block">
       <p class="ecc-caption"><strong>From flat grid to torus:</strong> modular wrapping in both axes.
         𝔽<sub>17</sub> (<span class="token variable">p</span> = 17); ● = <span class="token variable">y</span>² ≡ <span class="token variable">x</span>³ + 7 (mod 17).
+        <span class="token variable">a</span> = top/bottom (cyan) · <span class="token variable">b</span> = left/right (red).
         Torus maps the same curve points — secp256k1 uses <span class="token variable">p</span> ≈ 2²⁵⁶ (same topology, vastly larger).</p>
-      <figure class="ecc-figure ecc-figure--wide" aria-label="How the flat finite field grid wraps into a torus">
+      <figure class="ecc-figure ecc-figure--xwide" aria-label="How the flat finite field grid wraps into a torus">
         ${eccFigs.torus}
       </figure>
     </div>
@@ -1850,7 +1866,7 @@ Negation (<span class="token variable">x</span>, <span class="token variable">y<
         (b) tangent at <span class="token variable">P</span> → 2<span class="token variable">P</span>;
         (c) vertical line → identity 𝒪;
         (d) subtract by adding −<span class="token variable">Q</span>.</p>
-      <figure class="ecc-figure ecc-figure--wide" aria-label="Elliptic curve group law: addition, doubling, inverse, and subtraction">
+      <figure class="ecc-figure ecc-figure--xwide" aria-label="Elliptic curve group law: addition, doubling, inverse, and subtraction">
         ${eccFigs.pointOpsGrid}
       </figure>
     </div>

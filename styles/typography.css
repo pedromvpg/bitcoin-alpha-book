@@ -909,10 +909,11 @@ pre.example {
 .cryptography-primer .ecc-block {
   break-inside: avoid;
   page-break-inside: avoid;
-  margin: 0.85em 0 1.15em 0;
+  margin: 1.5em 0 1.85em 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 1.25em;
   width: 100%;
   max-width: 100%;
 }
@@ -921,7 +922,7 @@ pre.example {
 .cryptography-primer .ecc-block .ecc-caption {
   align-self: stretch;
   max-width: 38rem;
-  margin: 0 auto 0.5em auto;
+  margin: 0 auto;
   text-align: left;
 }
 
@@ -937,6 +938,11 @@ pre.example {
 .concepts .ecc-figure.ecc-figure--wide,
 .cryptography-primer .ecc-figure.ecc-figure--wide {
   max-width: min(100%, 42rem);
+}
+
+.concepts .ecc-figure.ecc-figure--xwide,
+.cryptography-primer .ecc-figure.ecc-figure--xwide {
+  max-width: min(100%, 56rem);
 }
 
 .concepts .ecc-figure svg,
@@ -992,16 +998,36 @@ pre.example .token.constant { color: #005cc5; }
   align-items: stretch;
   gap: 0;
   max-width: 100%;
+  text-align: center;
+}
+
+/* One type size + centered — beat .concepts p / li font rules */
+.concepts .synthesis-diagram,
+.concepts .synthesis-diagram .synth-stage-label,
+.concepts .synthesis-diagram .synth-col-head,
+.concepts .synthesis-diagram .synth-col li,
+.concepts .synthesis-diagram .synth-insight-title,
+.concepts .synthesis-diagram p,
+.cryptography-primer .synthesis-diagram,
+.cryptography-primer .synthesis-diagram .synth-stage-label,
+.cryptography-primer .synthesis-diagram .synth-col-head,
+.cryptography-primer .synthesis-diagram .synth-col li,
+.cryptography-primer .synthesis-diagram .synth-insight-title,
+.cryptography-primer .synthesis-diagram p {
+  font-size: 7.5pt;
+  line-height: 1.35;
+  text-align: center;
 }
 
 .synth-stage {
   border: 1px solid #333;
   background: #fff;
   box-sizing: border-box;
+  text-align: center;
 }
 
 .synth-stage-label {
-  font-size: 7pt;
+  font-size: inherit;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1019,6 +1045,7 @@ pre.example .token.constant { color: #005cc5; }
 .synth-col {
   padding: 0.55em 0.7em 0.7em;
   box-sizing: border-box;
+  text-align: center;
 }
 
 .synth-col + .synth-col {
@@ -1026,7 +1053,7 @@ pre.example .token.constant { color: #005cc5; }
 }
 
 .synth-col-head {
-  font-size: 6.5pt;
+  font-size: inherit;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1046,9 +1073,10 @@ pre.example .token.constant { color: #005cc5; }
 .synth-col li {
   margin: 0;
   padding: 0.12em 0;
-  font-size: 7pt;
+  font-size: inherit;
   line-height: 1.35;
   color: #333;
+  text-align: center;
 }
 
 .synth-join {
@@ -1127,10 +1155,11 @@ pre.example .token.constant { color: #005cc5; }
 }
 
 .synth-insight-title {
-  font-size: 8pt;
+  font-size: inherit;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  text-align: center;
   margin: 0.55em 0 0.35em;
 }
 
@@ -1139,9 +1168,10 @@ pre.example .token.constant { color: #005cc5; }
 .synth-bitcoin-tag {
   margin: 0;
   padding: 0 0.9em;
-  font-size: 7pt;
+  font-size: inherit;
   line-height: 1.4;
   color: #333;
+  text-align: center;
 }
 
 .synth-insight-eq {

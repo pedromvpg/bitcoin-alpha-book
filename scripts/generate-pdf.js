@@ -618,11 +618,11 @@ async function generatePDF() {
   page.setDefaultTimeout(300000);
   page.setDefaultNavigationTimeout(300000);
 
-  // Load the HTML
+  // Load the HTML (file:// — use load; networkidle can hang on large local docs)
   console.log('   Loading HTML...');
   await page.goto(`file://${tempHtmlPath}`, {
-    waitUntil: 'networkidle2',
-    timeout: 180000
+    waitUntil: 'load',
+    timeout: 600000
   });
   
   // Wait for fonts
@@ -633,7 +633,7 @@ async function generatePDF() {
   console.log('   Waiting for Paged.js to render...');
   try {
     // Wait for pagedjs_pages container to exist with actual pages
-    await page.waitForSelector('.pagedjs_pages .pagedjs_page', { timeout: 180000 });
+    await page.waitForSelector('.pagedjs_pages .pagedjs_page', { timeout: 600000 });
     console.log('   ✓ Paged.js pages detected');
 
     // Wait for page count to stabilize

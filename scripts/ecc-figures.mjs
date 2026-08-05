@@ -457,13 +457,14 @@ function finiteFieldScaleFigure() {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
   let stipple = '';
-  const nDots = 14000; // upper half; mirrored → ~28000 visible
+  // Keep dense enough for print, but bounded — 28k <circle>s made a 16MB HTML that stalled Paged.js.
+  const nDots = 3600; // upper half; mirrored → ~7200 visible
   for (let k = 0; k < nDots; k++) {
     const x = ox + pad + rand() * (plot - 2 * pad);
     const yTop = oy + pad + rand() * (midY - oy - pad - seam);
     const yBot = oy + plot - (yTop - oy);
-    const op = 0.62 + 0.35 * rand();
-    const rr = 0.48 + 0.32 * rand();
+    const op = 0.68 + 0.3 * rand();
+    const rr = 0.58 + 0.38 * rand();
     stipple += `<circle cx="${x.toFixed(2)}" cy="${yTop.toFixed(2)}" r="${rr.toFixed(2)}" fill="${STROKE.curve}" opacity="${op.toFixed(2)}"/>`;
     stipple += `<circle cx="${x.toFixed(2)}" cy="${yBot.toFixed(2)}" r="${rr.toFixed(2)}" fill="${STROKE.curve}" opacity="${op.toFixed(2)}"/>`;
   }

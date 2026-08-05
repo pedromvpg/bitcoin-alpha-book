@@ -47,7 +47,7 @@ annotations:
 
   - line: 10
     type: margin
-    text: "The <code class=\"variable\">_WIN32_WINNT</code> macro is first undefined then set to <code>0x0400</code>, which corresponds to Windows NT 4.0 / Windows 98. This sets the minimum Windows API version — Satoshi wanted Bitcoin to run on older Windows systems, not just the then-current Vista/XP. <code class=\"variable\">WIN32_LEAN_AND_MEAN</code> excludes rarely-used Windows headers (Cryptography, DDE, RPC, Shell, Winsock 1.x) to speed up compilation."
+    text: "The <code class=\"variable\">_WIN32_WINNT</code> macro is first undefined then set to <code>0x0400</code>, which corresponds to Windows NT 4.0. This sets the minimum Windows API version — Satoshi wanted Bitcoin to run on older Windows systems, not just the then-current Vista/XP. <code class=\"variable\">WIN32_LEAN_AND_MEAN</code> excludes rarely-used Windows headers (Cryptography, DDE, RPC, Shell, Winsock 1.x) to speed up compilation."
 
   - line: 15
     type: margin
@@ -67,7 +67,7 @@ annotations:
 
   - line: 36
     type: margin
-    text: "<code class=\"variable\">BOUNDSCHECK</code> set to 1 enables runtime bounds checking in Bitcoin's custom vector-like types (defined in <code>serialize.h</code>). This trades performance for safety — out-of-bounds access will throw rather than silently corrupt memory. In a financial system, silent corruption is far worse than a crash."
+    text: "<code class=\"variable\">BOUNDSCHECK</code> set to 1 was apparently meant to enable runtime bounds checking — but nothing anywhere in v0.01 references the macro. It is a dead switch: the safety feature it names was never wired in. Had it been live, it would trade performance for safety — out-of-bounds access throwing rather than silently corrupting memory. In a financial system, silent corruption is far worse than a crash."
 
   - line: 37
     type: margin
@@ -112,7 +112,7 @@ conclusion: |
   </p>
   <p>
     Today, Bitcoin Core has replaced every dependency listed here.{{cite:bitcoin-core-history}} wxWidgets gave way to Qt.{{cite:qt-lgpl-2009}}
-    Berkeley DB was replaced by LevelDB.{{cite:bdb-license}} The custom SHA-256 implementation was optimized with
+    Berkeley DB gave way to LevelDB for the block index (the wallet kept BDB for years).{{cite:bdb-license}} The custom SHA-256 implementation was optimized with
     hardware intrinsics. Even the precompiled header pattern itself was eventually abandoned
     in favor of modern build systems. But the layered architecture visible in this include
     ordering — serialization, cryptography, scripting, storage, networking, consensus, UI —

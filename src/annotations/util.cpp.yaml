@@ -85,15 +85,15 @@ annotations:
 
   - line: 253
     type: margin
-    text: "Overflow check: <code>nValue / CENT != nWhole</code>. After multiplying, division should recover the original. If not, multiplication overflowed. This defensive check prevents accepting astronomically large invalid amounts that wrapped around due to integer overflow."
+    text: "Overflow check: <code>nValue / 100 != nWhole</code>. After multiplying, division should recover the original. If not, multiplication overflowed. This defensive check prevents accepting astronomically large invalid amounts that wrapped around due to integer overflow."
 
   - line: 295
     type: margin
-    text: "<code class=\"function\">GetRand()</code>—generates cryptographically secure random numbers. This is the function called when generating private keys, selecting peers, and other security-critical operations. The <code>do-while</code> loop implements rejection sampling: since <code class=\"function\">RAND_bytes()</code> produces uniform random bits, but we want uniform distribution over <code>[0, nMax)</code>, we must reject values that would bias the result. The calculation <code>nRange = (_UI64_MAX / nMax) * nMax</code> finds the largest multiple of <code class=\"variable\">nMax</code> that fits in 64 bits. Values >= <code class=\"variable\">nRange</code> would favor lower results if taken mod <code class=\"variable\">nMax</code>, so they're rejected and we try again."
+    text: "<code class=\"function\">GetRand()</code>—generates cryptographically secure random numbers. This is the function called when selecting peers, choosing random IRC nicknames, and anywhere else uniform randomness is needed — though notably not for private keys, which OpenSSL generates internally. The <code>do-while</code> loop implements rejection sampling: since <code class=\"function\">RAND_bytes()</code> produces uniform random bits, but we want uniform distribution over <code>[0, nMax)</code>, we must reject values that would bias the result. The calculation <code>nRange = (_UI64_MAX / nMax) * nMax</code> finds the largest multiple of <code class=\"variable\">nMax</code> that fits in 64 bits. Values >= <code class=\"variable\">nRange</code> would favor lower results if taken mod <code class=\"variable\">nMax</code>, so they're rejected and we try again."
 
   - line: 319
     type: margin
-    text: "The chronometers quote—Satoshi's comment reveals his thinking on distributed time. The saying 'never go to sea with two chronometers; take one or three' means: with one clock, you trust it; with two disagreeing clocks, you don't know which is right; with three, you take the majority. Bitcoin implements this philosophy: rather than trusting any single time source, it takes the median of connected peers' clocks (adjusted for network latency). This prevents a single malicious peer from manipulating timestamps, which could affect block validity checking."
+    text: "The chronometers quote—Satoshi's comment reveals his thinking on distributed time. The saying 'never go to sea with two chronometers; take one or three' means: with one clock, you trust it; with two disagreeing clocks, you don't know which is right; with three, you take the majority. Bitcoin implements this philosophy: rather than trusting any single time source, it takes the median of connected peers' clocks. This prevents a single malicious peer from manipulating timestamps, which could affect block validity checking."
 
   - line: 337
     type: margin
@@ -101,11 +101,11 @@ annotations:
 
   - line: 342
     type: margin
-    text: "<code class=\"function\">AddTimeData()</code>—collects time samples from peers. When connecting to a peer, nodes exchange timestamps. This function tracks offsets (peer_time - local_time), deduplicates by IP, and computes the median. The logic waits for 5+ samples and only updates on odd counts (ensuring a true median exists). If median offset exceeds 5 minutes, the code notes 'go to NTP servers'—though NTP wasn't actually implemented in v0.1. The 5-minute threshold prevents attackers from gradually skewing network time."
+    text: "<code class=\"function\">AddTimeData()</code>—collects time samples from peers. When connecting to a peer, nodes exchange timestamps. This function tracks offsets (peer_time - local_time), deduplicates by IP, and computes the median. The logic waits for 5+ samples and only updates on odd counts (ensuring a true median exists). If median offset exceeds 5 minutes, the code notes 'go to NTP servers'—though NTP wasn't actually implemented in v0.1. In this version the branch does nothing beyond the TODO: the median is applied regardless of its size, so the safeguard was aspirational."
 
   - line: 362
     type: margin
-    text: "Safety limit: offsets beyond ±5 minutes trigger a TODO comment about NTP. Satoshi recognized the vulnerability: if an attacker controlled many peer connections, they could manipulate your time offset. The 5-minute cap limits damage. Later Bitcoin versions added stricter checks and warnings when clock offset is large."
+    text: "Safety limit: offsets beyond ±5 minutes trigger a TODO comment about NTP. Satoshi recognized the vulnerability: if an attacker controlled many peer connections, they could manipulate your time offset. The 5-minute cap exists here only as a comment — enforcement was left for later versions, which added stricter checks and warnings when clock offset is large."
 
 conclusion: |
   <p>
@@ -125,7 +125,7 @@ conclusion: |
   <p>
     The time synchronization code elegantly solves one of distributed systems'
     oldest problems: agreeing on the time without trusting any single authority.
-    By taking medians of peer clocks with bounded offsets, Bitcoin achieves
+    By taking medians of peer clocks, Bitcoin achieves
     rough time consensus sufficient for block timestamp validation without
     introducing centralization through NTP servers or trusted time sources.
     The approach is both robust and conservative—exactly what you want for

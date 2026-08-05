@@ -8,7 +8,7 @@ introduction: |
     This header defines the data structures for Satoshi's abandoned built-in
     marketplace: users with reputation atoms, cryptographically signed reviews,
     and product listings with order forms. Together with <code>market.cpp</code>,
-    these 183 lines describe a complete peer-to-peer commerce system that was
+    these 182 lines describe a complete peer-to-peer commerce system that was
     prototyped, partially wired into the UI, and then quietly shelved before
     Bitcoin's public release.
   </p>
@@ -70,7 +70,7 @@ annotations:
 
   - line: 106
     type: margin
-    text: "Three hash functions on a single class: <code class=\"function\">GetHash()</code> for unique identification, <code class=\"function\">GetSigHash()</code> for the bytes that get signed (excluding the signature itself via <code>SER_SKIPSIG</code>), and <code class=\"function\">GetUserHash()</code> which hashes the public key to derive a user identity. This triple-hash pattern reappears in <code class=\"type\">CProduct</code> below -- Satoshi reused the same authentication architecture across all marketplace objects."
+    text: "Three hash functions on a single class: <code class=\"function\">GetHash()</code> for unique identification, <code class=\"function\">GetSigHash()</code> for the bytes that get signed (excluding the signature itself via the <code>SER_GETHASH</code> check), and <code class=\"function\">GetUserHash()</code> which hashes the public key to derive a user identity. This triple-hash pattern reappears in <code class=\"type\">CProduct</code> below -- Satoshi reused the same authentication architecture across all marketplace objects."
 
   - line: 120
     type: margin
@@ -86,7 +86,7 @@ annotations:
 
   - line: 180
     type: margin
-    text: "Global state declarations: <code class=\"variable\">mapProducts</code> is the in-memory product catalogue (equivalent to the mempool for transactions), <code class=\"variable\">cs_mapProducts</code> is its mutex guard, and <code class=\"variable\">mapMyProducts</code> holds your own listings. The <code>extern</code> keyword means these are defined in <code>market.cpp</code> and shared across all translation units that include this header -- the same global-state pattern used for <code class=\"variable\">mapTransactions</code> and <code class=\"variable\">mapBlockIndex</code> in <code>main.cpp</code>."
+    text: "Global state declarations: <code class=\"variable\">mapProducts</code> is the in-memory product catalog (equivalent to the mempool for transactions), <code class=\"variable\">cs_mapProducts</code> is its mutex guard, and <code class=\"variable\">mapMyProducts</code> holds your own listings. The <code>extern</code> keyword means these are defined in <code>market.cpp</code> and shared across all translation units that include this header -- the same global-state pattern used for <code class=\"variable\">mapTransactions</code> and <code class=\"variable\">mapBlockIndex</code> in <code>main.cpp</code>."
 
 conclusion: |
   <p>

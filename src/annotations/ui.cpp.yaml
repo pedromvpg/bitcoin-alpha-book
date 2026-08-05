@@ -48,7 +48,7 @@ annotations:
 
   - line: 21
     type: margin
-    text: "<code>mapAddressBook</code> — the human-readable address book. Maps Bitcoin addresses (base58 strings) to contact names. Stored separately from the wallet; allows labelling received addresses with names like \"Alice\" or \"Donation pool\"."
+    text: "<code>mapAddressBook</code> — the human-readable address book. Maps Bitcoin addresses (base58 strings) to contact names. Stored in wallet.dat as simple name records, separate from the keys themselves; allows labeling received addresses with names like \"Alice\" or \"Donation pool\"."
 
   - line: 186
     type: margin
@@ -60,7 +60,7 @@ annotations:
 
   - line: 268
     type: margin
-    text: "<code>CMainFrame</code> constructor — wires up the main window. Creates the toolbar with PNG icons loaded from Windows resources, sets up 7 columns in the transaction list (hidden sort key, hidden hash, Status, Date, Description, Debit, Credit), and calls RefreshListCtrl() to populate from the wallet database."
+    text: "<code>CMainFrame</code> constructor — wires up the main window. Creates the toolbar with masked bitmap icons loaded from Windows resources, sets up 7 columns in the transaction list (hidden sort key, hidden hash, Status, Date, Description, Debit, Credit), and calls RefreshListCtrl() to populate from the wallet database."
 
   - line: 278
     type: margin
@@ -72,7 +72,7 @@ annotations:
 
   - line: 298
     type: margin
-    text: "Date column width is computed dynamically from the formatted width of a specific timestamp (1229413914 = December 16, 2008 — days after Bitcoin launched). Multiplying by 6 approximates pixels-per-character for the monospace font. This ensures the column fits dates in any locale's format."
+    text: "Date column width is computed dynamically from the formatted width of a specific timestamp (1229413914 = December 16, 2008 — weeks before Bitcoin launched). Multiplying by 6 approximates pixels-per-character for the monospace font. This ensures the column fits dates in any locale's format."
 
   - line: 331
     type: margin
@@ -84,7 +84,7 @@ annotations:
 
   - line: 365
     type: margin
-    text: "<code>OnMouseEvents</code> — harvests entropy from mouse movements for OpenSSL's random number generator. Every mouse event adds the X and Y coordinates to the entropy pool (RAND_add). Bitcoin keys require high-quality randomness; this ensures user activity continuously replenishes the pool. RandAddSeed() additionally mixes in the current time."
+    text: "<code>OnMouseEvents</code> — harvests entropy from mouse movements for OpenSSL's random number generator. Every mouse event adds the X and Y coordinates to the entropy pool (RAND_add). Bitcoin keys require high-quality randomness; this ensures user activity continuously replenishes the pool. RandAddSeed() additionally mixes in the CPU performance counter."
 
   - line: 379
     type: margin
@@ -132,7 +132,7 @@ annotations:
 
   - line: 774
     type: margin
-    text: "Status bar format: three fields. Left: empty or \"Generating\" / \"(not connected)\". Middle: 81px for mining status. Right: a live snapshot of connections, chain height, and transaction count. The format string encodes the user's current view of the network's health in one line."
+    text: "Status bar format: three fields. Left: empty. Middle (81px): mining status — \"Generating\" or \"(not connected)\". Right: a live snapshot of connections, chain height, and transaction count. The format string encodes the user's current view of the network's health in one line."
 
   - line: 821
     type: margin
@@ -160,7 +160,7 @@ annotations:
 
   - line: 1241
     type: margin
-    text: "<code>CAboutDialog</code> — shows the version string: \"version 0.N.N Alpha\" computed from the VERSION constant. The UTF-8 workaround removes the copyright symbol (©) which wxWidgets couldn't render correctly without UTF-8 support — a practical limitation of the 2009 era toolkit."
+    text: "<code>CAboutDialog</code> — shows the version string: \"version 0.N.N Alpha\" computed from the VERSION constant. The UTF-8 workaround strips the stray lead byte of the UTF-8-encoded copyright symbol — the 'Â' artifact that wxWidgets produced without UTF-8 support — a practical limitation of the 2009 era toolkit."
 
   - line: 1265
     type: margin
@@ -204,7 +204,7 @@ annotations:
 
   - line: 2885
     type: margin
-    text: "<code class=\"function\">OnInit2()</code> — real startup: parse argv, single-instance check, load wallet/block index, call <code class=\"function\">StartNode</code>, optionally spawn the miner, then show the main frame. Bitcoin boots as a desktop app, not a daemon."
+    text: "<code class=\"function\">OnInit2()</code> — real startup: single-instance check, parse argv, load wallet/block index, then show the main frame, call <code class=\"function\">StartNode</code>, and optionally spawn the miner. Bitcoin boots as a desktop app, not a daemon."
 
   - line: 3008
     type: margin
@@ -212,7 +212,7 @@ annotations:
 
   - line: 3036
     type: margin
-    text: "<code class=\"function\">StartNode()</code> — bring up sockets, IRC seed, and message threads. If this fails, the UI shows the error string and exits; without peers or listen capability the node is useless."
+    text: "<code class=\"function\">StartNode()</code> — bring up sockets, IRC seed, and message threads. If this fails, the UI shows the error string and keeps running; without peers or listen capability the node is useless."
 
 conclusion: |
   <p>

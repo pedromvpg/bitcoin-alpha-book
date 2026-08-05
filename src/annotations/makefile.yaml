@@ -5,7 +5,7 @@ title: "Assembly Required (MinGW)"
 
 introduction: |
   <p>
-    This is the makefile for building Bitcoin v0.01 with MinGW GCC on Windows. In 84 lines,
+    This is the makefile for building Bitcoin v0.01 with MinGW GCC on Windows. In 83 lines,
     it defines the entire build process: compiler flags, include paths, library dependencies,
     compilation rules for each source file, and the final link step that produces
     <code>bitcoin.exe</code>. Reading a makefile is reading the architect's blueprint — it
@@ -22,8 +22,8 @@ introduction: |
   <p>
     The makefile reveals Bitcoin's complete dependency graph. Four external libraries are
     linked: Berkeley DB for persistent storage,{{cite:bdb-license}} OpenSSL (as <code>libeay32</code>) for
-    cryptography,{{cite:openssl-license}} wxWidgets for the GUI,{{cite:wxwidgets-license}} and twelve Windows system libraries for networking,
-    graphics, and COM. Eleven source files are compiled into object files, each with
+    cryptography,{{cite:openssl-license}} wxWidgets for the GUI,{{cite:wxwidgets-license}} and fourteen Windows system libraries for networking,
+    graphics, and COM. Ten C++ source files are compiled into object files, each with
     explicitly declared header dependencies. A precompiled header (<code>headers.h.gch</code>)
     accelerates compilation. The entire project compiles into a single Windows GUI executable.
   </p>
@@ -53,11 +53,11 @@ annotations:
 
   - line: 20
     type: margin
-    text: "<strong>Include paths</strong> — five directories where the compiler searches for header files. The paths use absolute root-relative notation (<code>/boost</code>, <code>/DB/build_unix</code>, etc.), meaning each dependency is installed at the root of a drive. Note <code>/DB/build_unix</code> — Satoshi built Berkeley DB using the Unix-style build system under MSYS, even though the target is Windows. The wxWidgets path <code>vc_lib/mswd</code> references the MSVC debug build of wxWidgets, suggesting Satoshi cross-used wxWidgets libraries built with MSVC from the GCC build."
+    text: "<strong>Include paths</strong> — five directories where the compiler searches for header files. The paths use absolute root-relative notation (<code>/boost</code>, <code>/DB/build_unix</code>, etc.), meaning each dependency is installed at the root of a drive. Note <code>/DB/build_unix</code> — Satoshi built Berkeley DB using the Unix-style build system under MSYS, even though the target is Windows. The wxWidgets path <code>vc_lib/mswd</code> points at the MSVC debug build's directory (home of the build-specific <code>setup.h</code>), even though the libraries themselves are linked from <code>gcc_lib</code> — a cross-reference between the two builds."
 
   - line: 22
     type: margin
-    text: "<strong>Library dependencies</strong> — the complete list of everything Bitcoin links against. Three layers: (1) <code class=\"variable\">db_cxx</code> and <code class=\"variable\">eay32</code> — Berkeley DB C++ bindings and OpenSSL's crypto library. (2) Ten wxWidgets libraries — richtext, HTML, core, base, plus image format support (TIFF, JPEG, PNG) and utilities (zlib, regex, expat). (3) Twelve Windows system libraries — kernel32 (OS fundamentals), user32/gdi32 (GUI), winspool/winmm/shell32 (printing, multimedia, shell), comctl32/ole32/oleaut32/uuid (COM and controls), rpcrt4 (RPC runtime), advapi32 (registry and security), ws2_32 (Winsock 2 networking)."
+    text: "<strong>Library dependencies</strong> — the complete list of everything Bitcoin links against. Three layers: (1) <code class=\"variable\">db_cxx</code> and <code class=\"variable\">eay32</code> — Berkeley DB C++ bindings and OpenSSL's crypto library. (2) Ten wxWidgets libraries — richtext, HTML, core, base, plus image format support (TIFF, JPEG, PNG) and utilities (zlib, regex, expat). (3) Fourteen Windows system libraries — kernel32 (OS fundamentals), user32/gdi32/comdlg32 (GUI and common dialogs), winspool/winmm/shell32 (printing, multimedia, shell), comctl32/ole32/oleaut32/uuid (COM and controls), rpcrt4 (RPC runtime), advapi32 (registry and security), ws2_32 (Winsock 2 networking)."
 
   - line: 28
     type: margin
@@ -69,11 +69,11 @@ annotations:
 
   - line: 36
     type: margin
-    text: "<strong>Precompiled header rule</strong>. <code>headers.h.gch</code> is GCC's precompiled header format — a binary snapshot of all parsed declarations. The <code>-c</code> flag compiles without linking. The dependency list includes the core headers plus <code>net.h</code>, <code>irc.h</code>, <code>market.h</code>, <code>uibase.h</code>, and <code>ui.h</code> — every header in the project. When GCC finds <code>headers.h.gch</code> alongside <code>headers.h</code>, it uses the precompiled version automatically, dramatically speeding up compilation."
+    text: "<strong>Precompiled header rule</strong>. <code>headers.h.gch</code> is GCC's precompiled header format — a binary snapshot of all parsed declarations. The <code>-c</code> flag compiles without linking. The dependency list includes the core headers plus <code>net.h</code>, <code>irc.h</code>, <code>market.h</code>, <code>uibase.h</code>, and <code>ui.h</code> — every header in the project except <code>sha.h</code>. When GCC finds <code>headers.h.gch</code> alongside <code>headers.h</code>, it uses the precompiled version automatically, dramatically speeding up compilation."
 
   - line: 39
     type: margin
-    text: "<strong>Compilation rules</strong> — eleven source files, each with its own rule and explicit dependency tracking. The pattern is consistent: <code>g++ -c $(CFLAGS) -o $@ $<</code> compiles the source (<code>$<</code>, the first prerequisite) into the object file (<code>$@</code>, the target). Dependencies after the source filename are header files — if any change, the object is rebuilt. Note that most files depend only on <code>$(HEADERS)</code> (the precompiled header set), while some add specific extras: <code>db.cpp</code> needs <code>market.h</code>, <code>main.cpp</code> needs <code>net.h</code>, <code>market.h</code>, and <code>sha.h</code>."
+    text: "<strong>Compilation rules</strong> — ten source files, each with its own rule and explicit dependency tracking. The pattern is consistent: <code>g++ -c $(CFLAGS) -o $@ $<</code> compiles the source (<code>$<</code>, the first prerequisite) into the object file (<code>$@</code>, the target). Dependencies after the source filename are header files — if any change, the object is rebuilt. Note that most files depend on <code>$(HEADERS)</code> (the precompiled header set), while some add specific extras: <code>db.cpp</code> needs <code>market.h</code>, <code>main.cpp</code> needs <code>net.h</code>, <code>market.h</code>, and <code>sha.h</code>."
 
   - line: 63
     type: margin
@@ -101,7 +101,7 @@ annotations:
 
 conclusion: |
   <p>
-    This makefile compiles eleven C++ source files and one resource file into a single
+    This makefile compiles ten C++ source files and one resource file into a single
     Windows executable — the entirety of Bitcoin v0.01. The build has no configure step,
     no autotools, no CMake. Dependencies are assumed to be installed at hardcoded paths.
     The developer runs <code>make</code> and either gets a binary or an error. This simplicity
@@ -117,9 +117,9 @@ conclusion: |
     irrelevant compared to the debugging convenience of unoptimized builds.
   </p>
   <p>
-    Bitcoin Core's modern build system uses autotools, has a <code>./configure</code> script
-    with hundreds of options, supports dozens of platforms, and produces optimized binaries
+    Bitcoin Core's modern build system uses CMake,
+    supports dozens of platforms, and produces optimized binaries
     with link-time optimization and hardware-accelerated SHA-256.{{cite:bitcoin-core-history}} But it still compiles
     roughly the same logical components — consensus, networking, storage, scripting, and
-    a user interface — that Satoshi laid out in these 84 lines.
+    a user interface — that Satoshi laid out in these 83 lines.
   </p>

@@ -56,31 +56,31 @@ annotations:
 
   - line: 69
     type: margin
-    text: "<code>OP_DUP</code> - duplicate top stack item. Combined with OP_HASH160 and OP_EQUALVERIFY, forms P2PKH (Pay to Public Key Hash), Bitcoin's standard script."
+    text: "<code>OP_DUP</code> — duplicate top stack item. Combined with OP_HASH160 and OP_EQUALVERIFY, this forms P2PKH (Pay to Public Key Hash), Bitcoin's standard script."
 
   - line: 131
     type: margin
-    text: "<code>OP_HASH160</code> - RIPEMD160(SHA256(x)). Creates the 20-byte hash used in Bitcoin addresses. Double hashing adds security margin."
+    text: "<code>OP_HASH160</code> — RIPEMD160(SHA256(x)). Creates the 20-byte hash used in Bitcoin addresses. Double hashing adds security margin."
 
   - line: 132
     type: margin
-    text: "<code>OP_HASH256</code> - SHA256(SHA256(x)). Double SHA256 used for block hashes and txids. Defense against length extension attacks."
+    text: "<code>OP_HASH256</code> — SHA256(SHA256(x)). Double SHA256 used for block hashes and txids. Defense against length extension attacks."
 
   - line: 134
     type: margin
-    text: "<code>OP_CHECKSIG</code> - the signature verification opcode. This single instruction is why Bitcoin works: proves private key ownership."
+    text: "<code>OP_CHECKSIG</code> — the signature verification opcode. This single instruction is why Bitcoin works: proves private key ownership."
 
   - line: 135
     type: margin
-    text: "<code>OP_CHECKSIGVERIFY</code> - CHECKSIG + VERIFY. Fails script immediately if signature invalid. Used in multi-sig scripts."
+    text: "<code>OP_CHECKSIGVERIFY</code> — CHECKSIG + VERIFY. Fails script immediately if signature invalid. Used in multi-sig scripts."
 
   - line: 136
     type: margin
-    text: "<code>OP_CHECKMULTISIG</code> - M-of-N multi-signature verification, present from day one. Requires M valid signatures from a set of N public keys. Enables shared custody: a company treasury might require 2-of-3 executives to sign, or an escrow might need 2-of-3 (buyer, seller, arbitrator). Satoshi mentioned 'multi-party signature' in his BitcoinTalk posts as a planned feature.{{cite:nakamoto-script-types}} The implementation (script.cpp:727) iterates through signatures and keys, matching each signature to a key in order. A subtle bug existed: an extra unused value was consumed from the stack, fixed years later in BIP 147."
+    text: "<code>OP_CHECKMULTISIG</code> — M-of-N multi-signature verification, present from day one. Requires M valid signatures from a set of N public keys. Enables shared custody: a company treasury might require 2-of-3 executives to sign, or an escrow might need 2-of-3 (buyer, seller, arbitrator). Satoshi mentioned 'multi-party signature' in his BitcoinTalk posts as a planned feature.{{cite:nakamoto-script-types}} The implementation (script.cpp:727) iterates through signatures and keys, matching each signature to a key in order. A subtle bug existed: an extra unused value was consumed from the stack, constrained years later in BIP 147."
 
   - line: 327
     type: margin
-    text: "<code>CScript</code> class - a Bitcoin script as bytes. Inherits from vector<unsigned char>. Scripts are data until evaluated."
+    text: "<code>CScript</code> class — a Bitcoin script as bytes. Inherits from vector&lt;unsigned char&gt;. Scripts are data until evaluated."
 
   - line: 590
     type: margin

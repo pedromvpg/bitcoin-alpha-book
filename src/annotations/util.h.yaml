@@ -81,7 +81,7 @@ annotations:
 
   - line: 71
     type: margin
-    text: "Utility function declarations. <code class=\"function\">RandAddSeed()</code> feeds entropy into OpenSSL's random number generator -- called at startup and periodically to strengthen key generation. <code class=\"function\">strprintf()</code> is a type-safe sprintf-to-string. <code class=\"function\">FormatMoney()</code> converts satoshi integers to human-readable BTC strings with 8 decimal places. <code class=\"function\">GetRand()</code> returns a cryptographically secure random number. <code class=\"function\">GetAdjustedTime()</code> returns the current time adjusted by the median offset of all connected peers -- Bitcoin's network time."
+    text: "Utility function declarations. <code class=\"function\">RandAddSeed()</code> feeds entropy into OpenSSL's random number generator -- called at startup and periodically to strengthen key generation. <code class=\"function\">strprintf()</code> is a type-safe sprintf-to-string. <code class=\"function\">FormatMoney()</code> converts satoshi integers to human-readable BTC strings with two decimal places. <code class=\"function\">GetRand()</code> returns a cryptographically secure random number. <code class=\"function\">GetAdjustedTime()</code> returns the current time adjusted by the median offset of all connected peers -- Bitcoin's network time."
 
   - line: 84
     type: margin
@@ -101,7 +101,7 @@ annotations:
 
   - line: 133
     type: margin
-    text: "<code class=\"type\">CTryCriticalBlock</code> -- a non-blocking lock attempt. If the lock is already held by another thread, <code class=\"function\">TryEnterCriticalSection()</code> returns immediately with failure instead of waiting. Used in the mining thread to check for new blocks without stalling: <code>TRY_CRITICAL_BLOCK(cs_main) { ... }</code>. The <code class=\"function\">Entered()</code> method (line 141) lets the caller check whether the lock was acquired. This is why Satoshi couldn't use wxWidgets' critical section -- he needed this try-lock capability."
+    text: "<code class=\"type\">CTryCriticalBlock</code> -- a non-blocking lock attempt. If the lock is already held by another thread, <code class=\"function\">TryEnterCriticalSection()</code> returns immediately with failure instead of waiting. Used by the network threads, which cannot stall on a lock in the middle of a select loop: <code>TRY_CRITICAL_BLOCK(pnode->cs_vSend) { ... }</code>. The miner never uses it — it takes the blocking <code>CRITICAL_BLOCK(cs_main)</code> instead. The <code class=\"function\">Entered()</code> method (line 141) lets the caller check whether the lock was acquired. This is why Satoshi couldn't use wxWidgets' critical section -- he needed this try-lock capability."
 
   - line: 159
     type: margin
@@ -117,7 +117,7 @@ annotations:
 
   - line: 310
     type: margin
-    text: "<code>IMPLEMENT_RANDOMIZE_STACK</code> -- a macro that randomizes the stack depth by recursing a random number of times (up to 50) before executing the actual thread function. The comment explains: 'Randomize the stack to help protect against buffer overrun exploits.' By varying the stack pointer's position, an attacker who discovers a buffer overflow cannot predict exactly where the return address is stored. This is a defense-in-depth measure that complements OS-level ASLR (Address Space Layout Randomization). Used on the mining and network threads."
+    text: "<code>IMPLEMENT_RANDOMIZE_STACK</code> -- a macro that randomizes the stack depth by recursing a random number of times (up to 50) before executing the actual thread function. The comment explains: 'Randomize the stack to help protect against buffer overrun exploits.' By varying the stack pointer's position, an attacker who discovers a buffer overflow cannot predict exactly where the return address is stored. This is a defense-in-depth measure that complements OS-level ASLR (Address Space Layout Randomization). Used on the network threads."
 
   - line: 323
     type: margin
@@ -149,9 +149,9 @@ conclusion: |
     exception safety -- essentially reimplementing what C++11 would later
     standardize as <code>std::lock_guard</code> plus <code>std::unique_lock</code>.
     That he also built a non-blocking variant (<code>TRY_CRITICAL_BLOCK</code>)
-    shows a sophisticated understanding of concurrent programming. The mining thread
-    cannot afford to block waiting for the main thread to finish a database write;
-    it needs to try the lock and move on if it fails.
+    shows a sophisticated understanding of concurrent programming. The socket
+    handler cannot afford to stall on one peer's lock while every other peer
+    waits; it tries the per-node locks and moves on if one is held.
   </p>
   <p>
     The hashing functions at the end of the file are Bitcoin's cryptographic

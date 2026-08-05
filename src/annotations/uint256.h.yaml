@@ -8,8 +8,8 @@ introduction: |
     Standard computers work with 32-bit or 64-bit integers, but Bitcoin needs
     256-bit numbers. This file implements <code>uint256</code>—a custom 256-bit
     unsigned integer type that can represent numbers up to 2^256 - 1. That's
-    approximately 10^77, a number so vast it exceeds the estimated atoms in the
-    observable universe by many orders of magnitude.
+    approximately 10^77, a number so vast it rivals the estimated count of
+    atoms in the observable universe.
   </p>
   <p>
     Every SHA-256 hash is a uint256. Every transaction ID is a uint256. Every
@@ -19,8 +19,8 @@ introduction: |
     identifiable.
   </p>
   <p>
-    The implementation stores 256 bits as an array of eight 32-bit words (or four
-    64-bit words on 64-bit systems). Arithmetic operations—addition, subtraction,
+    The implementation stores 256 bits as an array of eight 32-bit words.
+    Arithmetic operations—addition, subtraction,
     comparison, bit shifting—are implemented by operating across these words with
     proper carry/borrow handling. It's essentially reimplementing grade-school
     arithmetic for numbers too big for the processor to handle natively.
@@ -52,7 +52,7 @@ annotations:
 
   - line: 33
     type: margin
-    text: "<code class=\"function\">operator!()</code>—tests if the value is zero. Iterates through all words; if any is non-zero, returns <code>false</code>. Used in boolean contexts: <code>if (!hash)</code> checks for the all-zeros hash, which indicates 'no parent' in the genesis block's <code class=\"variable\">prevhash</code> field."
+    text: "<code class=\"function\">operator!()</code>—tests if the value is zero. Iterates through all words; if any is non-zero, returns <code>false</code>. Used in boolean contexts: <code>if (!hash)</code> checks for the all-zeros hash, which indicates 'no parent' in the genesis block's <code class=\"variable\">hashPrevBlock</code> field."
 
   - line: 41
     type: margin
@@ -84,7 +84,7 @@ annotations:
 
   - line: 214
     type: margin
-    text: "<code class=\"function\">operator&lt;()</code>—less-than comparison. Compares from most significant word down. This is the core of proof-of-work validation: <code>hash <= target</code> checks if a block hash is 'small enough' to meet difficulty. The first non-equal word determines the result. If all words are equal, returns <code>false</code> (not strictly less than)."
+    text: "<code class=\"function\">operator&lt;()</code>—less-than comparison. Compares from most significant word down. This is the core of proof-of-work validation: <code>hash &lt;= target</code> checks if a block hash is 'small enough' to meet difficulty. The first non-equal word determines the result. If all words are equal, returns <code>false</code> (not strictly less than)."
 
   - line: 262
     type: margin

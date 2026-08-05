@@ -19,9 +19,9 @@ introduction: |
     key properties are preimage resistance (you cannot find the input from the
     output), second-preimage resistance (you cannot find a different input with
     the same output), and collision resistance (you cannot find any two inputs
-    with the same output). SHA-256 provides roughly 128 bits of security against
-    each of these attacks — strong enough that no practical weakness has ever
-    been found.
+    with the same output). SHA-256 provides roughly 256 bits of security against
+    the preimage attacks and 128 bits against collisions — strong enough that
+    no practical weakness has ever been found.
   </p>
   <p>
     Bitcoin uses SHA-256 in a double-application pattern. Every transaction ID,
@@ -35,7 +35,7 @@ introduction: |
     SHA-1 appears here because Crypto++ included it, not because Bitcoin uses it.
     Satoshi used SHA-256 exclusively.{{cite:fips-180-2}} SHA-1 was already known to be weakening in
     2009 — Wang Xiaoyun had demonstrated theoretical collision attacks in 2005.{{cite:wang-sha1-2005}}
-    Its presence in the file is historical artifact, not design.
+    Its presence in the file is a historical artifact, not design.
   </p>
 
 annotations:
@@ -45,7 +45,7 @@ annotations:
 
   - line: 24
     type: margin
-    text: "SHA-1 initial state: five 32-bit magic constants. These are not arbitrary. Each is the fractional part of the square root of a small integer: 0x67452301 ≈ frac(√2) × 2³², 0xEFCDAB89 ≈ frac(√3) × 2³², 0x98BADCFE ≈ frac(√5) × 2³², 0x10325476 ≈ frac(√7) × 2³², 0xC3D2E1F0 ≈ frac(√11) × 2³². The 'nothing up my sleeve' principle: constants derived from well-known mathematical expressions cannot encode a backdoor, because anyone can verify the derivation."
+    text: "SHA-1 initial state: five 32-bit magic constants. The first four — 0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476 — are inherited unchanged from MD4 and MD5: a simple pattern of ascending and descending hex digits, not a mathematical derivation. 0xC3D2E1F0 was added for the fifth word. The 'nothing up my sleeve' principle belongs to the round constants below and to SHA-256's initial state: constants derived from well-known mathematical expressions cannot encode a backdoor, because anyone can verify the derivation."
 
   - line: 33
     type: margin
@@ -53,7 +53,7 @@ annotations:
 
   - line: 39
     type: margin
-    text: "SHA-1 round constants: one per 20-round group. 0x5A827999 = floor(2³⁰ × √2), 0x6ED9EBA1 = floor(2³⁰ × √3), 0x8F1BBCDC = floor(2³⁰ × √5), 0xCA62C1D6 = floor(2³⁰ × √10). Again, square roots of small primes — verifiably non-random. SHA-256 uses 64 distinct constants (cube roots of 64 primes) instead of 4 repeated ones. The more varied schedule was part of the SHA-2 hardening."
+    text: "SHA-1 round constants: one per 20-round group. 0x5A827999 = floor(2³⁰ × √2), 0x6ED9EBA1 = floor(2³⁰ × √3), 0x8F1BBCDC = floor(2³⁰ × √5), 0xCA62C1D6 = floor(2³⁰ × √10). Again, square roots of small integers — verifiably non-random. SHA-256 uses 64 distinct constants (cube roots of 64 primes) instead of 4 repeated ones. The more varied schedule was part of the SHA-2 hardening."
 
   - line: 45
     type: margin
@@ -61,7 +61,7 @@ annotations:
 
   - line: 76
     type: margin
-    text: "Merkle-Damgård finalisation. After 80 rounds, the working variables are added back to the incoming state. This is the Merkle-Damgård construction: the output of each 512-bit block feeds into the next as initial state. A single-bit change anywhere in the input propagates through all subsequent blocks. It is also why SHA-1 is vulnerable to length-extension — the chaining value after the last block is directly the hash output, allowing an attacker to continue hashing without knowing the original input."
+    text: "Merkle-Damgård finalization. After 80 rounds, the working variables are added back to the incoming state. This is the Merkle-Damgård construction: the output of each 512-bit block feeds into the next as initial state. A single-bit change anywhere in the input propagates through all subsequent blocks. It is also why SHA-1 is vulnerable to length-extension — the chaining value after the last block is directly the hash output, allowing an attacker to continue hashing without knowing the original input."
 
   - line: 93
     type: margin
@@ -85,11 +85,11 @@ annotations:
 
   - line: 123
     type: margin
-    text: "Circular state indexing. Instead of eight named variables a–h that must be explicitly rotated each round, Wei Dai stores the state in T[8] and accesses it via modular index macros. a(i) = T[(0-i)&7], b(i) = T[(1-i)&7], etc. At round i, 'a' refers to whatever slot currently holds the top of the rotation. The effect: no actual rotation happens. This is a performance optimisation — the compiler sees eight array accesses instead of eight assignments. The mathematical result is identical; the generated machine code is faster."
+    text: "Circular state indexing. Instead of eight named variables a–h that must be explicitly rotated each round, Wei Dai stores the state in T[8] and accesses it via modular index macros. a(i) = T[(0-i)&7], b(i) = T[(1-i)&7], etc. At round i, 'a' refers to whatever slot currently holds the top of the rotation. The effect: no actual rotation happens. This is a performance optimization — the compiler sees eight array accesses instead of eight assignments. The mathematical result is identical; the generated machine code is faster."
 
   - line: 132
     type: margin
-    text: "The SHA-256 round macro in full. One round of SHA-256 in two lines: T1 = h + S1(e) + Ch(e,f,g) + K[i+j] + W[i]; d += T1; h = T1 + S0(a) + Maj(a,b,c). The big-sigma functions S0 and S1 are three-way XOR of rotations: S0(x) = ROTR(x,2) ^ ROTR(x,13) ^ ROTR(x,22); S1(x) = ROTR(x,6) ^ ROTR(x,11) ^ ROTR(x,25). These specific rotation amounts were chosen by NIST to maximise diffusion — each output bit depends on many input bits within one round."
+    text: "The SHA-256 round macro in full. One round of SHA-256 in two lines: T1 = h + S1(e) + Ch(e,f,g) + K[i+j] + W[i]; d += T1; h = T1 + S0(a) + Maj(a,b,c). The big-sigma functions S0 and S1 are three-way XOR of rotations: S0(x) = ROTR(x,2) ^ ROTR(x,13) ^ ROTR(x,22); S1(x) = ROTR(x,6) ^ ROTR(x,11) ^ ROTR(x,25). These specific rotation amounts were chosen by NIST to maximize diffusion — each output bit depends on many input bits within one round."
 
   - line: 136
     type: margin
@@ -113,15 +113,15 @@ annotations:
 
   - line: 166
     type: margin
-    text: "The commented-out 'smaller but slower' alternative. This is Wei Dai's original reference implementation, preserved in a block comment. It uses explicit variables rather than the circular-index trick, making the SHA-256 round structure much clearer. It was commented out because the indexed version is measurably faster on real hardware — the compiler can better schedule the modular array accesses. The comment is a rare gift: two complete implementations of SHA-256 in the same file, one optimised, one readable."
+    text: "The commented-out 'smaller but slower' alternative. This is Wei Dai's original reference implementation, preserved in a block comment. It uses explicit variables rather than the circular-index trick, making the SHA-256 round structure much clearer. It was commented out because the indexed version is measurably faster on real hardware — the compiler can better schedule the modular array accesses. The comment is a rare gift: two complete implementations of SHA-256 in the same file, one optimized, one readable."
 
   - line: 271
     type: margin
-    text: "SHA-512 round constants. 80 entries (SHA-512 runs 80 rounds versus SHA-256's 64), each a 64-bit word derived from the cube roots of the first 80 primes. The same nothing-up-my-sleeve derivation, extended to 64-bit precision. Bitcoin does not use SHA-512 — it appears here because Crypto++ 5.5.2 was included wholesale. Ethereum later adopted SHA-3 (Keccak), a completely different construction, partly to avoid any dependency on the NIST hash functions."
+    text: "SHA-512 round constants. 80 entries (SHA-512 runs 80 rounds versus SHA-256's 64), each a 64-bit word derived from the cube roots of the first 80 primes. The same nothing-up-my-sleeve derivation, extended to 64-bit precision. Bitcoin does not use SHA-512 — it appears here because Crypto++ 5.5.2 was included wholesale. Ethereum later adopted Keccak-256—the pre-standardization variant of what became SHA-3—a completely different construction from the NIST SHA-2 family."
 
   - line: 316
     type: margin
-    text: "SSE2-accelerated SHA-512: inline assembly for x86. Wei Dai wrote a hand-optimised MMX/SSE2 implementation that operates on two 64-bit words simultaneously using 128-bit XMM registers. The macros SSE2_S0_S1, SSE2_s0, SSE2_s1 implement the sigma functions entirely in SIMD instructions. This is 2007-era performance engineering — before compiler auto-vectorisation was reliable, hand-written assembly was the only way to fully exploit Intel's vector units. Bitcoin v0.01 ships this code but never calls it."
+    text: "SSE2-accelerated SHA-512: inline assembly for x86. Wei Dai wrote a hand-optimized MMX/SSE2 implementation that operates on two 64-bit words simultaneously using 128-bit XMM registers. The macros SSE2_S0_S1, SSE2_s0, SSE2_s1 implement the sigma functions entirely in SIMD instructions. This is 2007-era performance engineering — before compiler auto-vectorization was reliable, hand-written assembly was the only way to fully exploit Intel's vector units. Bitcoin v0.01 ships this code but never calls it."
 
   - line: 511
     type: margin

@@ -24,6 +24,7 @@ introduction: |
     The file defines five databases: <code>CTxDB</code> (blockchain index and
     transaction positions), <code>CAddrDB</code> (peer network addresses),
     <code>CReviewDB</code> (an unused peer-rating system Satoshi never launched),
+    <code>CMarketDB</code> (a marketplace listing stub that was never built out),
     and <code>CWalletDB</code> (your private keys, transactions, and address book).
     All five inherit from the base <code>CDB</code> class, which handles the BDB
     environment lifecycle.
@@ -35,7 +36,8 @@ introduction: |
     nodes but not on the new LevelDB-backed ones, causing an unintentional chain split
     documented as <strong>BIP 50</strong>.{{cite:bip-50}} Resolution required miners to deliberately
     orphan the longer (LevelDB) chain and revert to the shorter (BDB-compatible) one—
-    a coordinated rollback that cost one pool operator over 24 BTC in reversed coinbases.
+    a coordinated rollback that orphaned 24 blocks on the LevelDB chain, wiping out
+    the coinbases miners—including the largest pool, BTC Guild—had earned there.
     The incident proved that consensus rules extend beyond Bitcoin's source code to
     encompass the database engine, its configuration, and even the operating system.
     After BIP 50, the blockchain index migrated to LevelDB; the wallet retains BDB
@@ -46,7 +48,7 @@ annotations:
   # ── Global state ────────────────────────────────────────────────────────────
   - line: 16
     type: margin
-    text: "<code class=\"keyword\">cs_db</code> — the database mutex. All BDB environment operations acquire this lock first, preventing concurrent initialisation or shutdown from two threads."
+    text: "<code class=\"keyword\">cs_db</code> — the database mutex. All BDB environment operations acquire this lock first, preventing concurrent initialization or shutdown from two threads."
 
   - line: 17
     type: margin
@@ -64,7 +66,7 @@ annotations:
   # ── CDB constructor ──────────────────────────────────────────────────────────
   - line: 39
     type: margin
-    text: "<code class=\"type\">CDB</code> constructor — opens (or creates) a named database file. <code class=\"variable\">pszMode</code> mirrors <code class=\"function\">fopen</code> semantics: <code>\"r\"</code> = read-only, <code>\"r+\"</code> = read-write, <code>\"cr+\"</code> = create if absent then read-write. Every specialised database class passes a specific mode."
+    text: "<code class=\"type\">CDB</code> constructor — opens (or creates) a named database file. <code class=\"variable\">pszMode</code> mirrors <code class=\"function\">fopen</code> semantics: <code>\"r\"</code> = read-only, <code>\"r+\"</code> = read-write, <code>\"cr+\"</code> = create if absent then read-write. Every specialized database class passes a specific mode."
 
   - line: 45
     type: margin
@@ -82,9 +84,9 @@ annotations:
     type: margin
     text: "Transaction log directory (<code>\\database</code> subdirectory). BDB's write-ahead log records every mutation here before applying it to the data file. On crash, BDB replays the log on <code class=\"variable\">DB_RECOVER</code> to restore consistency—Bitcoin gets crash safety for free."
 
-  - line: 64
+  - line: 66
     type: margin
-    text: "<code class=\"function\">set_lk_max_locks(10000)</code> — the configuration that became BIP 50.{{cite:bip-50}} BDB counts every row-level lock a transaction holds simultaneously. Large blocks with thousands of inputs can exceed this limit on old BDB builds. Nodes that hit the limit refused to validate the block; nodes with newer BDB accepted it — splitting the chain."
+    text: "<code class=\"function\">set_lk_max_locks(10000)</code> — the configuration that became BIP 50.{{cite:bip-50}} BDB counts every row-level lock a transaction holds simultaneously. Large blocks with thousands of inputs can exceed this limit on old BDB builds. Nodes that hit the limit refused to validate the block; nodes on LevelDB accepted it — splitting the chain."
 
   - line: 70
     type: margin
@@ -143,7 +145,7 @@ annotations:
 
   - line: 256
     type: margin
-    text: "<code class=\"function\">ReadDiskTx</code> — two-step transaction retrieval: first fetch the <code class=\"type\">CTxIndex</code> (containing the disk position), then read the full serialised <code class=\"type\">CTransaction</code> from that position in <code>blk0001.dat</code>. The four overloads accept either a hash or an <code class=\"type\">COutPoint</code> (txid + output index), with and without returning the index."
+    text: "<code class=\"function\">ReadDiskTx</code> — two-step transaction retrieval: first fetch the <code class=\"type\">CTxIndex</code> (containing the disk position), then read the full serialized <code class=\"type\">CTransaction</code> from that position in <code>blk0001.dat</code>. The four overloads accept either a hash or an <code class=\"type\">COutPoint</code> (txid + output index), with and without returning the index."
 
   # ── WriteBlockIndex / InsertBlockIndex ───────────────────────────────────────
   - line: 282
@@ -157,7 +159,7 @@ annotations:
   # ── LoadBlockIndex ────────────────────────────────────────────────────────────
   - line: 322
     type: margin
-    text: "<code class=\"function\">LoadBlockIndex</code> — reconstructs the entire in-memory blockchain index from BDB on startup. Iterates every <code>\"blockindex\"</code> record, deserialises each <code class=\"type\">CDiskBlockIndex</code>, and re-links the <code class=\"type\">CBlockIndex</code> doubly-linked list (<code class=\"variable\">pprev</code>, <code class=\"variable\">pnext</code>). Without this, Bitcoin would need to re-scan every block file on each launch."
+    text: "<code class=\"function\">LoadBlockIndex</code> — reconstructs the entire in-memory blockchain index from BDB on startup. Iterates every <code>\"blockindex\"</code> record, deserializes each <code class=\"type\">CDiskBlockIndex</code>, and re-links the <code class=\"type\">CBlockIndex</code> doubly-linked list (<code class=\"variable\">pprev</code>, <code class=\"variable\">pnext</code>). Without this, Bitcoin would need to re-scan every block file on each launch."
 
   - line: 354
     type: margin
@@ -187,12 +189,12 @@ annotations:
   # ── CReviewDB ─────────────────────────────────────────────────────────────────
   - line: 474
     type: margin
-    text: "<code class=\"type\">CReviewDB</code> — a peer-rating database Satoshi designed but never activated. The idea: nodes could submit signed reviews of other nodes' reliability or honesty, stored and propagated like transactions. The infrastructure exists but no code ever calls <code class=\"function\">WriteReviews</code> in v0.01. It was quietly removed in later versions."
+    text: "<code class=\"type\">CReviewDB</code> — a peer-rating database Satoshi designed but never activated. The idea: nodes could submit signed reviews of other nodes' reliability or honesty, stored and propagated like transactions. The infrastructure exists — a <code>\"review\"</code> network message and the edit-review dialog both reach <code class=\"function\">WriteReviews</code> — but the feature never saw real use. It was quietly removed in later versions."
 
   # ── CWalletDB ─────────────────────────────────────────────────────────────────
   - line: 495
     type: margin
-    text: "<code class=\"function\">CWalletDB::LoadWallet</code> — deserialises the entire wallet from <code>wallet.dat</code> at startup. Uses a BDB cursor to iterate every record, switching on the string type tag stored at the front of each key. The wallet schema — name, tx, key, defaultkey, setting — is a simple tagged union encoded in BDB."
+    text: "<code class=\"function\">CWalletDB::LoadWallet</code> — deserializes the entire wallet from <code>wallet.dat</code> at startup. Uses a BDB cursor to iterate every record, switching on the string type tag stored at the front of each key. The wallet schema — name, tx, key, defaultkey, setting — is a simple tagged union encoded in BDB."
 
   - line: 500
     type: margin

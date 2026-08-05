@@ -115,7 +115,7 @@ annotations:
 
   - line: 319
     type: margin
-    text: "<code class=\"class\">CAddrDB</code>—peer address storage (<code>addr.dat</code>). Remembers IP addresses of other Bitcoin nodes. On startup, the node loads these addresses and attempts reconnection. This provides persistence across restarts: you don't need to rediscover the network from scratch each time. Combined with IRC bootstrap and address gossip, ensures network resilience."
+    text: "<code class=\"class\">CAddrDB</code>—peer address storage (<code>addr.dat</code>). Remembers IP addresses of other Bitcoin nodes. On startup, the node loads these addresses and attempts reconnection. This provides persistence across restarts: you don't need to rediscover the network from scratch each time. Combined with IRC bootstrap and address gossip, this ensures network resilience."
 
   - line: 337
     type: margin
@@ -143,7 +143,7 @@ annotations:
 
   - line: 412
     type: margin
-    text: "<code class=\"function\">LoadWallet()</code>—the critical startup function. Reads <code>wallet.dat</code>, populating in-memory structures with all keys and transactions. Returns the default receiving address. If this function fails (corrupted database, wrong password for encrypted wallets), the node cannot access its funds. The <code>vector&lt;unsigned char&gt;</code> return is the default public key."
+    text: "<code class=\"function\">LoadWallet()</code>—the critical startup function. Reads <code>wallet.dat</code>, populating in-memory structures with all keys and transactions. Returns the default receiving address. If this function fails (a corrupted database, for example—wallet encryption did not yet exist), the node cannot access its funds. The <code>vector&lt;unsigned char&gt;</code> return is the default public key."
 
   - line: 417
     type: margin

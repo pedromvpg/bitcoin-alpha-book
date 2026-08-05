@@ -34,7 +34,7 @@ introduction: |
     friendly (port 6667 was commonly allowed). The temporary solution worked perfectly
     for Bitcoin's first four years until the network was large enough that addr
     propagation alone sufficed for peer discovery. The IRC bootstrap was deprecated
-    in v0.6.x and removed entirely in v0.8.2 (February 2013).{{cite:bitcoin-core-history}}
+    in v0.6.x and removed entirely in v0.8.2 (May 2013).{{cite:bitcoin-core-history}}
   </p>
 
 annotations:
@@ -68,7 +68,7 @@ annotations:
 
   - line: 142
     type: margin
-    text: "<code class=\"variable\">fRestartIRCSeed</code> — a global boolean flag used to signal the IRC thread to reconnect. When the Bitcoin node detects it needs fresh peers (perhaps after losing connections), it sets this flag to <code>true</code>, causing the inner <code>while</code> loop at line 182 to exit and the outer <code>loop</code> to restart the entire IRC connection sequence."
+    text: "<code class=\"variable\">fRestartIRCSeed</code> — a global boolean flag used to signal the IRC thread to reconnect. When set to true, the inner <code>while</code> loop at line 182 exits and the outer <code>loop</code> restarts the entire IRC connection sequence — though nothing in v0.01 ever sets it; the mechanism exists for future use."
 
   - line: 144
     type: margin
@@ -80,7 +80,7 @@ annotations:
 
   - line: 152
     type: margin
-    text: "<code class=\"function\">ConnectSocket()</code> — attempts a TCP connection to the IRC server. If this fails, the function simply prints <code>'IRC connect failed'</code> and returns — no retry, no fallback. This is the only error path where the outer loop does <em>not</em> restart. If IRC is completely unreachable, the node falls back to other discovery mechanisms: hardcoded seed nodes in <code>net.cpp</code> and the addr message protocol for propagating peer addresses."
+    text: "<code class=\"function\">ConnectSocket()</code> — attempts a TCP connection to the IRC server. If this fails, the function simply prints <code>'IRC connect failed'</code> and returns — no retry, no fallback. Like every error path in this function, it exits the thread rather than restarting the outer loop. If IRC is completely unreachable, the node must fall back on the addr message protocol and any peer addresses saved from previous sessions."
 
   - line: 164
     type: margin
@@ -125,7 +125,7 @@ annotations:
 conclusion: |
   <p>
     The IRC bootstrap was deprecated in v0.6.x and removed entirely in v0.8.2
-    (February 2013).{{cite:bitcoin-core-history}} When LFNet (one of the IRC servers used) eventually shut down,
+    (May 2013).{{cite:bitcoin-core-history}} When LFNet (one of the IRC servers used) eventually shut down,
     it temporarily broke peer discovery for old clients — validating Satoshi's
     foresight in building redundant discovery systems. The addr message protocol,
     which propagates peer addresses through the P2P network itself, proved to be

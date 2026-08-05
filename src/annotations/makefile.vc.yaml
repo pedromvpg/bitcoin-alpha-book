@@ -9,7 +9,7 @@ introduction: |
     C++ 6.0, the other compiler Satoshi officially supported. Where the MinGW makefile uses
     GCC conventions (<code>-I</code>, <code>-L</code>, <code>-l</code>, <code>-o</code>),
     this file speaks MSVC's dialect (<code>/I</code>, <code>/LIBPATH:</code>, <code>.lib</code>,
-    <code>/Fo</code>). The same eleven source files are compiled into the same
+    <code>/Fo</code>). The same ten C++ source files are compiled into the same
     <code>bitcoin.exe</code>, but through Microsoft's toolchain instead of GNU's.
   </p>
   <p>
@@ -58,7 +58,7 @@ annotations:
 
   - line: 18
     type: margin
-    text: "<strong>Library dependencies</strong>. Key differences from the MinGW version: <code>libdb47s$(D).lib</code> is a statically linked Berkeley DB 4.7 (the 's' suffix means static), while MinGW links the shared <code>db_cxx</code>. The wxWidgets and Windows system libraries are identical in content but use <code>.lib</code> suffixes instead of <code>-l</code> prefixes. MSVC's linker resolves libraries by filename, not by name-mangling conventions."
+    text: "<strong>Library dependencies</strong>. Key differences from the MinGW version: <code>libdb47s$(D).lib</code> is a statically linked Berkeley DB 4.7 (the 's' suffix means static), while MinGW links the shared <code>db_cxx</code>. The wxWidgets and Windows system libraries are identical in content but use <code>.lib</code> suffixes instead of <code>-l</code> prefixes. MSVC's linker resolves libraries by filename, not by naming conventions."
 
   - line: 24
     type: margin
@@ -95,7 +95,7 @@ annotations:
 conclusion: |
   <p>
     The MSVC makefile is a near-mirror of the MinGW version, translated into Microsoft's
-    toolchain dialect. The same eleven source files compile into the same executable with
+    toolchain dialect. The same ten C++ source files compile into the same executable with
     the same dependencies. The differences are syntactic (flag formats, path conventions,
     file extensions) rather than semantic. This parallelism was intentional — Satoshi
     maintained both build systems to ensure the code compiled correctly under two
@@ -115,5 +115,5 @@ conclusion: |
     modern MSVC across Linux, macOS, Windows, and various BSDs. But the fundamental build
     structure — compile source files with their dependencies, optimize the cryptographic
     hot path, link against system and third-party libraries, produce a single executable —
-    remains unchanged from what Satoshi defined in these 78 lines.
+    remains unchanged from what Satoshi defined in these 77 lines.
   </p>

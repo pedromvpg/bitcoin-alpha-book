@@ -9,7 +9,7 @@ introduction: |
     Satoshi built a graphical application -- a Windows desktop program with buttons,
     menus, and dialog boxes. This header declares every window class in that
     application: the main transaction list, the send-coins dialog, the address book,
-    the options panel, and the entire abandoned marketplace UI. It is 418 lines of
+    the options panel, and the entire abandoned marketplace UI. It is 417 lines of
     wxWidgets C++ that reveal what Satoshi thought Bitcoin should <em>look like</em>.
   </p>
   <p>
@@ -46,7 +46,7 @@ introduction: |
 annotations:
   - line: 8
     type: margin
-    text: "<code>DECLARE_EVENT_TYPE</code> -- wxWidgets macro that registers custom event types for inter-thread communication. <code class=\"variable\">wxEVT_CROSSTHREADCALL</code> is the general-purpose mechanism: background threads post this event with an ID and payload, and the UI thread's <code class=\"function\">OnCrossThreadCall()</code> dispatches it. <code class=\"variable\">wxEVT_REPLY1</code> through <code class=\"variable\">wxEVT_REPLY3</code> handle the three stages of the IP-to-IP payment protocol (connect, send transaction, receive confirmation). <code class=\"variable\">wxEVT_TABLEADDED</code>, <code class=\"variable\">wxEVT_TABLEUPDATED</code>, and <code class=\"variable\">wxEVT_TABLEDELETED</code> are marketplace notifications -- never fully wired up."
+    text: "<code>DECLARE_EVENT_TYPE</code> -- wxWidgets macro that registers custom event types for inter-thread communication. <code class=\"variable\">wxEVT_CROSSTHREADCALL</code> is the general-purpose mechanism: background threads post this event with an ID and payload, and the UI thread's <code class=\"function\">OnCrossThreadCall()</code> dispatches it. <code class=\"variable\">wxEVT_REPLY1</code> through <code class=\"variable\">wxEVT_REPLY3</code> carry network replies back to waiting dialogs -- <code class=\"variable\">wxEVT_REPLY1</code> returns marketplace product details to the order form, while <code class=\"variable\">wxEVT_REPLY2</code> and <code class=\"variable\">wxEVT_REPLY3</code> handle the two stages of the IP-to-IP payment handshake (the recipient's key, then final confirmation). <code class=\"variable\">wxEVT_TABLEADDED</code>, <code class=\"variable\">wxEVT_TABLEUPDATED</code>, and <code class=\"variable\">wxEVT_TABLEDELETED</code> are marketplace notifications -- never fully wired up."
 
   - line: 16
     type: margin
@@ -54,11 +54,11 @@ annotations:
 
   - line: 24
     type: margin
-    text: "Free-standing UI helper functions. <code class=\"function\">HandleCtrlA()</code> implements select-all (Ctrl+A) across all text fields -- a small usability detail that shows Satoshi's attention to user experience. <code class=\"function\">DateTimeStr()</code> formats Unix timestamps for display. <code class=\"function\">FormatTxStatus()</code> converts a wallet transaction's confirmation state into human-readable text like '3 confirmations' or 'unconfirmed'. <code class=\"function\">MainFrameRepaint()</code> triggers a UI refresh when blockchain state changes."
+    text: "Free-standing UI helper functions. <code class=\"function\">HandleCtrlA()</code> implements select-all (Ctrl+A) across all text fields -- a small usability detail that shows Satoshi's attention to user experience. <code class=\"function\">DateTimeStr()</code> formats Unix timestamps for display. <code class=\"function\">FormatTxStatus()</code> converts a wallet transaction's confirmation state into human-readable text like '3/unconfirmed' or '42 blocks'. <code class=\"function\">MainFrameRepaint()</code> triggers a UI refresh when blockchain state changes."
 
   - line: 35
     type: margin
-    text: "<code class=\"type\">CMainFrame</code> -- the primary application window, inheriting from the auto-generated <code class=\"type\">CMainFrameBase</code> layout. This is what users see when they open Bitcoin: a transaction list, their address, a balance display, and send/address-book buttons. The class overrides 19 event handlers for everything from mouse clicks to window paint events. The destructor (<code class=\"function\">~CMainFrame()</code>) is where Satoshi saved application state on exit."
+    text: "<code class=\"type\">CMainFrame</code> -- the primary application window, inheriting from the auto-generated <code class=\"type\">CMainFrameBase</code> layout. This is what users see when they open Bitcoin: a transaction list, their address, a balance display, and send/address-book buttons. The class overrides 21 event handlers for everything from mouse clicks to window paint events. The destructor (<code class=\"function\">~CMainFrame()</code>) clears the global window pointer so no further UI events fire during shutdown."
 
   - line: 67
     type: margin
@@ -94,7 +94,7 @@ annotations:
 
   - line: 239
     type: margin
-    text: "<code class=\"type\">CProductsDialog</code> -- the marketplace product browser. Would have displayed a searchable, filterable list of products advertised on the network. <code class=\"variable\">m_vProduct</code> (line 253) holds the current search results. The search and combobox handlers suggest Satoshi planned category-based browsing. This dialog was wired into the UI menus but had no functioning backend."
+    text: "<code class=\"type\">CProductsDialog</code> -- the marketplace product browser. Would have displayed a searchable, filterable list of products advertised on the network. <code class=\"variable\">m_vProduct</code> (line 253) holds the current search results. The search and combobox handlers suggest Satoshi planned category-based browsing. This dialog was never even wired into the UI menus -- it had no functioning backend."
 
   - line: 258
     type: margin

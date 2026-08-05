@@ -27,8 +27,8 @@ introduction: |
   </p>
   <p>
     The protocol uses a simple message format: 4-byte magic number (to identify
-    the Bitcoin network), 12-byte command name, 4-byte payload size, 4-byte
-    checksum, then the payload. Messages include: "version" (handshake), "addr"
+    the Bitcoin network), 12-byte command name, 4-byte payload size, then
+    the payload. Messages include: "version" (handshake), "addr"
     (peer addresses), "inv" (announce data), "getdata" (request data), "tx"
     (transaction), "block" (block data). This simplicity enabled implementations
     in dozens of languages.
@@ -37,7 +37,7 @@ introduction: |
 annotations:
   - line: 20
     type: margin
-    text: "<code>fClient</code> — whether to run in lightweight mode without full blockchain. If true, NODE_NETWORK bit is cleared from nLocalServices, signalling to peers that this node cannot serve historical blocks."
+    text: "<code>fClient</code> — whether to run in lightweight mode without full blockchain. If true, NODE_NETWORK bit is cleared from nLocalServices, signaling to peers that this node cannot serve historical blocks."
 
   - line: 21
     type: margin
@@ -53,7 +53,7 @@ annotations:
 
   - line: 29
     type: margin
-    text: "<code>mapAddresses</code> — the address book of known peers. Keys are serialized IP+port; values are CAddress structs with last-seen time and service flags. Persisted to addr.txt on disk so peers survive restarts."
+    text: "<code>mapAddresses</code> — the address book of known peers. Keys are serialized IP+port; values are CAddress structs with last-seen time and service flags. Persisted to addr.dat on disk so peers survive restarts."
 
   - line: 31
     type: margin
@@ -73,7 +73,7 @@ annotations:
 
   - line: 61
     type: margin
-    text: "SOCKS4 handshake: the 9-byte request encodes VN=4, CD=1 (CONNECT), the destination port (big-endian), and IP (4 bytes). The string \"user\" is a null-terminated USERID field. A 0x5A response byte means the proxy accepted the connection."
+    text: "SOCKS4 handshake: the 13-byte request encodes VN=4, CD=1 (CONNECT), the destination port (big-endian), and IP (4 bytes). The string \"user\" is a null-terminated USERID field. A 0x5A response byte means the proxy accepted the connection."
 
   - line: 92
     type: margin
@@ -117,7 +117,7 @@ annotations:
 
   - line: 541
     type: margin
-    text: "Accept inbound connections: when the listening socket fires in the read set, accept() pulls the pending connection off the kernel queue, creates a CNode marked fFromMe=true (inbound), and adds it to vNodes. Inbound nodes are treated identically to outbound ones."
+    text: "Accept inbound connections: when the listening socket fires in the read set, accept() pulls the pending connection off the kernel queue, creates a CNode marked fInbound=true (inbound), and adds it to vNodes. Inbound nodes are treated identically to outbound ones."
 
   - line: 577
     type: margin
@@ -125,7 +125,7 @@ annotations:
 
   - line: 613
     type: margin
-    text: "Send path: flushes as much of vSend as the kernel will accept in one send() call, then erases the bytes sent. vSend is a deque so partial sends are handled correctly. Only marked writable (fdsetSend) if vSend is non-empty."
+    text: "Send path: flushes as much of vSend as the kernel will accept in one send() call, then erases the bytes sent. Unsent bytes remain in vSend, so partial sends are handled correctly. Only marked writable (fdsetSend) if vSend is non-empty."
 
   - line: 673
     type: margin
@@ -145,7 +145,7 @@ annotations:
 
   - line: 819
     type: margin
-    text: "<code>THREAD_PRIORITY_BELOW_NORMAL</code> — the message handler runs at reduced priority deliberately. Network I/O (socket handler) must be responsive; protocol processing can lag slightly. This priority inversion ensures data is received before it is processed."
+    text: "<code>THREAD_PRIORITY_BELOW_NORMAL</code> — the message handler runs at reduced priority deliberately. Network I/O (socket handler) must be responsive; protocol processing can lag slightly. This deliberate priority split ensures data is received before it is processed."
 
   - line: 858
     type: margin
@@ -165,7 +165,7 @@ annotations:
 
   - line: 961
     type: margin
-    text: "<code>addrIncoming</code> — if a previous session discovered our external IP, it was saved to wallet.dat. We restore it here rather than hitting whatismyip.com every startup. GetMyExternalIP updates it if successful."
+    text: "<code>addrIncoming</code> — if a previous session discovered our external IP, it was saved to wallet.dat. We restore it here as a fallback in case whatismyip.com is unreachable; GetMyExternalIP still runs and updates it if successful."
 
   - line: 968
     type: margin
@@ -173,7 +173,7 @@ annotations:
 
   - line: 974
     type: margin
-    text: "Thread startup sequence: four threads created with _beginthread() (Windows CRT). Each has a wrapper (ThreadSocketHandler) that catches exceptions and restarts the inner function after a 5-second sleep, providing fault tolerance. Thread indices 0–3 map to the vfThreadRunning array."
+    text: "Thread startup sequence: four threads created with _beginthread() (Windows CRT). All but ThreadIRCSeed run inside wrappers (like ThreadSocketHandler) that catch exceptions and restart the inner function after a 5-second sleep, providing fault tolerance. Thread indices 0–3 map to the vfThreadRunning array."
 
   - line: 998
     type: margin

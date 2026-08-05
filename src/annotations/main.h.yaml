@@ -55,7 +55,7 @@ annotations:
 
   - line: 22
     type: margin
-    text: "<code>bnProofOfWorkLimit</code>—the easiest possible difficulty, used for the genesis block. Expressed as <code>~uint256(0) >> 32</code>, meaning valid hashes must have at least 32 leading zero bits. This was trivially easy by modern standards: Satoshi's personal computer could find valid blocks in minutes. As more miners joined, difficulty automatically increased. Today's difficulty requires ~80+ leading zeros—approximately 10 trillion times harder than this initial value."
+    text: "<code>bnProofOfWorkLimit</code>—the easiest possible difficulty, used for the genesis block. Expressed as <code>~uint256(0) >> 32</code>, meaning valid hashes must have at least 32 leading zero bits. This was trivially easy by modern standards: Satoshi's personal computer could find valid blocks in minutes. As more miners joined, difficulty automatically increased. Today's difficulty requires ~80+ leading zeros—approximately 100 trillion times harder than this initial value."
 
   # Global state declarations
   - line: 30
@@ -105,7 +105,7 @@ annotations:
 
   - line: 198
     type: margin
-    text: "<code class=\"variable\">nSequence</code> — per-input sequence number. <code>UINT_MAX</code> means final; lower values were reserved for future replacement / relative lock-time. In v0.01 almost everything uses <code>UINT_MAX</code>; later soft forks (BIP 68/112/125) gave this field real consensus meaning."
+    text: "<code class=\"variable\">nSequence</code> — per-input sequence number. <code>UINT_MAX</code> means final; lower values were reserved for future replacement / relative lock-time. In v0.01 almost everything uses <code>UINT_MAX</code>; later upgrades (BIP 68/112 at consensus, BIP 125 as mempool policy) gave this field real meaning."
 
   - line: 274
     type: margin
@@ -201,7 +201,7 @@ annotations:
 
   - line: 1212
     type: margin
-    text: "<code>CBlockLocator</code> - compact chain representation for syncing. Exponentially spaced block hashes let nodes find common ancestor efficiently."
+    text: "<code>CBlockLocator</code> - compact chain representation for syncing. Exponentially spaced block hashes let nodes find a common ancestor efficiently."
 
   - lines: [17, 19]
     type: highlight

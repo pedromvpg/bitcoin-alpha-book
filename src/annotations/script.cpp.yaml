@@ -69,7 +69,7 @@ annotations:
 
   - line: 70
     type: margin
-    text: "Data push dispatch: opcodes 0x01–0x4b push that many bytes. OP_PUSHDATA1 uses the next byte as a length, OP_PUSHDATA2 uses two bytes, OP_PUSHDATA4 uses four. These cover everything from a 1-byte integer to a 520-byte maximum push. The vast majority of real scripts are mostly push operations followed by a few crypto opcodes."
+    text: "Data push dispatch: opcodes 0x01–0x4b push that many bytes. OP_PUSHDATA1 uses the next byte as a length, OP_PUSHDATA2 uses two bytes, OP_PUSHDATA4 uses four. These cover everything from a 1-byte integer to pushes of arbitrary size — v0.01 sets no maximum (the 520-byte limit came years later). The vast majority of real scripts are mostly push operations followed by a few crypto opcodes."
 
   - line: 78
     type: margin
@@ -81,7 +81,7 @@ annotations:
 
   - line: 116
     type: margin
-    text: "<code>OP_IF</code>/OP_NOTIF: pop the top stack element, evaluate as boolean, push result onto vfExec. If false, the branch up to OP_ELSE/OP_ENDIF is skipped. OP_VERIF/OP_VERNOTIF compare the version number instead of a stack value — a forward-compatibility mechanism Satoshi included but never deployed."
+    text: "<code>OP_IF</code>/OP_NOTIF: pop the top stack element, evaluate as boolean, push result onto vfExec. If false, the branch up to OP_ELSE/OP_ENDIF is skipped. OP_VERIF/OP_VERNOTIF compare the popped value against the client's VERSION instead — a forward-compatibility mechanism Satoshi included but never deployed."
 
   - line: 156
     type: margin
@@ -105,7 +105,7 @@ annotations:
 
   - line: 516
     type: margin
-    text: "Unary numeric opcodes operate on a BigNum decoded from the top stack element. OP_2MUL and OP_2DIV are simple shifts (<<1, >>1). OP_NOT is logical — returns 1 if input is zero. All operate through OpenSSL's CBigNum which handles arbitrary precision; these were later disabled to limit script complexity."
+    text: "Unary numeric opcodes operate on a BigNum decoded from the top stack element. OP_2MUL and OP_2DIV are simple shifts (<<1, >>1). OP_NOT is logical — returns 1 if input is zero. All operate through OpenSSL's CBigNum which handles arbitrary precision; of these, only OP_2MUL and OP_2DIV were later disabled."
 
   - line: 545
     type: margin

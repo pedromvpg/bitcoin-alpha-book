@@ -5,13 +5,13 @@
  * propagate them to: cover, spine, title page, colophon, home hero, review
  * chrome, and (via syncEditionInHtml) any stale built HTML still on disk.
  */
-export const EDITION = 'v0.3.4';
+export const EDITION = 'v0.3.5';
 
 /**
  * Annotations credit — which models authored / revised the commentary.
  */
 export const ANNOTATIONS_CREDIT =
-  'Annotations by Claude Sonnet 4.6 (Revised by Opus 4.6, GPT 5.6 Sol, Grok 4.5)';
+  'Annotations by Claude Sonnet 4.6 (Revised by Opus 4.6, GPT 5.6 Sol, Grok 4.5, Kimi K3)';
 
 /** Cache-bust / equality key for preview + review shells. */
 export function editionKey(edition = EDITION, credit = ANNOTATIONS_CREDIT) {

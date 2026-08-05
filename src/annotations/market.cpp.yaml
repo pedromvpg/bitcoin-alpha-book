@@ -14,11 +14,12 @@ introduction: |
   </p>
   <p>
     In a 2011 email to Mike Hearn, Satoshi explained: "I was trying to implement an
-    eBay-style marketplace built into the client. Basically, nodes would advertise
-    products for sale and there would be a review/reputation system."{{cite:nakamoto-hearn-emails}} The marketplace
+    eBay style marketplace built in to the client. Publish/subscribe would be used
+    for broadcasting product offers and ratings/reviews. Your reviews would be
+    weighted by the blocks you've generated."{{cite:nakamoto-hearn-emails}} The marketplace
     code uses a novel "atom" propagation system -- a form of trust diffusion where
-    reputation flows through a social graph of reviewers. A user who reviews a seller
-    gains atoms; those atoms propagate outward through subsequent links, decaying as
+    reputation flows through a social graph of reviewers. A seller gains atoms when a
+    user reviews them; those atoms propagate outward through subsequent links, decaying as
     they spread. This was Satoshi's attempt to solve the reputation bootstrapping
     problem without a central authority.
   </p>
@@ -37,7 +38,7 @@ introduction: |
     2009.{{cite:nakamoto-institute-code}}
   </p>
   <p>
-    What remains is 265 lines of C++ that reveal a mind thinking far beyond digital
+    What remains is 264 lines of C++ that reveal a mind thinking far beyond digital
     cash. Satoshi was designing an entire trustless economy: money, commerce, and
     reputation, all woven together. The marketplace failed as software, but it
     succeeded as prophecy.
@@ -50,7 +51,7 @@ annotations:
 
   - line: 26
     type: margin
-    text: "<code class=\"variable\">mapProducts</code> -- the global product catalogue, mapping product hashes to <code class=\"type\">CProduct</code> objects. This is the marketplace equivalent of <code class=\"variable\">mapTransactions</code> (the mempool). Products from all sellers across the network would live here. <code class=\"variable\">cs_mapProducts</code> is the mutex protecting it from concurrent access -- the same threading pattern used throughout Bitcoin's core."
+    text: "<code class=\"variable\">mapProducts</code> -- the global product catalog, mapping product hashes to <code class=\"type\">CProduct</code> objects. This is the marketplace equivalent of <code class=\"variable\">mapTransactions</code> (the mempool). Products from all sellers across the network would live here. <code class=\"variable\">cs_mapProducts</code> is the mutex protecting it from concurrent access -- the same threading pattern used throughout Bitcoin's core."
 
   - line: 29
     type: margin
@@ -66,7 +67,7 @@ annotations:
 
   - line: 84
     type: margin
-    text: "<code class=\"function\">Union()</code> -- a generic sorted-set-union utility. The commented-out block above (lines 91-96) is Satoshi's earlier attempt using <code class=\"function\">std::set_union</code> with erase, replaced by the cleaner <code class=\"function\">back_inserter</code> version. He left the old code as a note to himself: <code>//// need to check that this is equivalent, then delete this comment</code>. He never came back to clean it up -- another sign of code frozen mid-development."
+    text: "<code class=\"function\">Union()</code> -- a generic sorted-set-union utility. The commented-out block above (lines 91-96) is Satoshi's earlier attempt using <code class=\"function\">std::set_union</code> with erase, replaced by the cleaner <code class=\"function\">back_inserter</code> version. He left the old code as a note to himself: <code>///// need to check that this is equivalent, then delete this comment</code>. He never came back to clean it up -- another sign of code frozen mid-development."
 
   - line: 109
     type: margin

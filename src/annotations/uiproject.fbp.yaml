@@ -34,6 +34,7 @@ introduction: |
 
 annotations:
   - line: 38
+    type: margin
     text: |
       <p>
         <strong>The window title: simply "Bitcoin."</strong> No version number,
@@ -43,6 +44,7 @@ annotations:
       </p>
 
   - line: 35
+    type: margin
     text: |
       <p>
         <strong>705 x 484 pixels</strong>—the exact dimensions Satoshi chose for
@@ -53,6 +55,7 @@ annotations:
       </p>
 
   - line: 146
+    type: margin
     text: |
       <p>
         <strong>The mining toggle, hidden in plain sight.</strong> Under Options →
@@ -65,6 +68,7 @@ annotations:
       </p>
 
   - line: 241
+    type: margin
     text: |
       <p>
         <strong>The Send Coins toolbar button.</strong> The <code>send20</code>
@@ -75,6 +79,7 @@ annotations:
       </p>
 
   - line: 350
+    type: margin
     text: |
       <p>
         <strong>"Your Bitcoin Address:"</strong>—displayed prominently at the top
@@ -85,6 +90,7 @@ annotations:
       </p>
 
   - line: 632
+    type: margin
     text: |
       <p>
         <strong>The Balance display.</strong> Just a simple label showing your
@@ -95,6 +101,7 @@ annotations:
       </p>
 
   - line: 840
+    type: margin
     text: |
       <p>
         <strong>"All Transactions" tab.</strong> Every send, receive, and
@@ -105,6 +112,7 @@ annotations:
       </p>
 
   - line: 1801
+    type: margin
     text: |
       <p>
         <strong>Transaction fee configuration.</strong> Even in v0.1, Satoshi
@@ -115,6 +123,7 @@ annotations:
       </p>
 
   - line: 2479
+    type: margin
     text: |
       <p>
         <strong>Two ways to send: IP address or Bitcoin address.</strong> This
@@ -127,6 +136,7 @@ annotations:
       </p>
 
   - line: 3771
+    type: margin
     text: |
       <p>
         <strong>Privacy through multiple addresses.</strong> "You may want to

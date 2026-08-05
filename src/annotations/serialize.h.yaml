@@ -41,7 +41,7 @@ annotations:
 
   - line: 34
     type: margin
-    text: "Serialization context flags. <code class=\"constant\">SER_NETWORK</code> means data going over the wire—includes all fields. <code class=\"constant\">SER_DISK</code> means local storage—may include extra metadata. <code class=\"constant\">SER_GETHASH</code> means computing a hash—excludes signatures (for txid calculation). The modifier <code class=\"constant\">SER_SKIPSIG</code> omits signatures; <code class=\"constant\">SER_BLOCKHEADERONLY</code> serializes just the 80-byte header without transactions."
+    text: "Serialization context flags. <code class=\"constant\">SER_NETWORK</code> means data going over the wire—includes all fields. <code class=\"constant\">SER_DISK</code> means local storage—may include extra metadata. <code class=\"constant\">SER_GETHASH</code> means computing a hash—a block's transaction list is excluded, so the block hash covers only the header. The modifier <code class=\"constant\">SER_SKIPSIG</code> was meant to omit signatures—in v0.01 only the market code sets it, and nothing reads it; <code class=\"constant\">SER_BLOCKHEADERONLY</code> serializes just the 80-byte header without transactions."
 
   - line: 46
     type: margin
@@ -73,7 +73,7 @@ annotations:
 
   - line: 152
     type: margin
-    text: "<code class=\"function\">GetSizeOfCompactSize()</code>—returns how many bytes a CompactSize will occupy. Essential for pre-calculating buffer sizes. The thresholds: <253 uses 1 byte, <65536 uses 3 bytes (marker + 2-byte value), <4 billion uses 5 bytes, larger uses 9 bytes. Most transaction data stays in the 1-byte range."
+    text: "<code class=\"function\">GetSizeOfCompactSize()</code>—returns how many bytes a CompactSize will occupy. Essential for pre-calculating buffer sizes. The thresholds: &lt;253 uses 1 byte, &lt;65536 uses 3 bytes (marker + 2-byte value), &lt;4 billion uses 5 bytes, larger uses 9 bytes. Most transaction data stays in the 1-byte range."
 
   - line: 161
     type: margin
@@ -85,7 +85,7 @@ annotations:
 
   - line: 226
     type: margin
-    text: "<code class=\"macro\">FLATDATA(obj)</code> — serialize a POD / array as raw bytes with no CompactSize length prefix. Used for fixed-layout structs like <code class=\"class\">COutPoint</code> and block-header fields where the wire format is exactly the in-memory layout."
+    text: "<code class=\"macro\">FLATDATA(obj)</code> — serialize a POD / array as raw bytes with no CompactSize length prefix. Used for fixed-layout structs like <code class=\"class\">COutPoint</code> and message-header fields where the wire format is exactly the in-memory layout."
 
   - line: 311
     type: margin

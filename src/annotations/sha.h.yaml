@@ -56,11 +56,11 @@ annotations:
 
   - line: 120
     type: margin
-    text: "<code class=\"class\">SHA1</code>—160-bit hash, predecessor to SHA-256. Bitcoin uses SHA1 indirectly via RIPEMD160—addresses are RIPEMD160(SHA256(pubkey)). SHA1 is considered cryptographically weak (Google demonstrated a collision in 2017),{{cite:wang-sha1-2005}} but Bitcoin doesn't rely on SHA1's collision resistance—only SHA256's."
+    text: "<code class=\"class\">SHA1</code>—160-bit hash, predecessor to SHA-256. Bitcoin doesn't use SHA1 anywhere—addresses are RIPEMD160(SHA256(pubkey)), and RIPEMD160 is an independent design, not built on SHA1. SHA1 is considered cryptographically weak (broken theoretically in 2005,{{cite:wang-sha1-2005}} with a full collision demonstrated by Google in 2017), but Bitcoin never relied on it—only on SHA256's collision resistance."
 
   - line: 132
     type: margin
-    text: "<code class=\"class\">SHA256</code>—the cryptographic heart of Bitcoin. The <code>Transform()</code> method processes 512-bit blocks through 64 rounds of mixing, producing 256-bit output. <code>InitState()</code> sets the initial hash values (derived from the fractional parts of square roots of the first 8 primes). This is NIST FIPS 180-4's SHA-256, unchanged since standardization in 2001.{{cite:fips-180-2}}"
+    text: "<code class=\"class\">SHA256</code>—the cryptographic heart of Bitcoin. The <code>Transform()</code> method processes 512-bit blocks through 64 rounds of mixing, producing 256-bit output. <code>InitState()</code> sets the initial hash values (derived from the fractional parts of square roots of the first 8 primes). This is NIST FIPS 180-2's SHA-256, unchanged since standardization in 2001.{{cite:fips-180-2}}"
 
   - line: 137
     type: margin

@@ -38,7 +38,7 @@ annotations:
 
   - line: 16
     type: margin
-    text: "The Base58 alphabet: <code>123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz</code>. Note the missing characters: no <code>0</code> (zero), <code>O</code> (oh), <code>I</code> (eye), or <code>l</code> (ell). This 58-character set maps directly to values 0-57. The character <code>1</code> represents value 0, <code>2</code> represents 1, etc. This is why addresses starting with many <code>1</code>s have many leading zero bytes in their decoded form—the genesis coinbase's output had hash160 starting with zeros, giving an address full of <code>1</code>s."
+    text: "The Base58 alphabet: <code>123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz</code>. Note the missing characters: no <code>0</code> (zero), <code>O</code> (oh), <code>I</code> (eye), or <code>l</code> (ell). This 58-character set maps directly to values 0-57. The character <code>1</code> represents value 0, <code>2</code> represents 1, etc. Every leading zero byte in the decoded payload becomes one <code>1</code>—the genesis address <code>1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</code> starts with <code>1</code> because the 0x00 version byte encodes to it."
 
   - line: 19
     type: margin
@@ -98,11 +98,11 @@ annotations:
 
   - line: 157
     type: margin
-    text: "<code class=\"function\">Hash160ToAddress()</code>—converts a 160-bit hash to a Bitcoin address. This is the final step of address generation: (1) SHA256 the public key, (2) RIPEMD160 the result (giving 'hash160'), (3) prepend version byte, (4) Base58Check encode. The 160-bit hash provides 2^80 security against collision attacks while keeping addresses manageable length."
+    text: "<code class=\"function\">Hash160ToAddress()</code>—converts a 160-bit hash to a Bitcoin address. This is the final step of address generation: (1) SHA256 the public key, (2) RIPEMD160 the result (giving 'hash160'), (3) prepend version byte, (4) Base58Check encode. The 160-bit hash provides 2^80 security against collision attacks while keeping addresses a manageable length."
 
   - line: 165
     type: margin
-    text: "<code class=\"function\">AddressToHash160()</code>—extracts the hash160 from a Bitcoin address. Used when creating transactions: the recipient's address is decoded to get the hash160, which goes into the scriptPubKey. Version byte validation (line 176: <code>nVersion <= ADDRESSVERSION</code>) rejects addresses from incompatible networks—you can't accidentally send mainnet coins to a testnet address."
+    text: "<code class=\"function\">AddressToHash160()</code>—extracts the hash160 from a Bitcoin address. Used when creating transactions: the recipient's address is decoded to get the hash160, which goes into the scriptPubKey. Version byte validation (line 176: <code>nVersion &lt;= ADDRESSVERSION</code>) rejects addresses from incompatible networks—you can't accidentally send mainnet coins to a testnet address."
 
   - line: 184
     type: margin
@@ -123,7 +123,8 @@ conclusion: |
   <p>
     The 4-byte checksum provides strong error detection: the probability of
     a random typo producing a valid address is 1 in 4.3 billion. For comparison,
-    a credit card number's Luhn checksum only catches 90% of single-digit errors.
+    a credit card number's Luhn checksum catches all single-digit errors but
+    misses some adjacent-digit transpositions.
     Bitcoin's double-SHA256 checksum is overkill for error detection alone—but
     Satoshi consistently chose conservative security margins.
   </p>

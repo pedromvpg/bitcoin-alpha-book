@@ -93,7 +93,7 @@ annotations:
 
   - line: 53
     type: margin
-    text: "A classic build system hack: the OpenSSL build fails partway through after successfully producing <code>libeay32.dll</code> (the only output Bitcoin needs). Rather than fix the build, Satoshi simply comments out the error check (<code>REM if errorlevel 1 goto end</code>) so the script continues past the failure. Pragmatic, not elegant — but it works."
+    text: "A classic build system hack: the OpenSSL build fails partway through after successfully producing <code>libeay32</code> (all Bitcoin cares about). Rather than fix the build, Satoshi simply comments out the error check (<code>REM if errorlevel 1 goto end</code>) so the script continues past the failure and runs dllwrap to generate <code>libeay32.dll</code>. Pragmatic, not elegant — but it works."
 
   - line: 65
     type: margin

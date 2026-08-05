@@ -13,7 +13,7 @@ introduction: |
     EDIT THIS FILE!</code> warning.
   </p>
   <p>
-    The file declares thirteen GUI classes, and their names read like a feature list
+    The file declares fifteen GUI classes, and their names read like a feature list
     for a product far more ambitious than a simple payment tool:
     <code class="type">CMainFrameBase</code>,
     <code class="type">CTxDetailsDialogBase</code>,
@@ -117,13 +117,13 @@ annotations:
 
 conclusion: |
   <p>
-    This header file is a table of contents for Satoshi's complete vision. The thirteen
+    This header file is a table of contents for Satoshi's complete vision. The fifteen
     class declarations describe not just a wallet but an ecosystem: payments, address
     management, a marketplace with product listings and order forms, a review system,
-    and a poker game. Five of these thirteen classes — the marketplace browser, product
+    and a poker game. Five of these fifteen classes — the marketplace browser, product
     editor, product viewer, order viewer, review editor — were never activated in any
     public release. The poker lobby and table bring it to seven unreleased interfaces
-    out of thirteen total.
+    out of fifteen total.
   </p>
   <p>
     The virtual event handler pattern deserves appreciation. By making every handler

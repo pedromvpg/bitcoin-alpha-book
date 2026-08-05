@@ -70,7 +70,7 @@ annotations:
 
   - line: 99
     type: margin
-    text: "<code>'Balance:'</code> — a right-aligned static text field (120 pixels wide, 8-point font) that displays the user's current balance. The <code class=\"variable\">wxALIGN_RIGHT</code> and <code class=\"variable\">wxST_NO_AUTORESIZE</code> flags keep the number right-justified and prevent the layout from jumping as the balance changes. This was the user's entire view of their wealth — a single number on a grey background."
+    text: "<code>'Balance:'</code> — a right-aligned static text field (120 pixels wide, 8-point font) that displays the user's current balance. The <code class=\"variable\">wxALIGN_RIGHT</code> and <code class=\"variable\">wxST_NO_AUTORESIZE</code> flags keep the number right-justified and prevent the layout from jumping as the balance changes. This was the user's entire view of their wealth — a single number on a gray background."
 
   - line: 118
     type: margin

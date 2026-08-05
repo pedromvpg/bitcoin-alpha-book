@@ -39,11 +39,11 @@ annotations:
 
   - line: 6
     type: margin
-    text: "<code class=\"function\">ThreadIRCSeed()</code>—the IRC bootstrap thread, runs continuously in background. Connects to <code>chat.freenode.net</code> port 6667, joins <code>#bitcoin</code>, sets a nickname encoding our IP address. Periodically sends WHO requests to get user lists, decodes other users' nicknames to extract their IP addresses, and feeds those addresses into the peer discovery system. If the connection drops, retries automatically."
+    text: "<code class=\"function\">ThreadIRCSeed()</code>—the IRC bootstrap thread, runs continuously in background. Connects to <code>chat.freenode.net</code> port 6667, joins <code>#bitcoin</code>, sets a nickname encoding our IP address. Sends a WHO request to get the user list, decodes other users' nicknames to extract their IP addresses, and feeds those addresses into the peer discovery system. If the connection drops, the thread exits—there is no automatic reconnect in v0.01."
 
   - line: 7
     type: margin
-    text: "<code class=\"variable\">fRestartIRCSeed</code>—restart flag for the IRC thread. Set to true when configuration changes (like new external IP detected) or after connection failures. The thread checks this flag and reinitializes when needed. The bootstrap must be resilient—without peer discovery, a node is isolated and useless."
+    text: "<code class=\"variable\">fRestartIRCSeed</code>—restart flag for the IRC thread. Nothing in v0.01 ever sets it—the hook exists for future use. When set, the thread's inner receive loop exits and the outer loop reconnects. The bootstrap must be resilient—without peer discovery, a node is isolated and useless."
 
 conclusion: |
   <p>

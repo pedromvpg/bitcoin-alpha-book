@@ -14,7 +14,7 @@ introduction: |
     The key abstraction is the <code>CNode</code> class: a single connection to
     another Bitcoin node. Each CNode maintains send/receive buffers, tracks what
     data the peer has (to avoid redundant transfers), and handles the message
-    serialization. A typical node maintains 8-125 simultaneous CNode connections.
+    serialization. A typical node maintains 8–125 simultaneous CNode connections.
   </p>
   <p>
     Satoshi designed the protocol with minimal trust: nodes don't believe what
@@ -48,7 +48,7 @@ annotations:
 
   - line: 59
     type: margin
-    text: "<code class=\"constant\">COMMAND_SIZE=12</code>—maximum command name length. Commands like 'version', 'verack', 'inv', 'getdata', 'block', 'tx' easily fit. The padding with zeros allows fixed-size parsing. Longer command names would require protocol changes—but 12 characters has proven sufficient for all Bitcoin message types."
+    text: "<code class=\"constant\">COMMAND_SIZE=12</code>—maximum command name length. Commands like 'version', 'inv', 'getdata', 'block', 'tx', 'ping' easily fit. The padding with zeros allows fixed-size parsing. Longer command names would require protocol changes—but 12 characters has proven sufficient for all Bitcoin message types."
 
   - line: 94
     type: margin
@@ -92,7 +92,7 @@ annotations:
 
   - line: 434
     type: margin
-    text: "<code class=\"class\">CNode</code>—the heart of Bitcoin's networking: a single peer connection. Each CNode wraps a socket and maintains: send/receive buffers, version information, connection state, inventory tracking (what the peer has/wants), and address gossip state. A running Bitcoin node typically has 8-125 CNode instances, each representing one peer relationship."
+    text: "<code class=\"class\">CNode</code>—the heart of Bitcoin's networking: a single peer connection. Each CNode wraps a socket and maintains: send/receive buffers, version information, connection state, inventory tracking (what the peer has/wants), and address gossip state. A running Bitcoin node typically has 8–125 CNode instances, each representing one peer relationship."
 
   - line: 440
     type: margin
@@ -112,7 +112,7 @@ annotations:
 
   - line: 493
     type: margin
-    text: "Version message on connect: <code>PushMessage(\"version\", VERSION, nLocalServices, nTime, addr)</code>. The first message any node sends is <code>version</code>, announcing its protocol version, capabilities, and current time. The recipient responds with <code>verack</code> (version acknowledge). This handshake establishes the connection and negotiates compatible features."
+    text: "Version message on connect: <code>PushMessage(\"version\", VERSION, nLocalServices, nTime, addr)</code>. The first message any node sends is <code>version</code>, announcing its protocol version, capabilities, and current time. The recipient responds with its own <code>version</code> message. This handshake establishes the connection and negotiates compatible features."
 
   - line: 533
     type: margin
@@ -128,7 +128,7 @@ annotations:
 
   - line: 632
     type: margin
-    text: "<code class=\"function\">PushMessage()</code>—variadic templates for sending messages with any number of arguments. The syntax <code>vSend << a1 << a2</code> uses operator overloading to serialize each argument. This elegant design lets you write <code>PushMessage(\"block\", block)</code> and have the block automatically serialized according to its type's <code class=\"macro\">IMPLEMENT_SERIALIZE</code> definition."
+    text: "<code class=\"function\">PushMessage()</code>—variadic templates for sending messages with up to four arguments. The syntax <code>vSend << a1 << a2</code> uses operator overloading to serialize each argument. This elegant design lets you write <code>PushMessage(\"block\", block)</code> and have the block automatically serialized according to its type's <code class=\"macro\">IMPLEMENT_SERIALIZE</code> definition."
 
   - line: 766
     type: margin

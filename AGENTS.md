@@ -52,6 +52,11 @@ files; primers, front/back matter, and colophon are hardcoded HTML in
    author/reviser set changes) in `scripts/edition.mjs` — it propagates to
    title page, colophon, cover, spine, and preview chrome. Then rebuild
    (`npm run build && npm run cover`). Tag shipped releases in git.
+7. **GitHub release assets are edition-stamped**: book PDF uploads as
+   `bitcoin-alpha-book-<EDITION>.pdf`, cover as `bitcoin-alpha-cover-<EDITION>.pdf`
+   (e.g. `bitcoin-alpha-book-v0.3.5.pdf`). Rename via
+   `gh api -X PATCH repos/.../releases/assets/<id> -f name=...` if an asset
+   was uploaded unversioned.
 
 ## Repository policies
 

@@ -202,3 +202,23 @@ conclusion: |
     Lightning Network, Taproot—is ultimately an extension of these same opcodes
     operating on this same stack machine.{{cite:bitcoin-core-history}}
   </p>
+
+glossary:
+  - term: "opcode"
+    definition: "A single-byte instruction such as OP_DUP or OP_CHECKSIG that the interpreter executes one after another."
+  - term: "stack"
+    definition: "The last-in-first-out list of byte arrays scripts operate on: pushes add data, and each opcode pops its arguments and pushes its result."
+  - term: "reverse Polish notation"
+    definition: "The Forth-style syntax Script uses, where operators follow their operands (3 4 + instead of 3 + 4), so no parsing or precedence rules are needed."
+  - term: "EvalScript"
+    definition: "The interpreter function that runs a whole script and returns true only if execution finishes with a truthy value on top of the stack."
+  - term: "OP_CHECKSIG"
+    definition: "The opcode that pops a public key and a signature and verifies them with ECDSA, pushing 1 on success; the lock on virtually every standard payment."
+  - term: "sighash"
+    definition: "The flag byte appended to a signature (SIGHASH_ALL, NONE, or SINGLE, optionally with ANYONECANPAY) that selects which inputs and outputs the signature commits to."
+  - term: "P2PKH"
+    definition: "Pay-to-public-key-hash, the standard script pattern OP_DUP OP_HASH160 hash OP_EQUALVERIFY OP_CHECKSIG that pays whoever can sign with the key behind an address."
+  - term: "OP_CHECKMULTISIG"
+    definition: "The opcode implementing M-of-N multi-signature, succeeding when at least M of the supplied signatures verify against the N listed public keys."
+  - term: "alt stack"
+    definition: "A secondary stack on which a script can park a value with OP_TOALTSTACK and retrieve it later with OP_FROMALTSTACK."

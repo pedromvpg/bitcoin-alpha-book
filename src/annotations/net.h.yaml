@@ -167,3 +167,23 @@ conclusion: |
     built on top rather than integrated into the base protocol. But these
     remnants show Satoshi thinking beyond simple value transfer.
   </p>
+
+glossary:
+  - term: "CNode"
+    definition: "The class representing one live connection to a peer, holding its buffers, negotiated version, and records of what that peer has and knows."
+  - term: "inv"
+    definition: "The inventory message advertising a list of (type, hash) pairs, so peers can request only the transactions or blocks they lack."
+  - term: "getdata"
+    definition: "The message a node sends to pull the actual transaction or block after learning of it from a peer's inv announcement."
+  - term: "message header"
+    definition: "The 20-byte prefix on every network message: four magic bytes, a 12-byte command name, and the payload size."
+  - term: "magic bytes"
+    definition: "The fixed 4-byte marker 0xf9beb4d9 that starts every message, chosen to be unlikely in ordinary data so message boundaries are easy to find."
+  - term: "version handshake"
+    definition: "The exchange of version messages when two nodes connect, negotiating protocol version, capabilities, and time before any other traffic flows."
+  - term: "addr gossip"
+    definition: "The relaying of peer addresses in addr messages, letting the network discover new participants without any central directory."
+  - term: "NODE_NETWORK"
+    definition: "The service flag a node sets to declare itself a full node willing to serve historical blocks to its peers."
+  - term: "relay"
+    definition: "The forwarding of transactions and blocks to every connected peer except those already known to have them, flooding new data across the mesh."

@@ -159,3 +159,23 @@ conclusion: |
     at the Merkle tree level, this margin is the mathematical bedrock beneath
     every unspent output in every wallet on Earth.
   </p>
+
+glossary:
+  - term: "SHA-256"
+    definition: "The NIST hash standard (FIPS 180-2) that maps any input to 256 bits through 64 rounds of mixing, and underlies every block hash and transaction ID."
+  - term: "digest"
+    definition: "The fixed-size output a hash function produces, which changes completely if even one input bit flips."
+  - term: "compression function"
+    definition: "The core routine SHA256::Transform that mixes one 512-bit block into the running hash state, executed trillions of times per second across the mining network."
+  - term: "round constant"
+    definition: "One of the 64 fixed 32-bit values added per round, each taken from the fractional cube root of a prime to keep the rounds from being self-similar."
+  - term: "nothing-up-my-sleeve number"
+    definition: "A constant derived from a simple verifiable formula such as square roots of primes, proving the designers had no freedom to hide a weakness."
+  - term: "Merkle-Damgård"
+    definition: "The construction that chains input blocks together by adding each block's output into the next block's starting state, so one input bit affects the entire final hash."
+  - term: "avalanche effect"
+    definition: "The property that flipping a single input bit changes about half the output bits, which is why mining is a lottery with no partial progress."
+  - term: "message schedule"
+    definition: "The expansion that stretches 16 words of input into the 64 words the rounds consume, so every input bit influences many rounds."
+  - term: "SHA-1"
+    definition: "The older 160-bit hash implemented in this file's first half; Bitcoin never uses it, and it shipped only because the Crypto++ source came as a bundle."

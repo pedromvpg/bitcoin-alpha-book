@@ -95,3 +95,21 @@ conclusion: |
     when the result is hashed again. Whether Satoshi knew this or just chose
     defense-in-depth, the double-hash has proven robust for over seventeen years.
   </p>
+
+glossary:
+  - term: "hash function"
+    definition: "A function mapping any input to a fixed-size fingerprint that is easy to compute but infeasible to reverse."
+  - term: "preimage resistance"
+    definition: "The property that given a hash output you cannot find an input producing it, which makes proof-of-work a lottery rather than a puzzle to solve."
+  - term: "collision resistance"
+    definition: "The property that no one can find two different inputs with the same hash, keeping transaction IDs and block hashes unique."
+  - term: "double-SHA256"
+    definition: "Bitcoin's standard construction SHA256(SHA256(data)), used for block hashes and transaction IDs as a safety margin against length-extension attacks."
+  - term: "RIPEMD-160"
+    definition: "The 160-bit hash applied after SHA-256 when deriving addresses, an independent second design so addresses never depend on one algorithm alone."
+  - term: "endianness"
+    definition: "The byte-order convention of a machine; SHA-256 is defined big-endian while most CPUs are little-endian, so ByteReverse swaps bytes before hashing."
+  - term: "rotation"
+    definition: "A bit shift in which bits pushed off one end reappear at the other; SHA-256's mixing functions are XORs of rotations such as rotr(x,2), rotr(x,13), and rotr(x,22)."
+  - term: "ASIC"
+    definition: "An application-specific integrated circuit; modern miners are chips that perform this file's Transform routine in silicon billions of times per second."

@@ -124,3 +124,21 @@ conclusion: |
     scalability vision—and for the SPV (Simplified Payment Verification)
     protocol Satoshi described in Section 8 of the whitepaper.{{cite:nakamoto-whitepaper}}
   </p>
+
+glossary:
+  - term: "CBigNum"
+    definition: "Bitcoin's C++ wrapper around OpenSSL's BIGNUM, letting the code write a + b on numbers far larger than any CPU register holds."
+  - term: "arbitrary precision"
+    definition: "Arithmetic on integers of any size instead of the fixed 32 or 64 bits a processor handles natively, required for 256-bit keys and targets."
+  - term: "compact target"
+    definition: "The 4-byte nBits encoding of the 256-bit proof-of-work threshold, one exponent byte plus three mantissa bytes, decoded by SetCompact."
+  - term: "MPI"
+    definition: "Multi-Precision Integer, OpenSSL's big-endian byte format with a length prefix and a sign bit, used to store and transmit big numbers."
+  - term: "modular arithmetic"
+    definition: "Math in which results wrap around at a fixed modulus; ECDSA signing and verification are built from modular multiplication and inversion."
+  - term: "BN_CTX"
+    definition: "OpenSSL's scratch context holding temporary values during multi-step calculations, managed here by the RAII wrapper CAutoBN_CTX."
+  - term: "RAII"
+    definition: "The C++ pattern in which a constructor acquires a resource and the destructor releases it, guaranteeing cleanup even when an exception is thrown."
+  - term: "operator overloading"
+    definition: "The C++ feature letting a class redefine arithmetic and comparison symbols, so big-number code reads like ordinary math."

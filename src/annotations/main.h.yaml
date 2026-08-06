@@ -234,3 +234,25 @@ conclusion: |
     scales to millions of users without centralized databases. Your coins exist as
     scattered outputs across the blockchain, united only by your private keys.
   </p>
+
+glossary:
+  - term: "UTXO"
+    definition: "An unspent transaction output, the atomic coin of this system; a wallet's balance is nothing more than the sum of outputs its keys can spend."
+  - term: "COutPoint"
+    definition: "The pair of a transaction hash and an output index that uniquely names one coin, and the pointer every input uses to say what it spends."
+  - term: "scriptPubKey"
+    definition: "The small program stored in each output that states the conditions for spending it, typically a signature matching a given public key hash."
+  - term: "scriptSig"
+    definition: "The data packed into an input to satisfy the previous output's scriptPubKey, usually a signature plus the public key it was made with."
+  - term: "txid"
+    definition: "A transaction's unique identifier, the double-SHA256 of its serialized bytes as returned by CTransaction::GetHash()."
+  - term: "block header"
+    definition: "The 80 bytes that are hashed for proof-of-work: version, previous block hash, merkle root, timestamp, nBits, and nonce."
+  - term: "CBlockIndex"
+    definition: "The in-memory record holding a known block's metadata and links to its predecessor and successor, so the node can walk the chain without loading full blocks from disk."
+  - term: "coinbase maturity"
+    definition: "The rule (COINBASE_MATURITY, 100 blocks) that freshly mined coins may not be spent until their block is buried 100 deep."
+  - term: "nLockTime"
+    definition: "The transaction field giving the earliest time or block height at which it may be included; zero means it is immediately final."
+  - term: "satoshi"
+    definition: "The smallest money unit in this code, one hundred-millionth of a bitcoin (COIN = 100,000,000), used as the integer unit for all amounts."

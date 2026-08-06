@@ -742,6 +742,15 @@ function generateBookHtml(files) {
     const ctx = createCitationContext(file.id, GLOBAL_REFERENCES, annotation);
     const introduction = annotation.introduction ? ctx.process(annotation.introduction) : '';
     const conclusion = annotation.conclusion ? ctx.process(annotation.conclusion) : '';
+    // Optional chapter glossary (Key Terms list, rendered after the summary)
+    const glossary = Array.isArray(annotation.glossary) ? annotation.glossary : [];
+    const glossaryHtml = glossary.length ? `
+      <div class="annotation-block chapter-glossary">
+        <h4>Key Terms</h4>
+        <dl class="glossary-list">
+          ${glossary.map((g) => `<dt>${escapeHtml(String(g.term))}</dt><dd>${ctx.process(String(g.definition))}</dd>`).join('\n          ')}
+        </dl>
+      </div>` : '';
     // Re-render code with citations so line-note cites share chapter numbering
     const codeHtml = generateCodeBlockHtml(
       file.filename,
@@ -793,6 +802,7 @@ function generateBookHtml(files) {
         <h4>Summary</h4>
         ${conclusion}
       </div>` : ''}
+      ${glossaryHtml}
       ${footnotesHtml}
     </section>`;
 
@@ -1304,7 +1314,7 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       crushed the 1956 revolt. This shaped his distrust of government overreach
       and drew him to Hayek's writings on monetary economics. After studying
       computer science and working at NASA's Jet Propulsion Laboratory, he joined
-      the cypherpunks and briefly worked at DigiCash in Amsterdam.{{cite:chaum-digicash}}
+      the cypherpunks and briefly worked at DigiCash in Amsterdam.{{cite:van-wirdum-genesis-book}}{{cite:chaum-digicash}}
     </p>
     <p>
       At DigiCash, Szabo saw firsthand how easy it was to manipulate balances
@@ -1360,7 +1370,7 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       Hal Finney graduated top of his high-school class and studied engineering
       at Caltech, then spent years
       developing video games for Intellivision and Atari before becoming a
-      core contributor to PGP. Unlike some cypherpunks, Finney was a pragmatist.
+      core contributor to PGP.{{cite:van-wirdum-genesis-book}} Unlike some cypherpunks, Finney was a pragmatist.
       He didn't believe cryptography could create an anarchist utopia: "There
       is no such place as cyberspace. I am in California. Its agents carry
       physical guns which shoot real bullets."
@@ -2979,6 +2989,16 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
           <td>Oct 2, 2024</td>
           <td>Testnet4. Package relay groundwork (1P1C). Full TRUC/V3 transaction support.{{cite:bitcoin-core-history}}</td>
         </tr>
+        <tr>
+          <td><strong>v29.0</strong></td>
+          <td>Apr 14, 2025</td>
+          <td><strong>CMake migration</strong>—Autotools build system retired.{{cite:bitcoin-core-history}}</td>
+        </tr>
+        <tr>
+          <td><strong>v30.0</strong></td>
+          <td>Oct 10, 2025</td>
+          <td>Qt 6 GUI. New unified <code>bitcoin</code> command. Legacy BDB wallets removed.{{cite:bitcoin-core-history}}</td>
+        </tr>
       </tbody>
     </table>
 
@@ -3161,6 +3181,14 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     </p>
 
     <p>
+      <strong>Copyright and license.</strong>
+      The annotations, introductory primers, selection, and book design are © 2026 PirateHash
+      and, like the code they accompany, are released under the MIT License. The commentary
+      was drafted with AI assistance and revised through human and machine review (see
+      <em>Credits</em> below).
+    </p>
+
+    <p>
       <strong>Typography.</strong>
       Body and annotations are set in <strong>${typefaceMeta.body}</strong>. Code listings, headings, and UI
       labels use <strong>${typefaceMeta.code}</strong> (with a monospaced fallback stack for print).
@@ -3188,8 +3216,11 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     <p>
       <strong>Errata and updates.</strong>
-      For corrections or to rebuild this edition from source, use the project that produced
-      this file (version-controlled content, scripts, and styles).
+      This edition is version-controlled: corrections are recorded in the project’s public
+      repository (github.com/pedromvpg/bitcoin-alpha-book) and released as incremented
+      editions. The edition string on the title page and this page (${EDITION}) identifies
+      the content of a given printing; the repository’s tags and release history provide
+      the errata trail between printings.
     </p>
   </section>
 

@@ -224,6 +224,33 @@ p.lead {
   border-bottom: none;
 }
 
+/* Chapter glossary - Key Terms list rendered when a chapter defines one */
+.annotation-block.chapter-glossary {
+  margin-top: 0;
+  padding-top: 2em;
+  border-top: 1px solid #dddddd;
+  border-bottom: none;
+}
+
+.glossary-list {
+  margin: 0;
+}
+
+.glossary-list dt {
+  font-family: var(--font-code);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  margin-top: 0.9em;
+}
+
+.glossary-list dt:first-of-type {
+  margin-top: 0;
+}
+
+.glossary-list dd {
+  margin: 0.2em 0 0 0;
+}
+
 .annotation-block h4,
 .chapter-conclusion h4 {
   font-family: var(--font-code);

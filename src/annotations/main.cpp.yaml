@@ -497,3 +497,23 @@ conclusion: |
     years, securing over a trillion dollars in value, without a CEO, a board of
     directors, or a single hour of planned downtime.
   </p>
+
+glossary:
+  - term: "mempool"
+    definition: "The node's in-memory pool (mapTransactions) of valid but unconfirmed transactions, where they wait for a miner to include them in a block."
+  - term: "UTXO"
+    definition: "An unspent transaction output: a coin that has been created but not yet spent, tracked in memory by mapNextTx and marked spent when a block connects."
+  - term: "coinbase"
+    definition: "The special first transaction of a block whose input references nothing (a null prevout) and whose outputs pay the miner the subsidy plus fees."
+  - term: "merkle root"
+    definition: "The single hash stored in a block header that commits to every transaction in the block, built by repeatedly double-hashing pairs of transaction IDs."
+  - term: "nonce"
+    definition: "The 32-bit block-header field miners increment while searching for a hash at or below the difficulty target."
+  - term: "difficulty target"
+    definition: "The 256-bit threshold a block's hash must not exceed, stored compactly in the header as nBits and recalculated every 2016 blocks to hold the ten-minute average."
+  - term: "chain reorganization"
+    definition: "The switch to a competing longer valid chain, in which the old tip's blocks are disconnected and their transactions return to the mempool."
+  - term: "halving"
+    definition: "The event every 210,000 blocks that right-shifts the subsidy in GetBlockValue, cutting the block reward in half and converging the total supply toward 21 million."
+  - term: "orphan transaction"
+    definition: "A transaction that arrives before the parent whose output it spends, parked in mapOrphanTransactions until the parent shows up."

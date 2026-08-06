@@ -151,3 +151,21 @@ conclusion: |
     while maintaining enormous security margins. The birthday attack bound of 2^80
     is still astronomically secure—no one can find colliding addresses.
   </p>
+
+glossary:
+  - term: "uint256"
+    definition: "A 256-bit unsigned integer stored as eight 32-bit words; the type of every block hash, transaction ID, and merkle root."
+  - term: "uint160"
+    definition: "The 160-bit sibling type used for address hashes, short enough to keep addresses at a manageable length."
+  - term: "little-endian"
+    definition: "The byte order storing the least significant word first in the pn[] array, which makes carries ripple naturally through the arithmetic."
+  - term: "carry"
+    definition: "The overflow from one 32-bit word into the next during addition, propagated word by word like grade-school column addition."
+  - term: "two's complement"
+    definition: "The standard way to negate a binary number, flip every bit and add one, used by operator-() to compute additive inverses."
+  - term: "hash160"
+    definition: "The 160-bit result of RIPEMD160(SHA256(pubkey)) that sits at the heart of every Bitcoin address, stored as a uint160."
+  - term: "bit shift"
+    definition: "An operation sliding every bit left or right; right-shifting the subsidy by the era number divides the block reward by two at each halving."
+  - term: "hex"
+    definition: "Base-16 notation using digits 0-9 and a-f, the 64-character form in which hashes appear in debug output and block explorers."

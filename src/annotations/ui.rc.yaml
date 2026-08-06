@@ -25,10 +25,11 @@ introduction: |
   </p>
   <p>
     The original Bitcoin icon referenced here was a gold coin with the letters "BC"
-    on it, designed by Satoshi himself. This early design would be replaced in
-    February 2010 when the community adopted the now-iconic orange circle with the
-    slanted "B" and two vertical strokes, designed by a user known as "bitboy" on
-    the BitcoinTalk forums.{{cite:bitcoin-logo-2010}} But for the first year of Bitcoin's existence, the icon
+    on it, designed by Satoshi himself. Satoshi refreshed it in February 2010,
+    replacing the "BC" initials with a stroked "B" on the same gold coin. That
+    November, the community adopted the now-iconic design: a white, slanted "B" with
+    two vertical strokes on a flat orange circle, created by a user known as "bitboy"
+    on the BitcoinTalk forums.{{cite:bitcoin-logo-2010}} But for the first year of Bitcoin's existence, the icon
     compiled into this resource script was the only symbol the cryptocurrency had.
   </p>
   <p>
@@ -83,7 +84,8 @@ conclusion: |
   </p>
   <p>
     The visual identity defined here lasted just over a year. The "BC" gold coin
-    was replaced by the community-designed orange B logo in February 2010,{{cite:bitcoin-logo-2010}} and the
+    was replaced by the community-designed orange ₿ logo—created by forum user
+    bitboy—in November 2010,{{cite:bitcoin-logo-2010}} and the
     wxWidgets GUI was replaced by Qt in 2011.{{cite:qt-lgpl-2009}}{{cite:bitcoin-core-history}} But the design principle -- that
     Bitcoin needs a polished, approachable visual identity -- originated in these
     fourteen lines. Every wallet app, exchange interface, and cryptocurrency logo

@@ -6,7 +6,7 @@ the first public release by Satoshi Nakamoto in January 2009.
 ## Specifications
 
 - **Size:** 7" × 10" (Executive)
-- **Pages:** ~274
+- **Pages:** 630
 - **Paper:** 60# White Uncoated
 - **Binding:** Paperback Perfect Bound
 - **Cover:** Glossy
@@ -19,6 +19,10 @@ npm install
 
 # Download Bitcoin v0.01 source code
 npm run fetch
+
+# Validate annotations (YAML schema, citations, line anchors) — also runs
+# automatically before every build
+npm run validate
 
 # Build the HTML book
 npm run build
@@ -35,16 +39,28 @@ npm run pdf
 ```
 bitcoin-alpha-book/
 ├── src/
-│   ├── bitcoin-0.01/          # Original source code (fetched)
-│   └── annotations/           # YAML annotation files
+│   ├── bitcoin-0.01/          # Original v0.01 source (fetched, gitignored)
+│   ├── versions/              # Bitcoin Core source trees for every version
+│   │                          #   referenced in "What Came After"
+│   │                          #   (`npm run fetch:versions`, gitignored)
+│   ├── annotations/           # YAML annotation files (one per source file)
+│   └── references.yaml        # Shared citation registry for {{cite:key}}
 ├── styles/
 │   ├── print.css              # Page dimensions & layout
 │   ├── syntax.css             # Code highlighting theme
 │   └── typography.css         # Fonts & text styles
 ├── scripts/
-│   ├── fetch-source.js        # Downloads Bitcoin source
-│   ├── build.js               # Generates HTML/PDF
-│   └── preview.js             # Local preview server
+│   ├── fetch-source.js        # Downloads Bitcoin v0.01 source
+│   ├── fetch-versions.js      # Downloads referenced Bitcoin Core releases
+│   ├── validate-annotations.mjs  # Annotation schema/citation/anchor checks
+│   ├── build.js               # Generates the book HTML (prose + chapters)
+│   ├── build-cover.js         # Generates the cover HTML (spine, back cover)
+│   ├── generate-pdf.js        # Book PDF via Paged.js + Puppeteer
+│   ├── generate-thumbnails.js # Page thumbnail grids & contact sheets
+│   ├── content-review.mjs     # Continuous-scroll proofing manuscript
+│   ├── derive-donation.js     # Donation address derivation (xpub)
+│   ├── edition.mjs            # EDITION + annotations credit (single source)
+│   └── release.js             # Full release pipeline → releases/YYYY-MM-DD_*/
 ├── output/
 │   ├── bitcoin-alpha-book.html
 │   └── bitcoin-alpha-book.pdf

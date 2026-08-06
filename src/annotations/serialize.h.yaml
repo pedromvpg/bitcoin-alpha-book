@@ -138,3 +138,23 @@ conclusion: |
     blockchain size. Satoshi optimized for the common case while gracefully
     handling the rare large values.
   </p>
+
+glossary:
+  - term: "serialization"
+    definition: "The conversion of in-memory objects to bytes for disk, network, or hashing, and back again."
+  - term: "CompactSize"
+    definition: "The variable-length integer encoding that stores a count in one byte when it is under 253, growing to 3, 5, or 9 bytes only for larger values."
+  - term: "CDataStream"
+    definition: "Bitcoin's byte buffer with stream operators that serialize objects as they pass through; every network message flows through one."
+  - term: "FLATDATA"
+    definition: "The macro serializing a fixed-layout struct as raw bytes with no length prefix, for fields whose wire format is exactly their memory layout."
+  - term: "IMPLEMENT_SERIALIZE"
+    definition: "The macro that expands one block of READWRITE statements into three functions, size, write, and read, so encoding and decoding can never drift apart."
+  - term: "READWRITE"
+    definition: "The macro applied to each field that counts, writes, or reads it depending on which of the three operations is in progress."
+  - term: "deterministic"
+    definition: "The property that the same object always serializes to the same bytes; without it two nodes would hash the same transaction differently and fork."
+  - term: "protocol version"
+    definition: "The VERSION constant (101 for v0.1.0) carried in every stream so newer software can still parse data written by older releases."
+  - term: "secure_allocator"
+    definition: "The allocator that zeroes memory before freeing it, used for stream buffers that may hold private keys."

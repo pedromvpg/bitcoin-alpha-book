@@ -137,3 +137,19 @@ conclusion: |
     Satoshi's security philosophy throughout Bitcoin: never depend on a
     single cryptographic assumption when you can depend on two.
   </p>
+
+glossary:
+  - term: "Base58"
+    definition: "The binary-to-text encoding whose 58-character alphabet drops 0, O, I, and l, so addresses can be read aloud or typed without ambiguity."
+  - term: "Base58Check"
+    definition: "Base58 with a four-byte checksum appended, so a mistyped address fails validation with only about a one-in-four-billion chance of slipping through."
+  - term: "address"
+    definition: "The string you share to receive payment: a hash160 plus a version byte, Base58Check-encoded into something like 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa."
+  - term: "version byte"
+    definition: "The leading byte (0x00 on mainnet) prepended before encoding that names the address type and produces the familiar leading 1."
+  - term: "checksum"
+    definition: "The first four bytes of the double-SHA256 of the payload, appended so any corruption in copying the address is caught on decode."
+  - term: "hash160"
+    definition: "The 160-bit RIPEMD160(SHA256(pubkey)) digest of a public key at the heart of every address."
+  - term: "burn address"
+    definition: "A syntactically valid address with no known private key, so anything sent to it can never be spent."

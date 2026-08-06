@@ -139,3 +139,21 @@ conclusion: |
     failure mode entirely. This was added to Bitcoin Core years after v0.01—one
     of the few genuine security improvements to the cryptographic layer.{{cite:bitcoin-core-history}}
   </p>
+
+glossary:
+  - term: "private key"
+    definition: "A 256-bit random number that controls coins; anyone who learns it can spend the funds, so CKey zeroes it from memory on destruction."
+  - term: "public key"
+    definition: "The 65-byte curve point (a 0x04 prefix plus x and y coordinates) derived from a private key, safe to publish and used to verify signatures."
+  - term: "ECDSA"
+    definition: "The Elliptic Curve Digital Signature Algorithm, by which a private key signs a hash and anyone holding the public key can verify it without learning the key."
+  - term: "secp256k1"
+    definition: "The particular elliptic curve Bitcoin signs on, chosen because its constants are verifiably non-random rather than taken from NIST."
+  - term: "DER"
+    definition: "Distinguished Encoding Rules, the binary ASN.1 format wrapping private keys (279 bytes) and signatures (up to 72 bytes) for storage and transmission."
+  - term: "point multiplication"
+    definition: "The one-way operation that derives a public key by adding the curve's generator point to itself private-key times; reversing it is the discrete logarithm problem."
+  - term: "nonce"
+    definition: "The fresh random value k that each ECDSA signature consumes; reusing one across two signatures lets anyone algebraically recover the private key."
+  - term: "secure_allocator"
+    definition: "The memory allocator used for key material that overwrites buffers with zeros before freeing them, so secrets do not linger in RAM or swap."

@@ -110,3 +110,23 @@ conclusion: |
     Satoshi identified that OP_CAT + OP_DUP could create 1TB stack elements,
     crashing nodes.{{cite:opcode-disable-2010}} His quick response showed active security maintenance.
   </p>
+
+glossary:
+  - term: "script"
+    definition: "Bitcoin's stack-based language, defined by this header, that encodes the conditions under which coins can be spent."
+  - term: "opcode"
+    definition: "One entry of the opcodetype enum naming a single-byte Script instruction; many entries are reserved or were disabled in 2010."
+  - term: "CScript"
+    definition: "The class that holds a script as a vector of bytes; a script is inert data until EvalScript runs it."
+  - term: "Turing-complete"
+    definition: "Describes a language that can loop forever; Script deliberately has no loops or recursion, so every script's running time is provably bounded."
+  - term: "OP_RETURN"
+    definition: "The opcode that in v0.01 merely ended script execution; later versions made it fail immediately, giving a clean way to embed data in provably unspendable outputs."
+  - term: "OP_HASH160"
+    definition: "The opcode computing RIPEMD160(SHA256(x)), the 20-byte hash of a public key that a Bitcoin address encodes."
+  - term: "multisig"
+    definition: "A spending condition requiring M of N possible signatures, verified by OP_CHECKMULTISIG and used for shared custody such as escrows and treasuries."
+  - term: "disabled opcode"
+    definition: "An instruction such as OP_CAT or OP_MUL that stays in the enum but was turned off in August 2010 after denial-of-service bugs; any script using it fails."
+  - term: "SignatureHash"
+    definition: "The function that builds the exact byte string a signature signs: a modified copy of the transaction shaped by the sighash flags."

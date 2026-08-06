@@ -928,7 +928,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
     <div class="cover-back" id="cover-back" data-cover-panel="back">
       <div class="back-copy">
         <p class="back-edition-lead"><strong>Annotated edition — ${EDITION}.</strong> The complete v0.01 Alpha source with commentary embedded in the listing — context anchored to the lines it explains, not siloed in a separate appendix.</p>
-        <p class="back-description">On January 3, 2009, Satoshi Nakamoto launched Bitcoin with a single executable and these 2,300 lines of C++.<br><br>This volume walks that first public release file by file. Explanations appear inline: annotation blocks break the code flow where they belong, so you read the original source and the commentary as one continuous thread — data structures, algorithms, and design choices spelled out without leaving the program in front of you.</p>
+        <p class="back-description">On January 3, 2009, Satoshi Nakamoto launched Bitcoin with a single executable and these 20,000 lines of C++.<br><br>This volume walks that first public release file by file. Explanations appear inline: annotation blocks break the code flow where they belong, so you read the original source and the commentary as one continuous thread — data structures, algorithms, and design choices spelled out without leaving the program in front of you.</p>
         <p class="back-copyright">Source code copyright © 2009 Satoshi Nakamoto · MIT/X11 License</p>
       </div>
       <div class="back-footer-group">

@@ -1052,11 +1052,11 @@ ${typographyCss}
 
     <p>
       This book contains the complete source code of Bitcoin version 0.01 Alpha, the
-      first public release.{{cite:nakamoto-institute-code}}{{cite:readme-v001}} Roughly 16,000 lines of C++ that solved a problem widely
+      first public release.{{cite:nakamoto-institute-code}}{{cite:readme-v001}} Roughly 20,000 lines of C++ that solved a problem widely
       considered unsolvable: how to prevent double-spending in a digital currency
       without a central authority. The code has been running continuously since
-      that January day—producing a block approximately every ten minutes, without
-      a single hour of downtime, for over seventeen years.
+      that January day—producing a block approximately every ten minutes
+      for over seventeen years.
     </p>
 
     <h2>Why This Code Matters</h2>
@@ -1228,17 +1228,17 @@ ${typographyCss}
       has a private key they never share and a public key they broadcast to the world.
       The math allows two parties to compute a shared secret without ever transmitting it:
     </p>
-    <pre class="example">Public: Generator point G
+    <pre class="example">Public: prime p, generator g
 
-Alice (private a):     Bob (private b):
-Computes A = aG        Computes B = bG
-Sends A to Bob         Sends B to Alice
-Computes aB = abG      Computes bA = baG
+Alice (private a):          Bob (private b):
+Computes A = g^a mod p      Computes B = g^b mod p
+Sends A to Bob              Sends B to Alice
+Computes B^a mod p          Computes A^b mod p
 
-Shared secret: abG (same for both!)</pre>
+Shared secret: g^(ab) mod p (same for both!)</pre>
     <p>
-      An eavesdropper sees G, A, and B, but cannot compute abG without knowing
-      either a or b. This insight—that you can publish part of your key without
+      An eavesdropper sees g, A, and B, but cannot compute g^(ab) mod p without
+      knowing either a or b. This insight—that you can publish part of your key without
       compromising your secrets—is the foundation of all cryptocurrency.
     </p>
     <p>
@@ -1294,7 +1294,8 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       Sound familiar? Wei Dai's b-money was never implemented, but Satoshi cited
       it first in the Bitcoin whitepaper's references.{{cite:nakamoto-whitepaper}}{{cite:dai-bmoney}} In early emails, Satoshi
       told Wei Dai: "I was very interested to read your b-money page. I'm getting
-      ready to release a paper that expands on your ideas."{{cite:nakamoto-dai-email}}
+      ready to release a paper that expands on your ideas into a complete working
+      system."{{cite:nakamoto-dai-email}}
     </p>
 
     <h2>Bit Gold (1998-2005)</h2>
@@ -1317,8 +1318,7 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       entirely.{{cite:szabo-bit-gold}} His system used proof-of-work to create tokens, chained hashes
       together (each valid hash becoming the input for the next), and proposed
       a distributed "property club" to track ownership. It was never implemented,
-      but its architecture clearly influenced Bitcoin. Szabo later acknowledged:
-      "Bitcoin is an implementation of bit gold."{{cite:szabo-bit-gold}}
+      but its architecture clearly influenced Bitcoin.{{cite:szabo-bit-gold}}
     </p>
 
     <h2>Merkle Trees (1979)</h2>
@@ -1357,7 +1357,8 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
 
     <h2>RPOW: Reusable Proof of Work (2004)</h2>
     <p>
-      Hal Finney graduated top of his class from Caltech and spent years
+      Hal Finney graduated top of his high-school class and studied engineering
+      at Caltech, then spent years
       developing video games for Intellivision and Atari before becoming a
       core contributor to PGP. Unlike some cypherpunks, Finney was a pragmatist.
       He didn't believe cryptography could create an anarchist utopia: "There
@@ -1742,8 +1743,9 @@ SHA256("bitcoin") =  (just lowercase 'b')
     <pre class="example">Easy:    3^15 mod 17 = 6      (compute in milliseconds)
 Hard:    3^? mod 17 = 6       (which exponent gives 6?)</pre>
     <p>
-      For small numbers, you can try all possibilities. But with 256-bit 
-      numbers, there are more possibilities than atoms in the universe. 
+      For small numbers, you can try all possibilities. But with 256-bit
+      numbers, there are roughly as many possibilities as atoms in the
+      observable universe.
       This asymmetry—easy forward, impossible backward—is the foundation 
       of public key cryptography.
     </p>
@@ -1822,8 +1824,8 @@ Negation (<span class="token variable">x</span>, <span class="token variable">y<
       (0 and <span class="token variable">p</span> are the same value), the flat grid
       has its top edge identified with its bottom edge, and its left edge identified with
       its right edge. Gluing one pair of opposite edges gives a cylinder; gluing both pairs
-      gives a <strong>torus</strong>. Mathematically, 𝔽<sub>p</sub> × 𝔽<sub>p</sub> has
-      the topology of a torus — and the curve points live on its surface.
+      gives a <strong>torus</strong>. Mathematically, the coordinate grid wraps like a
+      torus — and the curve points live on that surface.
     </p>
     <div class="ecc-block">
       <p class="ecc-caption"><strong>From flat square to torus:</strong> identifying opposite edges.
@@ -1844,7 +1846,7 @@ Negation (<span class="token variable">x</span>, <span class="token variable">y<
     <p>
       For any point <span class="token variable">P</span> = (<span class="token variable">x</span>, <span class="token variable">y</span>) on the curve, negation is reflection across the
       horizontal midline: −<span class="token variable">P</span> = (<span class="token variable">x</span>, −<span class="token variable">y</span> mod <span class="token variable">p</span>).
-      On the torus this is a half-turn around the latitude circle.
+      On the torus this flips each cross-section circle top-to-bottom.
       Addition still follows chord-and-tangent — but now the "line" wraps modulo <span class="token variable">p</span>.
     </p>
     <p>
@@ -1899,9 +1901,11 @@ Negation (<span class="token variable">x</span>, <span class="token variable">y<
 <span class="token class-name">G</span>.<span class="token variable">y</span> = <span class="token number">0x483ADA7726A3C4655DA4FBFC0E1108A8</span>
        <span class="token number">FD17B448A68554199C47D08FFB10D4B8</span></pre>
     <p>
-      These coordinates look random but are actually derived from a simple formula,
-      making them "nothing up my sleeve" numbers—verifiably not chosen to hide a
-      backdoor.{{cite:dual-ec-drbg}} Satoshi didn't define G in Bitcoin's code; he used OpenSSL's built-in
+      These coordinates look random, and their derivation was never publicly
+      explained—but the curve's other parameters are deliberately simple:
+      the prime p = 2²⁵⁶ − 2³² − 977, and the coefficients a = 0, b = 7.
+      After the Dual_EC_DRBG revelations, such "nothing up my sleeve"
+      parameters became a mark of trust.{{cite:dual-ec-drbg}} Satoshi didn't define G in Bitcoin's code; he used OpenSSL's built-in
       <code class="token variable">NID_secp256k1</code> curve identifier, which includes G and all other
       curve parameters.{{cite:openssl-license}}
     </p>
@@ -1916,7 +1920,7 @@ Negation (<span class="token variable">x</span>, <span class="token variable">y<
 <span class="token class-name">P</span> = <span class="token variable">k</span> × <span class="token class-name">G</span>
 
 <span class="token comment">// Computing P from k: ~0.001 seconds</span>
-<span class="token comment">// Computing k from P: ~10^37 years (all computers on Earth)</span></pre>
+<span class="token comment">// Computing k from P: longer than the age of the universe (all computers on Earth)</span></pre>
     <p>
       This asymmetry—trivial to compute forward, impossible to reverse—is why
       your public key (and Bitcoin address) can be safely shared while your
@@ -2025,11 +2029,6 @@ Then rotate: h=g, g=f, f=e, e=d+T1, d=c, c=b, b=a, a=T1+T2</pre>
     </p>
     <pre class="example">SHA256("Bitcoin") = b4056df6691f8dc72e56302ddad345d65...</pre>
     <p>
-      The key property: every input bit affects every output bit through 
-      64 rounds of mixing. Bitcoin uses <strong>double SHA-256</strong> 
-      (SHA256(SHA256(x))) for extra security.
-    </p>
-    <p>
       The key insight: every bit of input affects every bit of output through
       64 rounds of mixing. The constants K[0..63] are derived from cube roots
       of the first 64 primes—nothing up anyone's sleeve.
@@ -2046,13 +2045,13 @@ Then rotate: h=g, g=f, f=e, e=d+T1, d=c, c=b, b=a, a=T1+T2</pre>
       This makes it impossible to predict or reverse-engineer the output:
     </p>
     <pre class="example"><span class="token keyword">Input:</span>  <span class="token string">"The Times 03/Jan/2009"</span>
-<span class="token function">SHA256:</span> <span class="token number">72a0d3c0c831c12b6e6066ce5f6f3d77e6d61c8bbdfd4b7a9a25a11a0c36e65c</span>
+<span class="token function">SHA256:</span> <span class="token number">99fc2183119bc964034d6da7acdee6b4a0c379da75e076edb8f66a78a345afc8</span>
 
 <span class="token keyword">Input:</span>  <span class="token string">"The Times 03/Jan/2008"</span>  <span class="token comment">// Changed 2009 → 2008</span>
-<span class="token function">SHA256:</span> <span class="token number">9f14e5a317b27c6c5dbf4e6d1a7b8c2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c</span>
+<span class="token function">SHA256:</span> <span class="token number">55a253ca0bca02e1e5c2f1924b59fa626aecda10ae2d844937fa9868bc9cea5c</span>
 
 <span class="token keyword">Input:</span>  <span class="token string">"the Times 03/Jan/2009"</span>  <span class="token comment">// Changed T → t</span>
-<span class="token function">SHA256:</span> <span class="token number">3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e</span></pre>
+<span class="token function">SHA256:</span> <span class="token number">d91f6a7a6095c6c936748d7fbd31171f8831538947e782ac1eeb6f648129afc5</span></pre>
     <p>
       Notice how changing just one digit (2009→2008) or one letter's case (T→t)
       produces a hash that shares virtually nothing with the original. This is why
@@ -2109,7 +2108,7 @@ Miner tries:
   nonce=1: SHA256(block) = 9c4d5e... (too high)
   nonce=2: SHA256(block) = 1b8f7a... (too high)
   ...millions of attempts...
-  nonce=2347893: SHA256(block) = 0000000000000abc... (valid!)</pre>
+  nonce=2347893: SHA256(block) = 00000000000000000008f3... (valid!)</pre>
     <p>
       Because SHA-256 is unpredictable, the only way to find a valid nonce 
       is trial and error. The difficulty adjusts so that the network finds 
@@ -2301,7 +2300,7 @@ uint256 <span class="token class-name">CBlock</span><span class="token punctuati
         </tr>
         <tr>
           <td>makefile</td>
-          <td>Unix/Linux build instructions</td>
+          <td>MinGW GCC build instructions (Windows)</td>
         </tr>
         <tr>
           <td>makefile.vc</td>
@@ -2349,10 +2348,9 @@ main.o: main.cpp main.h
 bitcoin: main.o net.o db.o script.o ...
     g++ main.o net.o ... -o bitcoin -lssl -ldb</pre>
     <p>
-      Bitcoin v0.01 includes two makefiles: <code>makefile</code> for Unix/Linux
-      (using g++) and <code>makefile.vc</code> for Windows (using Visual C++).
-      Satoshi initially developed on Windows, so both platforms were supported
-      from day one.{{cite:nakamoto-windows-only}}
+      Bitcoin v0.01 includes two makefiles: <code>makefile</code> for MinGW GCC
+      and <code>makefile.vc</code> for Microsoft's Visual C++. Both target
+      Windows—the only platform v0.01 supported.{{cite:nakamoto-windows-only}}
     </p>
 
     <h3>Resource and Project Files</h3>
@@ -2718,7 +2716,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     <p class="lead">
       You've now studied Bitcoin at its origin—the pristine v0.01 code that launched
       a monetary revolution. But Bitcoin didn't stop evolving on January 9, 2009.{{cite:bitcoin-core-history}}{{cite:nakamoto-windows-only}}
-      Over seventeen years, the codebase has grown from ~15,000 lines to over 200,000,
+      Over seventeen years, the codebase has grown from ~20,000 lines to over 200,000,
       with hundreds of contributors refining Satoshi's vision. Here's a chronological
       guide to what came next, so you know which versions to study for specific improvements.
     </p>
@@ -2745,12 +2743,12 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v0.2.0</strong></td>
           <td>Dec 16, 2009</td>
-          <td><strong>Linux support</strong>. Command-line daemon mode. Numerous optimizations.{{cite:bitcoin-core-history}}</td>
+          <td><strong>Linux support</strong>. Numerous optimizations.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.0</strong></td>
           <td>Jul 6, 2010</td>
-          <td><strong>Mac OS X support</strong>. JSON-RPC API begins. Safer database writes.{{cite:bitcoin-core-history}}</td>
+          <td><strong>Mac OS X support</strong>. JSON-RPC API and daemon mode begin.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.1</strong></td>
@@ -2758,19 +2756,19 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
           <td><strong>1 MB block size limit</strong> added by Satoshi as anti-spam measure. Originally temporary, became contentious years later.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
-          <td><strong>v0.3.6</strong></td>
-          <td>Aug 15, 2010</td>
-          <td><strong>Testnet</strong> introduced for development testing without real value.{{cite:bitcoin-core-history}}</td>
-        </tr>
-        <tr>
           <td><strong>v0.3.9</strong></td>
-          <td>Aug 16, 2010</td>
+          <td>Aug 15, 2010</td>
           <td><strong>OP_RETURN disabled</strong> after discovery of a critical script bug allowing anyone to spend any coins. Satoshi's emergency soft fork.{{cite:opcode-disable-2010}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.10</strong></td>
-          <td>Aug 17, 2010</td>
+          <td>Aug 15, 2010</td>
           <td><strong>Value overflow fix</strong>. Block 74638 exploited integer overflow to create 184 billion BTC. Chain reorganized to remove it.{{cite:overflow-bug-2010}}</td>
+        </tr>
+        <tr>
+          <td><strong>v0.3.14</strong></td>
+          <td>Oct 21, 2010</td>
+          <td><strong>Testnet</strong> introduced by Gavin Andresen for development testing without real value.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.21</strong></td>
@@ -2783,7 +2781,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     <p>
       <strong>Study these versions if:</strong> You want to trace Satoshi's thinking as
       he responded to real-world usage. The JSON-RPC API (v0.3.0+) enabled the first
-      exchanges and services. The testnet (v0.3.6) is still used today.
+      exchanges and services. The testnet (v0.3.14) is still used today.
     </p>
 
     <h2>Early Community Development (2011–2013)</h2>
@@ -2808,17 +2806,17 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v0.6.0</strong></td>
           <td>Mar 30, 2012</td>
-          <td><strong>Bloom filters</strong> (BIP 37) for lightweight SPV clients.{{cite:bitcoin-core-history}}</td>
+          <td><strong>Compressed public keys</strong> (33-byte) for smaller transactions. QR codes for addresses.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.7.0</strong></td>
           <td>Sep 17, 2012</td>
-          <td>Reduced memory usage. Better fee handling. Prepare for BIP 16 (P2SH).{{cite:bitcoin-core-history}}</td>
+          <td>Reduced memory usage. Better fee handling. Implements BIPs 22, 34, 35 (block templates, height in coinbase).{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.8.0</strong></td>
           <td>Feb 18, 2013</td>
-          <td><strong>LevelDB</strong> replaces Berkeley DB for UTXO set. 10x sync speed improvement.{{cite:bitcoin-core-history}}</td>
+          <td><strong>LevelDB</strong> replaces Berkeley DB for UTXO set. Bloom filters (BIP 37) for SPV clients. 10x sync speed improvement.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.8.1</strong></td>
@@ -2954,7 +2952,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v23.0</strong></td>
           <td>Apr 25, 2022</td>
-          <td>Taproot multisig (MuSig). CJDNS network support. Tracepoints for debugging.{{cite:bitcoin-core-history}}</td>
+          <td>Taproot wallet support (bech32m addresses). CJDNS network support. Tracepoints for debugging.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v24.0</strong></td>
@@ -3088,11 +3086,11 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td>Build System</td>
           <td>Makefiles (hand-written)</td>
-          <td>CMake (as of v28)</td>
+          <td>CMake (as of v29)</td>
         </tr>
         <tr>
           <td>Code Size</td>
-          <td>~15,000 lines</td>
+          <td>~20,000 lines</td>
           <td>~200,000+ lines</td>
         </tr>
       </tbody>
@@ -3108,7 +3106,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
       <li><strong>Consensus Rules:</strong> v0.3.10 (overflow fix) → v0.8.1 (DB fork) → v22.0 (Taproot)</li>
       <li><strong>Cryptography:</strong> v0.11.0 (libsecp256k1) → v22.0 (Schnorr/Taproot)</li>
       <li><strong>Wallet Development:</strong> v0.4.0 (encryption) → v0.18.0 (descriptors) → v0.21.0 (descriptor default)</li>
-      <li><strong>Networking:</strong> v0.2.0 (daemon) → v0.6.0 (Bloom) → v26.0 (encrypted P2P)</li>
+      <li><strong>Networking:</strong> v0.3.0 (daemon) → v0.8.0 (Bloom filters) → v26.0 (encrypted P2P)</li>
       <li><strong>Script/Smart Contracts:</strong> v0.6.0 (P2SH) → v0.13.0 (SegWit) → v22.0 (Tapscript) → v25.0 (Miniscript)</li>
       <li><strong>Lightning Prerequisites:</strong> v0.13.0 (SegWit) → v0.19.0 (CPFP carve-out) → v24.0 (full RBF)</li>
       <li><strong>Security & Bugs:</strong> v0.3.9 (OP_RETURN){{cite:opcode-disable-2010}} → v0.3.10 (overflow){{cite:overflow-bug-2010}} → v0.8.1 (BDB){{cite:bip-50}} → v0.16.3 (CVE-2018-17144){{cite:cve-2018-17144}}</li>
@@ -3128,7 +3126,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     <p>
       The code you've studied in this book is where it all began. Every feature,
       every optimization, every security fix in modern Bitcoin Core traces back
-      to these 15,000 lines. Satoshi wrote: "I'm sure that in 20 years there will
+      to these 20,000 lines. Satoshi wrote: "I'm sure that in 20 years there will
       either be very large transaction volume or no volume."{{cite:nakamoto-20-years-volume}} Seventeen years in,
       the code keeps evolving—and now you know where to look.
     </p>

@@ -5,7 +5,7 @@
  * propagate them to: cover, spine, title page, colophon, home hero, review
  * chrome, and (via syncEditionInHtml) any stale built HTML still on disk.
  */
-export const EDITION = 'v0.3.5';
+export const EDITION = 'v0.3.6';
 
 /**
  * Annotations credit — which models authored / revised the commentary.

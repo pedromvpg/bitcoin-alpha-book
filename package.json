@@ -16,7 +16,7 @@
     "test:index": "node scripts/test-index.js",
     "debug:index": "node scripts/debug-index-pages.js",
     "thumbnails": "node scripts/generate-thumbnails.js",
-    "donation:silent": "node scripts/donation-silent.js",
+    "donation": "node scripts/donation.js",
     "release": "node scripts/release.js",
     "ship": "node scripts/release.js && node scripts/preview.js"
   },

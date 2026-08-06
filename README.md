@@ -6,7 +6,7 @@ the first public release by Satoshi Nakamoto in January 2009.
 ## Specifications
 
 - **Size:** 7" × 10" (Executive)
-- **Pages:** 630
+- **Pages:** 652
 - **Paper:** 60# White Uncoated
 - **Binding:** Paperback Perfect Bound
 - **Cover:** Glossy

@@ -262,14 +262,25 @@ function loadDonationCover({ previewDonation = false } = {}) {
 function buildBackDonationHtml(d) {
   if (!d?.enabled || !d.qrDataUrl || !d.address) return '';
   const safeSrc = String(d.qrDataUrl).replace(/"/g, '&quot;');
-  const wrapClass = d.preview ? 'back-barcode-wrap back-barcode-preview' : 'back-barcode-wrap';
-  const title = d.preview ? 'Preview QR' : 'Bitcoin donation';
-  const sub = d.preview ? 'Layout-only test address' : 'Scan to support this project';
+  const isPlaceholder = d.placeholder || d.preview;
+  const wrapClass = isPlaceholder ? 'back-barcode-wrap back-barcode-preview' : 'back-barcode-wrap';
+  const title = d.placeholder
+    ? 'Donation QR placeholder'
+    : d.preview ? 'Preview QR' : 'Bitcoin donation';
+  const sub = d.placeholder
+    ? 'Replace with a real silent payment address before printing'
+    : d.preview ? 'Layout-only test address'
+    : d.scheme === 'silent-payment' ? 'Silent payment — scan to support this project'
+    : 'Scan to support this project';
+  // Wrap long addresses (silent payment sp1… runs ~115 chars) across lines
+  const addr = escapeHtml(d.address);
+  const chunks = addr.match(/.{1,44}/g) || [addr];
+  const longClass = addr.length > 60 ? ' back-barcode-addr-long' : '';
   return `<div class="${wrapClass}" role="region" aria-label="Back cover code block">
       <div class="back-barcode-copy">
         <p class="back-barcode-label">${title}</p>
         <p class="back-barcode-sublabel">${sub}</p>
-        <p class="back-barcode-addr">${(() => { const a = escapeHtml(d.address); const mid = Math.ceil(a.length / 2); return a.slice(0, mid) + '<br>' + a.slice(mid); })()}</p>
+        <p class="back-barcode-addr${longClass}">${chunks.join('<br>')}</p>
       </div>
       <img class="back-barcode-qr" src="${safeSrc}" width="200" height="200" alt="">
     </div>`;
@@ -494,6 +505,11 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       text-transform: none;
       margin: 0 0 ${px(0.07)}px 0;
       line-height: 1.3;
+    }
+
+    .back-barcode-addr-long {
+      font-size: 4.6pt;
+      white-space: normal;
     }
 
     .back-barcode-addr {
@@ -1033,7 +1049,7 @@ export async function buildCover(opts = {}) {
     if (donationCover.preview) {
       console.log('   Back cover: preview donation QR (BIP173 test address). Use BITCOIN_DONATION_XPUB + npm run donation:derive for production.\n');
     } else {
-      console.log(`   Back cover: donation QR → ${donationCover.address} (index ${donationCover.receiveIndex})\n`);
+      console.log(`   Back cover: donation QR → ${donationCover.address.slice(0, 30)}… (${donationCover.placeholder ? 'PLACEHOLDER' : donationCover.scheme || 'address'})\n`);
     }
   }
 

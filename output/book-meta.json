@@ -1,5 +1,5 @@
 {
-  "pageCount": 632,
+  "pageCount": 652,
   "part2SourceToc": [
     {
       "label": "rc/ (Resources)",
@@ -11,129 +11,129 @@
     },
     {
       "label": "bignum.h",
-      "page": "75"
+      "page": "77"
     },
     {
       "label": "db.cpp",
-      "page": "87"
+      "page": "91"
     },
     {
       "label": "db.h",
-      "page": "103"
+      "page": "107"
     },
     {
       "label": "headers.h",
-      "page": "117"
+      "page": "121"
     },
     {
       "label": "irc.cpp",
-      "page": "125"
+      "page": "129"
     },
     {
       "label": "irc.h",
-      "page": "137"
+      "page": "141"
     },
     {
       "label": "key.h",
-      "page": "143"
+      "page": "147"
     },
     {
       "label": "license.txt",
-      "page": "151"
-    },
-    {
-      "label": "main.cpp",
       "page": "157"
     },
     {
+      "label": "main.cpp",
+      "page": "163"
+    },
+    {
       "label": "main.h",
-      "page": "211"
+      "page": "217"
     },
     {
       "label": "makefile",
-      "page": "237"
+      "page": "245"
     },
     {
       "label": "makefile.vc",
-      "page": "243"
+      "page": "251"
     },
     {
       "label": "market.cpp",
-      "page": "249"
+      "page": "257"
     },
     {
       "label": "market.h",
-      "page": "259"
-    },
-    {
-      "label": "net.cpp",
       "page": "267"
     },
     {
+      "label": "net.cpp",
+      "page": "275"
+    },
+    {
       "label": "net.h",
-      "page": "289"
+      "page": "297"
     },
     {
       "label": "readme.txt",
-      "page": "309"
+      "page": "319"
     },
     {
       "label": "script.cpp",
-      "page": "317"
+      "page": "327"
     },
     {
       "label": "script.h",
-      "page": "341"
+      "page": "353"
     },
     {
       "label": "serialize.h",
-      "page": "355"
+      "page": "369"
     },
     {
       "label": "sha.cpp",
-      "page": "377"
+      "page": "393"
     },
     {
       "label": "sha.h",
-      "page": "391"
+      "page": "409"
     },
     {
       "label": "ui.cpp",
-      "page": "399"
+      "page": "419"
     },
     {
       "label": "ui.h",
-      "page": "445"
+      "page": "465"
     },
     {
       "label": "ui.rc",
-      "page": "455"
+      "page": "475"
     },
     {
       "label": "uibase.cpp",
-      "page": "461"
+      "page": "481"
     },
     {
       "label": "uibase.h",
-      "page": "493"
+      "page": "513"
     },
     {
       "label": "uint256.h",
-      "page": "509"
-    },
-    {
-      "label": "uiproject.fbp",
       "page": "529"
     },
     {
+      "label": "uiproject.fbp",
+      "page": "549"
+    },
+    {
       "label": "util.cpp",
-      "page": "593"
+      "page": "613"
     },
     {
       "label": "util.h",
-      "page": "605"
+      "page": "625"
     }
   ],
-  "edition": "v0.3.5",
+  "edition": "v0.3.6",
   "annotationsCredit": "Annotations by Claude Sonnet 4.6 (Revised by Opus 4.6, GPT 5.6 Sol, Grok 4.5, Kimi K3)"
 }

@@ -4,7 +4,7 @@
  * Runs the complete pipeline in order:
  *   1. build             — compile HTML
  *   2. pdf               — render book PDF (also writes book-meta.json for spine width)
- *   3. donation:derive   — new bc1 address from BITCOIN_DONATION_XPUB (optional env)
+ *   3. donation:silent   — silent payment address QR (BITCOIN_SILENT_PAYMENT_ADDRESS env/.env)
  *   4. cover             — generate cover HTML
  *   5. cover:pdf         — render cover PDF
  *   6. thumbnails        — raw grid PNG/HTML + contact-sheet PNG/HTML
@@ -106,7 +106,7 @@ async function release() {
   // ── Pipeline ──────────────────────────────────────────────────────────────
   run('Step 1/6 — Build HTML', 'build');
   run('Step 2/6 — Generate book PDF', 'pdf');
-  run('Step 3/6 — Donation address + QR (BITCOIN_DONATION_XPUB)', 'donation:derive');
+  run('Step 3/6 — Silent payment donation QR (BITCOIN_SILENT_PAYMENT_ADDRESS)', 'donation:silent');
   run('Step 4/6 — Build cover HTML', 'cover');
   run('Step 5/6 — Generate cover PDF', 'cover:pdf');
   run('Step 6/6 — Generate thumbnails + contact sheet', 'thumbnails');

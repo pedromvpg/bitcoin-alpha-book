@@ -68,9 +68,12 @@ files; primers, front/back matter, and colophon are hardcoded HTML in
 - **Build artifacts**: `output/*.html` and `output/*.pdf` are gitignored;
   `output/*.png`, `output/*.json` and `releases/*/` ARE committed (release
   history is part of the repo).
-- **Never commit secrets.** Donation derivation uses `BITCOIN_DONATION_XPUB`
-  from the environment; derived addresses/state in `output/donation-cover.json`
-  and `donation-derive-state.json` are public-by-design and committed.
+- **Never commit secrets.** Donation config lives in the gitignored `.env`
+  (`BITCOIN_SILENT_PAYMENT_ADDRESS` — see `.env.example`); the build falls back
+  to a clearly-invalid placeholder QR when unset. The derived payload in
+  `output/donation-cover.json` is public-by-design (it is printed on the cover)
+  and committed. The legacy xpub-based derive flow was removed — no key
+  material of any kind belongs in tracked files.
 
 ## Validation & CI
 

@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "fetch": "node scripts/fetch-source.js",
-    "build": "node scripts/build.js",
+    "fetch:versions": "node scripts/fetch-versions.js",
+    "validate": "node scripts/validate-annotations.mjs",
+    "build": "node scripts/validate-annotations.mjs && node scripts/build.js",
     "preview": "node scripts/build-cover.js --preview-donation && node scripts/preview.js",
     "pdf": "node scripts/generate-pdf.js",
     "cover": "node scripts/build-cover.js",

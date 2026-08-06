@@ -5,6 +5,14 @@ node_modules/
 output/*.html
 output/*.pdf
 
+# Fetched/archived source trees (regenerable — see AGENTS.md)
+# src/bitcoin-0.01 comes from `npm run fetch`; src/versions from `npm run fetch:versions`;
+# the two research clones are re-clonable from their GitHub remotes.
+src/bitcoin-0.01/
+src/versions/
+src/nakamotoinstitute.org/
+src/programmingbitcoin/
+
 # OS files
 .DS_Store
 Thumbs.db

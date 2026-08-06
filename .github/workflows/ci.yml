@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The v0.01 source is gitignored; fetch it (primary: bitcointalk zip,
+      # fallback: GitHub mirror — see scripts/fetch-source.js)
+      - name: Fetch Bitcoin v0.01 source
+        run: npm run fetch
+
+      # Schema, citation keys, line anchors — fails on silent content loss
+      - name: Validate annotations
+        run: npm run validate
+
+      - name: Index tests
+        run: npm test
+
+      - name: Build book HTML
+        run: npm run build
+
+      - name: Upload built book
+        uses: actions/upload-artifact@v4
+        with:
+          name: bitcoin-alpha-book-html
+          path: output/bitcoin-alpha-book.html
+          retention-days: 14

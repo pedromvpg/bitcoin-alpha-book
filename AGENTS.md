@@ -19,12 +19,26 @@ files; primers, front/back matter, and colophon are hardcoded HTML in
 | `npm run validate` | Validate all annotations: YAML schema, citation keys, line anchors. **Runs automatically before `npm run build`.** |
 | `npm run build` | Build `output/bitcoin-alpha-book.html` |
 | `npm run preview` | Local preview server (also syncs edition strings into stale HTML) |
+| `npm run open` | Same as `preview` but also opens the site in the default browser (`scripts/preview.js --open[=path]`) |
 | `npm run pdf` | Render the book PDF (Paged.js + Puppeteer; also writes `output/book-meta.json`) |
 | `npm run cover` / `npm run cover:pdf` | Cover HTML / cover PDF (reads `book-meta.json` for spine width) |
 | `npm run thumbnails` | Thumbnail grid + contact sheet PNGs |
 | `npm test` | Index-generation tests (`scripts/test-index.js`) — the only test suite |
 | `npm run release` | Full pipeline, copies deliverables to `releases/YYYY-MM-DD_HH-MM-SS/` |
 | `node scripts/content-review.mjs` | Continuous-scroll proofing manuscript server |
+| `npm run build:web` | Assemble the static site into `dist/` (book + cover + landing page; run after `build`/`cover`) |
+| `npm run build:netlify` | Full Netlify pipeline: fetch → build → cover → build:web |
+
+## Netlify
+
+`netlify.toml` deploys the book as a static site: build command
+`npm run build:netlify`, publish dir `dist/` (gitignored, assembled by
+`scripts/build-web.js`: `index.html` landing, `book.html`, `cover.html`,
+`contact-sheet.png`, `_redirects` for `/book` and `/cover`). Only `dist/` is
+deployed — research material in `src/` (filenames with spaces/`?`, which
+Netlify rejects) never leaves the repo. No Chromium on Netlify: PDF/thumbnail
+steps are local-only. The cover's donation QR comes from the committed
+`output/donation-cover.json`, so no env vars are needed.
 
 ## Hard rules for content edits
 

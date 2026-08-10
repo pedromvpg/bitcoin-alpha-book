@@ -9,6 +9,7 @@
     "validate": "node scripts/validate-annotations.mjs",
     "build": "node scripts/validate-annotations.mjs && node scripts/build.js",
     "preview": "node scripts/build-cover.js --preview-donation && node scripts/preview.js",
+    "open": "node scripts/build-cover.js --preview-donation && node scripts/preview.js --open",
     "pdf": "node scripts/generate-pdf.js",
     "cover": "node scripts/build-cover.js",
     "cover:pdf": "node scripts/generate-cover-pdf.js",
@@ -18,7 +19,9 @@
     "thumbnails": "node scripts/generate-thumbnails.js",
     "donation": "node scripts/donation.js",
     "release": "node scripts/release.js",
-    "ship": "node scripts/release.js && node scripts/preview.js"
+    "ship": "node scripts/release.js && node scripts/preview.js",
+    "build:web": "node scripts/build-web.js",
+    "build:netlify": "npm run fetch && npm run build && npm run cover && npm run build:web"
   },
   "dependencies": {
     "adm-zip": "^0.5.10",

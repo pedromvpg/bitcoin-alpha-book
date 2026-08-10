@@ -5,6 +5,9 @@ node_modules/
 output/*.html
 output/*.pdf
 
+# Static web site (Netlify publish dir — see scripts/build-web.js)
+dist/
+
 # Fetched/archived source trees (regenerable — see AGENTS.md)
 # src/bitcoin-0.01 comes from `npm run fetch`; src/versions from `npm run fetch:versions`;
 # the two research clones are re-clonable from their GitHub remotes.

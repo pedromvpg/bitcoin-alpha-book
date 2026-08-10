@@ -19,7 +19,7 @@
  */
 
 import express from 'express';
-import { spawn } from 'child_process';
+import { spawn, execFileSync } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, readdirSync, statSync, readFileSync, writeFileSync } from 'fs';
@@ -906,7 +906,23 @@ app.get('/contact-sheet', (req, res) => {
 });
 
 // ── Start ────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
+// --open[=<path>] opens the site in the default browser once listening.
+const openArg = process.argv.find(a => a === '--open' || a.startsWith('--open='));
+const openPath = openArg?.startsWith('--open=') ? openArg.slice('--open='.length) : '/';
+
+function describePortOwner(port) {
+  try {
+    const out = execFileSync('lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-FpPc'], {
+      encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    const pid = (out.match(/^p(\d+)$/m) || [])[1];
+    const cmd = (out.match(/^c(.+)$/m) || [])[1];
+    if (pid && cmd) return `${cmd} (PID ${pid})`;
+  } catch { /* lsof unavailable or nothing found */ }
+  return null;
+}
+
+const server = app.listen(PORT, () => {
   console.log(`\n📖 Bitcoin Alpha Book`);
   console.log(`   Home     → http://localhost:${PORT}/`);
   console.log(`   Book     → http://localhost:${PORT}/book`);
@@ -914,4 +930,20 @@ app.listen(PORT, () => {
   console.log(`   Review   → http://localhost:${PORT}/review`);
   console.log(`   Releases → http://localhost:${PORT}/#releases\n`);
   console.log(`   Press Ctrl+C to stop\n`);
+
+  if (openArg) {
+    import('open')
+      .then(({ default: open }) => open(`http://localhost:${PORT}${openPath}`))
+      .catch(err => console.warn(`   ⚠ Could not open browser: ${err.message}`));
+  }
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    const owner = describePortOwner(PORT);
+    console.error(`\n✖ Port ${PORT} is already in use${owner ? ` by ${owner}` : ''}.`);
+    console.error(`  Stop that process, or run on another port:  PORT=${PORT + 1} npm run ${openArg ? 'open' : 'preview'}\n`);
+    process.exit(1);
+  }
+  throw err;
 });

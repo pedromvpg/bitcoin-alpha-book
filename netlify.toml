@@ -1,0 +1,14 @@
+# Netlify deploys only the built static site (dist/), never the repo root —
+# research material in src/ (filenames with spaces, "?", etc.) is not deployed.
+#
+# Pipeline mirrors CI: fetch the gitignored v0.01 source, validate + build the
+# book HTML, build the cover, then assemble dist/. Puppeteer's Chromium is not
+# needed (no PDF generation here); sharp resolves its prebuilt binary via
+# optionalDependencies.
+
+[build]
+  command = "npm run fetch && npm run build && npm run cover && npm run build:web"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"

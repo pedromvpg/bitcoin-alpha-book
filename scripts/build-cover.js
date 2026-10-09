@@ -636,7 +636,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       background-repeat: no-repeat;
       background-position: center;
       background-size: contain;
-      transform: rotate(-90deg) scale(1.5);
+      transform: rotate(90deg) scale(1.5);
       transform-origin: center center;
       filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.34))
               drop-shadow(0 0 48px rgba(255, 255, 255, 0.2))
@@ -644,7 +644,9 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
               drop-shadow(0 0 120px rgba(255, 255, 255, 0.05));
     }
 
-    /* Standard convention: text reads bottom-to-top on English book spines */
+    /* Cover-up on a table: letter tops point toward the front cover, so the
+       spine reads with the front, not upside down. vertical-rl does that
+       (tops to the right, toward the front panel). */
     .spine-inner {
       flex: 1 1 auto;
       min-height: 0;
@@ -652,7 +654,6 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       align-items: center;
       justify-content: center;
       writing-mode: vertical-rl;
-      transform: rotate(180deg);
       flex-direction: row;
       gap: ${spineGap}px;
       white-space: nowrap;

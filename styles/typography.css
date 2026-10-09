@@ -1343,17 +1343,38 @@ hr {
    ============================================ */
 
 .footnote-ref {
-  font-size: 0.75em;
-  vertical-align: super;
+  font-size: inherit;
+  vertical-align: baseline;
   line-height: 0;
   text-decoration: none;
   color: var(--color-text);
-  font-weight: 600;
+  font-weight: 400;
+  font-synthesis: none;
   margin-left: 0.1em;
+}
+
+/* Raised, but taken out of the line box so wrapped lines stay even. */
+sup:has(> a.footnote-ref),
+sup:has(> a.cite-ref),
+sup.footnote-missing,
+sup.cite-missing {
+  font-size: 0.7em;
+  line-height: 0;
+  vertical-align: baseline;
+  position: relative;
+  top: -0.55em;
 }
 
 .footnote-ref:hover {
   color: var(--color-accent);
+}
+
+/* Chicago-style: adjacent note numbers are separated by a comma (¹¹,¹²). */
+sup:has(> a.footnote-ref) + sup:has(> a.footnote-ref)::before,
+sup:has(> a.cite-ref) + sup:has(> a.cite-ref)::before {
+  content: ",";
+  font-weight: 400;
+  margin-right: 0.12em;
 }
 
 .footnote-missing {
@@ -1364,7 +1385,10 @@ hr {
   font-size: var(--font-size-sm);
   border-top: 1px solid var(--color-border);
   margin-top: 2em;
-  padding-top: 1em;
+  padding-top: 2em;
+  /* Repeat the rule and the gap under it when the notes continue on the next page. */
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
   font-family: var(--font-body);
   color: var(--color-text);
 }
@@ -1381,31 +1405,32 @@ hr {
 
 .footnotes-list {
   margin: 0;
-  padding-left: 1.5em;
-  list-style: decimal;
+  padding: 0;
+  list-style: none;
 }
 
 .footnote {
-  margin-bottom: 0.5em;
-  padding-left: 0.25em;
+  position: relative;
+  margin: 0 0 0.5em;
+  /* Number sits in a fixed column; every line of the note shares one left edge. */
+  padding-left: 2.4em;
   line-height: var(--line-height-relaxed);
   text-indent: 0;
-  /* hanging indent for wrapped URLs / long titles */
-  padding-left: 0.5em;
-  text-indent: -0.5em;
+}
+
+.footnote::before {
+  content: attr(value) ".";
+  position: absolute;
+  left: 0;
+  width: 1.9em;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 .footnote a.footnote-url {
   word-break: break-all;
   overflow-wrap: anywhere;
   font-size: 0.95em;
-}
-
-.footnote-backref {
-  text-decoration: none;
-  color: var(--color-accent);
-  margin-left: 0.25em;
-  white-space: nowrap;
 }
 
 /* ============================================

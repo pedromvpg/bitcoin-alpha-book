@@ -237,6 +237,21 @@ p, .code-line {
   break-inside: avoid;
 }
 
+.footnote-ref,
+.cite-ref {
+  font-weight: 400;
+  font-synthesis: none;
+}
+
+sup:has(> a.footnote-ref),
+sup:has(> a.cite-ref) {
+  font-size: 0.7em;
+  line-height: 0;
+  vertical-align: baseline;
+  position: relative;
+  top: -0.55em;
+}
+
 .footnote a.footnote-url {
   word-break: break-all;
   overflow-wrap: anywhere;

@@ -152,7 +152,6 @@ class CitationContext {
     const items = this.usedOrder.map(({ number, ref }) => `
       <li id="${this.chapterId}-fn-${number}" value="${number}">
         ${formatFootnote(ref)}
-        <a href="#${this.chapterId}-fnref-${number}" class="cite-back">↩</a>
       </li>`).join('');
     return `<section class="footnotes"><h4 class="footnotes-title">Sources</h4><ol class="footnotes-list">${items}</ol></section>`;
   }
@@ -314,6 +313,7 @@ function prepareProseHtml(raw, id) {
   if (id === 'toc') {
     h = h.replace(/\bclass="([^"]*)\btoc\b([^"]*)"/, 'class="$1book-toc$2"');
   }
+  h = h.replace(/\s*<a href="#[^"]*" class="footnote-backref"[^>]*>↩<\/a>/g, '');
   return syncEditionInHtml(h);
 }
 
@@ -629,7 +629,7 @@ function reviewChromeCss() {
       font-family: var(--font-code, monospace); font-size: 8pt;
       letter-spacing: 0.08em; text-transform: uppercase; color: #888; margin-right: 0.5em;
     }
-    .flow .cite-ref, .flow .cite-back { color: #555; text-decoration: none; }
+    .flow .cite-ref { color: #555; text-decoration: none; font-weight: 400; font-synthesis: none; }
     .flow .cite-missing { color: #d73a49; }
 
     .chapter-mount {

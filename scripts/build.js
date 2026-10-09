@@ -129,7 +129,7 @@ class CitationContext {
       }
 
       const fnId = `${this.chapterId}-fn-${number}`;
-      // First occurrence keeps the canonical id for ↩ backrefs; later ones stay unique
+      // First occurrence keeps the canonical id; later ones stay unique
       const refId = occurrence === 1
         ? `${this.chapterId}-fnref-${number}`
         : `${this.chapterId}-fnref-${number}-${occurrence}`;
@@ -151,11 +151,9 @@ class CitationContext {
 
     const items = this.usedOrder.map(({ number, ref }) => {
       const fnId = `${this.chapterId}-fn-${number}`;
-      const refId = `${this.chapterId}-fnref-${number}`;
       return `
       <li id="${fnId}" class="footnote" value="${number}">
         ${formatFootnote(ref)}
-        <a href="#${refId}" class="footnote-backref" aria-label="Return to text">↩</a>
       </li>`;
     }).join('');
 

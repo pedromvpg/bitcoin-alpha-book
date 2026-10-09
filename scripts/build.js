@@ -1872,7 +1872,7 @@ Negation (<span class="token variable">x</span>, <span class="token variable">y<
       <li><strong>Doubling</strong> 2<span class="token variable">P</span> = <span class="token variable">P</span> ⊕ <span class="token variable">P</span>: same idea with the <em>tangent</em> at <span class="token variable">P</span>.</li>
       <li><strong>Subtraction</strong>: <span class="token variable">P</span> − <span class="token variable">Q</span> := <span class="token variable">P</span> ⊕ (−<span class="token variable">Q</span>).</li>
     </ul>
-    <div class="ecc-block">
+    <div class="ecc-block ecc-block--sheet">
       <p class="ecc-caption"><strong>Group law on y² = x³ + 7:</strong>
         (a) chord through <span class="token variable">P</span>, <span class="token variable">Q</span> → reflect <span class="token variable">R′</span> → <span class="token variable">R</span>;
         (b) tangent at <span class="token variable">P</span> → 2<span class="token variable">P</span>;

@@ -994,6 +994,40 @@ pre.example {
   margin-top: 0;
 }
 
+/* Group-law diagram owns a page, so a too-tall figure cannot spill a
+   sliver onto the next page and leave the following text stranded. */
+.concepts .ecc-block--sheet,
+.cryptography-primer .ecc-block--sheet {
+  break-before: page;
+  break-after: page;
+  page-break-before: always;
+  page-break-after: always;
+  margin: 0;
+  /* Content box: 10in page minus 0.85in top and 0.75in bottom margins. */
+  height: 8.4in;
+  max-height: 8.4in;
+  box-sizing: border-box;
+  justify-content: center;
+  gap: 0.65em;
+}
+
+.concepts .ecc-block--sheet .ecc-figure,
+.cryptography-primer .ecc-block--sheet .ecc-figure {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.concepts .ecc-block--sheet .ecc-figure svg,
+.cryptography-primer .ecc-block--sheet .ecc-figure svg {
+  width: 100%;
+  height: 100%;
+  max-height: 7.4in;
+}
+
 /* Syntax highlighting for examples */
 pre.example .token.comment { color: #6a737d; font-style: italic; }
 pre.example .token.keyword { color: #d73a49; font-weight: 500; }

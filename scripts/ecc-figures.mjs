@@ -125,7 +125,7 @@ function axesPath(proj, xMin, xMax, yMin, yMax) {
 
 function svgWrap(width, height, body, ariaHidden = true) {
   const ah = ariaHidden ? ' aria-hidden="true"' : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img"${ah}>${body}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" role="img"${ah}>${body}</svg>`;
 }
 
 function dot(proj, x, y, r = 3.5) {

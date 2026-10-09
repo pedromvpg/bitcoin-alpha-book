@@ -806,8 +806,8 @@ function generateBookHtml(files) {
 
     // Blank pages after chapters
     if (['market.h', 'net.h', 'readme.txt', 'base58.h',
-         'key.h', 'headers.h', 'irc.h', 'irc.cpp', 'license.txt', 'script.h',
-         'ui.rc', 'uibase.cpp', 'uibase.h', 'uint256.h', 'uiproject.fbp',
+         'key.h', 'headers.h', 'irc.cpp', 'license.txt', 'script.h',
+         'ui.rc', 'uibase.cpp', 'uint256.h', 'uiproject.fbp',
          'util.cpp', 'util.h'].includes(file.filename)) {
       chaptersHtml += `\n    <section class="blank-page"></section>`;
     }

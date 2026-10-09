@@ -450,12 +450,6 @@ const sectionId = (() => {
   return s && /^[a-z0-9-]+$/.test(s) ? s : null;
 })();
 
-// Margins in px (at 100% zoom)
-const MARGIN = {
-  recto: { top: 82, right: 60,  bottom: 72, left: 84 },  // odd pages
-  verso: { top: 82, right: 84,  bottom: 72, left: 60 },  // even pages
-};
-
 let zoom = 100;          // % integer
 let isSpread = false;
 let showGuides = true;
@@ -555,7 +549,7 @@ const PASTEBOARD_CSS = `
 `;
 
 const guideCss = (on) => on ? `
-  /* Margin guides */
+  /* Margin guides — box is placed on the live content area in placeMarginGuides */
   body.dtp-active .pagedjs_page .dtp-guide-margin {
     display: block !important;
     pointer-events: none !important;
@@ -563,20 +557,7 @@ const guideCss = (on) => on ? `
     z-index: 9997 !important;
     border: 1px solid rgba(255, 60, 200, 0.55) !important;
     background: transparent !important;
-  }
-  /* Verso (even/left) pages */
-  body.dtp-active .pagedjs_page[data-side="left"] .dtp-guide-margin {
-    top: ${MARGIN.verso.top}px !important;
-    right: ${MARGIN.verso.right}px !important;
-    bottom: ${MARGIN.verso.bottom}px !important;
-    left: ${MARGIN.verso.left}px !important;
-  }
-  /* Recto (odd/right) pages — default */
-  body.dtp-active .pagedjs_page:not([data-side="left"]) .dtp-guide-margin {
-    top: ${MARGIN.recto.top}px !important;
-    right: ${MARGIN.recto.right}px !important;
-    bottom: ${MARGIN.recto.bottom}px !important;
-    left: ${MARGIN.recto.left}px !important;
+    box-sizing: border-box !important;
   }
 ` : `
   body.dtp-active .dtp-guide-margin { display: none !important; }
@@ -605,14 +586,28 @@ function setGuideStyle(doc, on) {
   s.textContent = guideCss(on);
 }
 
-/* inject a guide overlay div into each page if not already present */
-function injectGuideOverlays(doc) {
+/* Outline the page's real content box (Paged.js margins), not a fixed inset. */
+function placeMarginGuides(doc) {
   doc.querySelectorAll('.pagedjs_page').forEach(page => {
-    if (!page.querySelector('.dtp-guide-margin')) {
-      const div = doc.createElement('div');
-      div.className = 'dtp-guide-margin';
-      page.appendChild(div);
+    let guide = page.querySelector('.dtp-guide-margin');
+    if (!guide) {
+      guide = doc.createElement('div');
+      guide.className = 'dtp-guide-margin';
+      page.appendChild(guide);
     }
+    const content = page.querySelector('.pagedjs_page_content');
+    if (!content || !page.offsetWidth || !page.offsetHeight) return;
+    const pageRect = page.getBoundingClientRect();
+    const contentRect = content.getBoundingClientRect();
+    const scaleX = pageRect.width / page.offsetWidth;
+    const scaleY = pageRect.height / page.offsetHeight;
+    const set = (prop, value) => guide.style.setProperty(prop, value, 'important');
+    set('top', ((contentRect.top - pageRect.top) / scaleY) + 'px');
+    set('left', ((contentRect.left - pageRect.left) / scaleX) + 'px');
+    set('width', (contentRect.width / scaleX) + 'px');
+    set('height', (contentRect.height / scaleY) + 'px');
+    set('right', 'auto');
+    set('bottom', 'auto');
   });
 }
 
@@ -919,7 +914,7 @@ function onRenderComplete(doc, count) {
   // activate DTP mode on iframe body
   doc.body.classList.add('dtp-active');
   injectStyles(doc);
-  injectGuideOverlays(doc);
+  placeMarginGuides(doc);
 
   // fit page on first load
   setZoom('fit-page');

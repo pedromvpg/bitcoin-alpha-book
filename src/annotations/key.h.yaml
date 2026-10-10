@@ -16,9 +16,10 @@ introduction: |
     everyone used NIST's secp256r1. The Koblitz curve Satoshi picked was obscure,
     supported by few libraries, and lacked the institutional endorsement of the
     NIST alternatives. What it had instead was something more valuable: its
-    parameters are <em>verifiably non-random</em>. The prime field, the curve
-    coefficients <code>a=0, b=7</code>, and the generator point can all be derived
-    from simple mathematical expressions. There is no room to hide a backdoor.
+    parameters are <em>verifiably non-random</em>. The prime field and the curve
+    coefficients <code>a=0, b=7</code> follow simple, predictable rules, leaving
+    little room to hide a weakness. (The origin of its generator point was never
+    documented, though the choice of generator does not affect the curve's security.)
   </p>
   <p>
     The Snowden revelations of 2013 vindicated this paranoia. NSA documents showed
@@ -42,7 +43,7 @@ annotations:
 
   - line: 21
     type: margin
-    text: "secp256k1 constants: private key 279 bytes (DER-encoded), public key 65 bytes (uncompressed point: 04 prefix + 32-byte x + 32-byte y), signature up to 72 bytes (DER-encoded r and s). These three numbers define the wire format of Bitcoin cryptography — every wallet, every transaction, every signature must agree on them exactly."
+    text: "secp256k1 sizes: private key 279 bytes (OpenSSL's DER encoding), public key 65 bytes (uncompressed point: 04 prefix + 32-byte x + 32-byte y), signature up to 72 bytes (DER-encoded r and s). Like the other three blocks, these are comments — Satoshi's notes, not constants the code uses. The last line explains why he cared: Script's single-byte push opcodes carry at most 75 bytes, and both a 65-byte public key and a 72-byte signature plus its 1-byte hash type fit in one push. The key sizes were checked against the scripting language."
 
   - line: 31
     type: margin
@@ -50,11 +51,11 @@ annotations:
 
   - line: 39
     type: margin
-    text: "CPrivKey is a byte vector with a custom allocator. secure_allocator (defined in serialize.h) ensures that when the vector is destroyed, its memory is zeroed before being freed — preventing private key material from lingering in memory where it could be found by another process or recovered from swap. This is why std::vector&lt;unsigned char&gt; is not used directly."
+    text: "CPrivKey is a byte vector with a custom allocator. secure_allocator (defined in serialize.h) ensures that when the vector is destroyed, its memory is zeroed before being freed — preventing private key material from lingering in freed memory where it could be found later. (It does not lock pages in RAM, so a live key can still be swapped to disk.) This is why std::vector&lt;unsigned char&gt; is not used directly."
 
   - line: 43
     type: margin
-    text: "CKey is a thin RAII wrapper around OpenSSL's EC_KEY. The design is deliberate: Satoshi doesn't implement elliptic curve arithmetic directly — he delegates entirely to OpenSSL, inheriting both its correctness and its audited implementation. The private key bytes never leave this object in raw form; all operations go through OpenSSL's API."
+    text: "CKey is a thin RAII wrapper around OpenSSL's EC_KEY. The design is deliberate: Satoshi doesn't implement elliptic curve arithmetic directly — he delegates entirely to OpenSSL, inheriting both its correctness and its audited implementation. All key operations go through OpenSSL's API."
 
   - line: 51
     type: margin
@@ -74,7 +75,7 @@ annotations:
 
   - line: 81
     type: margin
-    text: "d2i_ECPrivateKey — 'd2i' is OpenSSL shorthand for 'DER to internal'. DER (Distinguished Encoding Rules) is the binary serialization format used throughout Bitcoin's wire protocol. The private key is stored as an ASN.1 structure containing the raw key bytes plus curve parameters. This is why PRIVATE_KEY_SIZE is 279, not 32 — the DER wrapper adds metadata around the 32-byte key."
+    text: "d2i_ECPrivateKey — 'd2i' is OpenSSL shorthand for 'DER to internal'. DER (Distinguished Encoding Rules) is the ASN.1 encoding OpenSSL uses for keys and for the signatures that appear inside scripts; the rest of Bitcoin's wire format is Satoshi's own (serialize.h). The private key is stored as an ASN.1 structure containing the raw key bytes plus curve parameters. This is why PRIVATE_KEY_SIZE is 279, not 32 — the DER wrapper adds metadata around the 32-byte key."
 
   - line: 89
     type: margin
@@ -90,7 +91,7 @@ annotations:
 
   - line: 121
     type: margin
-    text: "ECDSA_sign takes a 256-bit message hash (not the message itself) and produces a signature. Internally, OpenSSL generates a random nonce k, computes a curve point R = k × G, and sets r = R.x mod n. Then s = k⁻¹(hash + r·privKey) mod n. The signature is the pair (r, s), DER-encoded. The pchSig[10000] buffer is dramatically oversized for a max-72-byte signature — Satoshi was being defensive about the output length query."
+    text: "ECDSA_sign takes a 256-bit message hash (not the message itself) and produces a signature. Internally, OpenSSL generates a random nonce k, computes a curve point R = k × G, and sets r = R.x mod n. Then s = k⁻¹(hash + r·privKey) mod n. The signature is the pair (r, s), DER-encoded. The pchSig[10000] buffer is dramatically oversized for a max-72-byte signature — Satoshi was being defensive rather than querying the exact output length."
 
   - line: 121
     type: highlight
@@ -98,7 +99,7 @@ annotations:
 
   - line: 126
     type: margin
-    text: "Nonce reuse is catastrophic. If the same k is ever used to sign two different messages, the private key can be algebraically recovered from the two signatures: privKey = (s1·hash2 - s2·hash1) / (r·(s2-s1)) mod n. This is not theoretical — it has happened. The PlayStation 3 team used a fixed k when signing firmware, allowing George Hotz to extract Sony's master key in 2010.{{cite:ps3-ecdsa-2010}} Bitcoin's OpenSSL ECDSA always generates a fresh random k per signature."
+    text: "Nonce reuse is catastrophic. If the same k is ever used to sign two different messages, the private key can be algebraically recovered from the two signatures: privKey = (s1·hash2 - s2·hash1) / (r·(s2-s1)) mod n. This is not theoretical — it has happened. Sony used a fixed k when signing PlayStation 3 firmware; fail0verflow exposed the flaw in December 2010,{{cite:ps3-ecdsa-2010}} and the PS3 signing key was published weeks later. Bitcoin's OpenSSL ECDSA always generates a fresh random k per signature."
 
   - line: 133
     type: margin
@@ -156,4 +157,4 @@ glossary:
   - term: "nonce"
     definition: "The fresh random value k that each ECDSA signature consumes; reusing one across two signatures lets anyone algebraically recover the private key."
   - term: "secure_allocator"
-    definition: "The memory allocator used for key material that overwrites buffers with zeros before freeing them, so secrets do not linger in RAM or swap."
+    definition: "The memory allocator used for key material that overwrites buffers with zeros before freeing them, so secrets do not linger in freed memory."

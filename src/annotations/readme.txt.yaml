@@ -24,14 +24,15 @@ introduction: |
   <p>
     Perhaps the most remarkable line is on line 36: "Bitcoin does not use any encryption."{{cite:readme-v001}}
     This single sentence distinguishes Bitcoin from every cypherpunk project that came before
-    it. Systems like PGP, Tor, and the earlier digital cash schemes (DigiCash, e-gold) relied
-    on encryption to protect privacy.{{cite:chaum-digicash}} Bitcoin uses cryptography —
+    it. Tools like PGP and Tor relied on encryption to protect privacy, and DigiCash hid
+    its users behind blind signatures issued by a central mint.{{cite:chaum-digicash}} Bitcoin uses cryptography —
     specifically digital signatures and hash functions — but never encrypts data. All
     transactions are broadcast in the clear. All blocks are publicly readable. Privacy comes
     not from secrecy but from pseudonymity: your identity is hidden behind a cryptographic
-    public key, but your transactions are visible to everyone. This design choice avoided
-    the legal minefield of encryption export controls that had hindered earlier cypherpunk
-    projects.{{cite:itar-ear-crypto}}
+    public key, but your transactions are visible to everyone. Satoshi never said whether
+    it was a motive, but the design also kept Bitcoin clear of the encryption export
+    controls that had hindered earlier cypherpunk projects (and that, by 2009, had already
+    been largely relaxed).{{cite:itar-ear-crypto}}
   </p>
   <p>
     The build instructions also reveal that Bitcoin v0.01 was a <em>Windows desktop
@@ -65,11 +66,11 @@ annotations:
 
   - line: 23
     type: margin
-    text: "<strong>OpenSSL</strong> — provides ECDSA (transaction signing), SHA-256 (proof-of-work hashing), and RIPEMD-160 (address generation). In 2009, OpenSSL was the de facto standard cryptographic library for C/C++.{{cite:openssl-license}} Its 'Old BSD license with the problematic advertising requirement' refers to the original BSD clause requiring all advertising mentioning the software to credit the University of California — a clause widely considered a nuisance."
+    text: "<strong>OpenSSL</strong> — provides ECDSA (transaction signing), SHA-256 (proof-of-work hashing), and RIPEMD-160 (address generation). In 2009, OpenSSL was the de facto standard cryptographic library for C/C++.{{cite:openssl-license}} Its 'Old BSD license with the problematic advertising requirement' refers to an 'advertising clause' in the style of the original BSD license: OpenSSL's terms require any advertising material mentioning features of the software to credit the OpenSSL Project and Eric Young — a clause widely considered a nuisance. It is the reason lines 6-8 of this README exist."
 
   - line: 24
     type: margin
-    text: "<strong>Berkeley DB</strong> — the embedded database storing blocks, transactions, and wallet data. Its license required that 'linked software must be free open source' — a significant constraint.{{cite:bdb-license}} This effectively prevented anyone from building a proprietary Bitcoin node. Later versions of Bitcoin Core replaced Berkeley DB with LevelDB (for the block index) to avoid this licensing restriction, though <code>wallet.dat</code> continued using BDB for years.{{cite:bitcoin-core-history}}"
+    text: "<strong>Berkeley DB</strong> — the embedded database storing blocks, transactions, and wallet data. Its license required that 'linked software must be free open source' — a significant constraint.{{cite:bdb-license}} This effectively prevented anyone from building a proprietary Bitcoin node. Later versions of Bitcoin Core replaced Berkeley DB with LevelDB for the block index and chainstate (v0.8, 2013) — a move made for performance and reliability rather than licensing — though <code>wallet.dat</code> continued using BDB for years.{{cite:bitcoin-core-history}}"
 
   - line: 25
     type: margin
@@ -81,7 +82,7 @@ annotations:
 
   - line: 36
     type: margin
-    text: "'Bitcoin does not use any encryption.' A profound statement.{{cite:readme-v001}} Every prior digital cash system — from David Chaum's DigiCash (1990){{cite:chaum-digicash}} to Wei Dai's b-money proposal (1998){{cite:dai-bmoney}} — relied on encryption for privacy. Satoshi took a fundamentally different approach: all data is public, all transactions are broadcast in cleartext, and privacy comes from pseudonymous keys rather than encrypted channels. This sidestepped the U.S. encryption export regulations (ITAR/EAR) that had hamstrung earlier cypherpunk tools like PGP.{{cite:itar-ear-crypto}}"
+    text: "'Bitcoin does not use any encryption.' A profound statement.{{cite:readme-v001}} Earlier digital cash designs leaned on secrecy for privacy — David Chaum's DigiCash (1990) on blind signatures from a central mint,{{cite:chaum-digicash}} Wei Dai's b-money proposal (1998) on an untraceable network of pseudonyms.{{cite:dai-bmoney}} Satoshi took a fundamentally different approach: all data is public, all transactions are broadcast in cleartext, and privacy comes from pseudonymous keys rather than encrypted channels. A side effect — Satoshi never called it a motive — was distance from the U.S. encryption export regulations (ITAR/EAR) that had hamstrung earlier cypherpunk tools like PGP, though by 2009 those rules had been largely relaxed.{{cite:itar-ear-crypto}}"
 
   - line: 40
     type: margin

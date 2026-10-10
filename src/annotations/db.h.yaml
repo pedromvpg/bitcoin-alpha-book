@@ -51,7 +51,7 @@ annotations:
 
   - line: 42
     type: margin
-    text: "<code class=\"function\">Read()</code>—generic key-value read. Takes any serializable key type <code>K</code> and value type <code>T</code>. The key is serialized to bytes, looked up in Berkeley DB, and the value is deserialized back into type <code>T</code>. The template magic means you can write <code>Read(txid, transaction)</code> with full type safety—if types don't match the stored data, you get a compile error."
+    text: "<code class=\"function\">Read()</code>—generic key-value read. Takes any serializable key type <code>K</code> and value type <code>T</code>. The key is serialized to bytes, looked up in Berkeley DB, and the value is deserialized back into type <code>T</code>. The template magic means you can write <code>Read(txid, transaction)</code> for any type. The compiler checks that <code>K</code> and <code>T</code> are serializable, but it cannot know what bytes are actually stored; reading with the wrong type fails at runtime."
 
   - line: 58
     type: margin
@@ -67,11 +67,11 @@ annotations:
 
   - line: 99
     type: margin
-    text: "<code class=\"function\">Erase()</code>—removes a key-value pair. Used when spending coins (removing UTXOs) or cleaning up orphan data. Returns <code>true</code> even if key didn't exist (<code class=\"constant\">DB_NOTFOUND</code> is not an error for deletion). The key is zeroed after use for security."
+    text: "<code class=\"function\">Erase()</code>—removes a key-value pair. Used, for example, when a reorganization disconnects a block's transactions, or when a wallet transaction is deleted. Returns <code>true</code> even if key didn't exist (<code class=\"constant\">DB_NOTFOUND</code> is not an error for deletion). The key is zeroed after use for security."
 
   - line: 139
     type: margin
-    text: "<code class=\"function\">GetCursor()</code>—creates a database cursor for iteration. Cursors allow walking through all key-value pairs, essential for operations like 'load all transactions' or 'find all UTXOs for an address'. The cursor maintains position across multiple reads, enabling efficient sequential access."
+    text: "<code class=\"function\">GetCursor()</code>—creates a database cursor for iteration. Cursors allow walking through all key-value pairs, essential for operations like 'load all wallet records' or 'find all transactions paying an address'. The cursor maintains position across multiple reads, enabling efficient sequential access."
 
   - line: 150
     type: margin
@@ -83,11 +83,11 @@ annotations:
 
   - line: 198
     type: margin
-    text: "Transaction methods: <code class=\"function\">TxnBegin()</code>, <code class=\"function\">TxnCommit()</code>, <code class=\"function\">TxnAbort()</code>. These wrap Berkeley DB's transaction API. Begin starts a transaction, recording a 'checkpoint'. Commit makes changes permanent. Abort rolls back to the checkpoint. If Bitcoin crashes between Begin and Commit, recovery automatically aborts the incomplete transaction—no corrupted state."
+    text: "Transaction methods: <code class=\"function\">TxnBegin()</code>, <code class=\"function\">TxnCommit()</code>, <code class=\"function\">TxnAbort()</code>. These wrap Berkeley DB's transaction API. Begin starts a transaction. Commit makes its changes permanent. Abort discards them, restoring the state from before Begin. If Bitcoin crashes between Begin and Commit, recovery automatically aborts the incomplete transaction—no corrupted state."
 
   - line: 232
     type: margin
-    text: "<code class=\"function\">ReadVersion()</code>/<code class=\"function\">WriteVersion()</code>—database schema versioning. As Bitcoin evolves, database formats may change. The version number lets code detect old formats and migrate them. If you open a v0.1 wallet with later software, it knows to upgrade the structure. Forward compatibility planning from day one."
+    text: "<code class=\"function\">ReadVersion()</code>/<code class=\"function\">WriteVersion()</code>—database schema versioning. As Bitcoin evolves, database formats may change. The version number lets future code detect old formats and migrate them. v0.01 writes it but never calls <code>ReadVersion()</code>—backward-compatibility planning from day one, left for later releases to use."
 
   - line: 251
     type: margin
@@ -95,7 +95,7 @@ annotations:
 
   - line: 259
     type: margin
-    text: "<code class=\"class\">CTxDB</code> methods: <code class=\"function\">ReadTxIndex()</code>, <code class=\"function\">UpdateTxIndex()</code>, <code class=\"function\">AddTxIndex()</code>, <code class=\"function\">EraseTxIndex()</code>. These maintain the UTXO set—the record of all unspent transaction outputs. When a transaction spends coins, <code class=\"function\">EraseTxIndex()</code> removes the spent outputs. When a new transaction is confirmed, <code class=\"function\">AddTxIndex()</code> records its outputs as spendable. This is Bitcoin's notion of 'who owns what.'"
+    text: "<code class=\"class\">CTxDB</code> methods: <code class=\"function\">ReadTxIndex()</code>, <code class=\"function\">UpdateTxIndex()</code>, <code class=\"function\">AddTxIndex()</code>, <code class=\"function\">EraseTxIndex()</code>. These maintain the transaction index: one record per confirmed transaction, holding its disk position and a <code class=\"variable\">vSpent</code> slot per output. <code class=\"function\">AddTxIndex()</code> records a newly confirmed transaction with every slot empty (unspent); spending an output fills its slot (<code class=\"function\">UpdateTxIndex()</code>); <code class=\"function\">EraseTxIndex()</code> runs only when a block is disconnected during a reorganization. This is v0.01's notion of 'who owns what'—the separate UTXO-set database came with v0.8 (2013)."
 
   - line: 269
     type: margin
@@ -131,7 +131,7 @@ annotations:
 
   - line: 378
     type: margin
-    text: "<code class=\"function\">ReadKey()</code>/<code class=\"function\">WriteKey()</code>—private key storage. This is where the actual secrets live. The key is the public key bytes; the value is the encrypted private key (<code class=\"class\">CPrivKey</code>). Note <code class=\"function\">WriteKey()</code> uses <code>fOverwrite=false</code>—you never want to accidentally overwrite an existing key with a different value, as that would destroy the original key."
+    text: "<code class=\"function\">ReadKey()</code>/<code class=\"function\">WriteKey()</code>—private key storage. This is where the actual secrets live. The key is the public key bytes; the value is the private key itself (a DER-encoded <code class=\"class\">CPrivKey</code>), unencrypted; wallet encryption arrived only in v0.4 (2011). Note <code class=\"function\">WriteKey()</code> uses <code>fOverwrite=false</code>—you never want to accidentally overwrite an existing key with a different value, as that would destroy the original key."
 
   - line: 389
     type: margin
@@ -139,7 +139,7 @@ annotations:
 
   - line: 400
     type: margin
-    text: "<code class=\"function\">ReadSetting()</code>/<code class=\"function\">WriteSetting()</code>—generic settings storage. User preferences (like 'start minimized', 'proxy server address') are stored as key-value pairs with the 'setting' prefix. The template methods accept any serializable type, providing type-safe settings without proliferating ReadXxxSetting methods."
+    text: "<code class=\"function\">ReadSetting()</code>/<code class=\"function\">WriteSetting()</code>—generic settings storage. User preferences (in v0.01: <code>fGenerateBitcoins</code>, <code>nTransactionFee</code>, and <code>addrIncoming</code>) are stored as key-value pairs with the 'setting' prefix. The template methods accept any serializable type, providing type-safe settings without proliferating ReadXxxSetting methods."
 
   - line: 412
     type: margin
@@ -160,7 +160,7 @@ conclusion: |
   </p>
   <p>
     Berkeley DB's transactional guarantees are essential for financial software.
-    If your computer crashes while Bitcoin is updating the UTXO set, you don't
+    If your computer crashes while Bitcoin is marking outputs as spent, you don't
     want to end up with inconsistent state where coins appear both spent and
     unspent. The transaction mechanism ensures atomicity: either the entire
     update succeeds, or the database rolls back to the previous consistent state.

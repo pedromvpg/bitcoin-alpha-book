@@ -56,7 +56,7 @@ annotations:
 
   - line: 120
     type: margin
-    text: "<code class=\"class\">SHA1</code>—160-bit hash, predecessor to SHA-256. Bitcoin doesn't use SHA1 anywhere—addresses are RIPEMD160(SHA256(pubkey)), and RIPEMD160 is an independent design, not built on SHA1. SHA1 is considered cryptographically weak (broken theoretically in 2005,{{cite:wang-sha1-2005}} with a full collision demonstrated by Google in 2017), but Bitcoin never relied on it—only on SHA256's collision resistance."
+    text: "<code class=\"class\">SHA1</code>—160-bit hash, predecessor to SHA-256. Bitcoin's block and transaction hashing never touches SHA1—addresses are RIPEMD160(SHA256(pubkey)), and RIPEMD160 is an independent design, not built on SHA1. Script does expose it as the <code>OP_SHA1</code> opcode (script.cpp:667, via OpenSSL), still valid today; this Crypto++ copy is unused. SHA1 is considered cryptographically weak (broken theoretically in 2005,{{cite:wang-sha1-2005}} with a full collision demonstrated by Google in 2017), but Bitcoin never relied on it—only on SHA256's collision resistance."
 
   - line: 132
     type: margin
@@ -64,7 +64,7 @@ annotations:
 
   - line: 137
     type: margin
-    text: "<code class=\"function\">Transform()</code>—the compression function, called once per 64-byte block of input. Bitcoin mining is essentially: set up a block header (80 bytes), call Transform twice (for double-SHA256), check if result is below target, increment nonce, repeat. ASICs implement Transform directly in hardware—billions of transforms per second per chip."
+    text: "<code class=\"function\">Transform()</code>—the compression function, called once per 64-byte block of input. Bitcoin mining is essentially: set up a block header (80 bytes, which pads to two 64-byte blocks), call Transform three times—twice for the first SHA-256, once for the second—check if the result is below target, increment nonce, repeat. That is exactly what v0.01's <code>BitcoinMiner</code> does. ASICs implement Transform directly in hardware—billions of transforms per second per chip."
 
   - line: 142
     type: margin
@@ -83,11 +83,12 @@ conclusion: |
     means attackers can't create two transactions with the same txid.
   </p>
   <p>
-    The Transform function is the most-executed code in human history.
-    Every second, the Bitcoin network performs approximately 500 exahashes
-    (5×10²⁰ double-SHA256 operations). That's Transform() being called
-    roughly 10²¹ times per second globally. No other function comes close.
-    This relentless hashing secures approximately $1 trillion in value.
+    The computation Transform performs is the most-executed algorithm in human
+    history. Today's network performs hundreds of exahashes per second—each
+    hash a double SHA-256 needing several compression-function calls—so the
+    Transform operation runs on the order of 10<sup>21</sup> times every second,
+    now in ASIC silicon rather than this C++. No other computation comes close.
+    This relentless hashing secures over a trillion dollars in value.
   </p>
   <p>
     Satoshi's choice of double-SHA256 (hashing twice) adds a safety margin.

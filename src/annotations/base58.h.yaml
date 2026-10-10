@@ -5,8 +5,8 @@ title: "Human-Readable Money"
 
 introduction: |
   <p>
-    Every Bitcoin address you've ever seen—those strings starting with "1" or "3"—
-    uses Base58Check encoding defined in this file. Base58 is a binary-to-text
+    Every legacy Bitcoin address—those strings starting with "1" (and, from 2012,
+    "3")—uses the Base58Check encoding defined in this file. Base58 is a binary-to-text
     encoding designed specifically for human readability: it uses all alphanumeric
     characters except those easily confused with each other.
   </p>
@@ -90,7 +90,7 @@ annotations:
 
   - line: 136
     type: margin
-    text: "Checksum verification: <code>memcmp(&hash, &vchRet.end()[-4], 4)</code>. This constant-time comparison checks if the computed and stored checksums match. A mismatch means the address was corrupted (typo, OCR error, transmission corruption). By returning false rather than the corrupted data, users are protected from sending funds to wrong addresses."
+    text: "Checksum verification: <code>memcmp(&hash, &vchRet.end()[-4], 4)</code>. This comparison checks if the computed and stored checksums match. A mismatch means the address was corrupted (typo, OCR error, transmission corruption). By returning false rather than the corrupted data, users are protected from sending funds to wrong addresses."
 
   - line: 155
     type: margin

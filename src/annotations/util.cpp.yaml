@@ -29,7 +29,8 @@ introduction: |
     The time synchronization code deserves special attention. Bitcoin blocks
     include timestamps, and nodes must agree roughly on what time it is. But
     trusting a single clock source would be a centralization risk. Satoshi's
-    solution: take the median of peer clocks, with bounds to prevent manipulation.
+    solution: take the median of peer clocks (the bounds meant to limit manipulation
+    were left as a TODO in this version).
     This elegant approach—"never go to sea with two chronometers; take one or
     three"—appears in the time adjustment code below.
   </p>
@@ -65,7 +66,7 @@ annotations:
 
   - line: 118
     type: margin
-    text: "<code class=\"function\">strprintf()</code>—dynamic string formatting. Unlike fixed-buffer <code class=\"function\">snprintf()</code>, this allocates exactly the memory needed. The <code class=\"macro\">loop</code> macro (a Satoshi-ism for <code>for(;;)</code>) doubles buffer size until the output fits. The 50KB initial buffer handles typical cases without allocation. This function is called throughout Bitcoin for debug logging and error messages."
+    text: "<code class=\"function\">strprintf()</code>—dynamic string formatting that returns a <code>std::string</code> of whatever length the output needs. It first tries a 50KB buffer on the stack, which handles typical cases without any heap allocation; if the output doesn't fit, the <code class=\"macro\">loop</code> macro (a Satoshi-ism for <code>for(;;)</code>) keeps doubling a heap buffer until it does. This function is called throughout Bitcoin for debug logging and error messages."
 
   - line: 151
     type: margin
@@ -81,11 +82,11 @@ annotations:
 
   - line: 218
     type: margin
-    text: "<code class=\"function\">ParseMoney()</code>—the inverse of <code class=\"function\">FormatMoney()</code>. Converts user-entered strings like '1,234.56' to satoshis. Handles thousand separators, leading/trailing whitespace, and validates format. The check <code>strWhole.size() > 17</code> prevents overflow—17 digits exceeds the 21 million BTC cap. Returns false for malformed input rather than throwing exceptions, following C convention."
+    text: "<code class=\"function\">ParseMoney()</code>—the inverse of <code class=\"function\">FormatMoney()</code>. Converts user-entered strings like '1,234.56' to satoshis. Handles thousand separators, leading/trailing whitespace, and validates format — strictly: if there is a decimal point, exactly two digits must follow, so '1.5' and '1.505' are both rejected. The check <code>strWhole.size() > 17</code> caps the whole-number part at 17 digits, a crude guard against overflow that has nothing to do with the 21 million BTC cap (only 8 digits). Returns false for malformed input rather than throwing exceptions, following C convention."
 
   - line: 253
     type: margin
-    text: "Overflow check: <code>nValue / 100 != nWhole</code>. After multiplying, division should recover the original. If not, multiplication overflowed. This defensive check prevents accepting astronomically large invalid amounts that wrapped around due to integer overflow."
+    text: "Overflow check: <code>nValue / 100 != nWhole</code>. After multiplying, division should recover the original. If not, multiplication overflowed. But the check covers only the ×100 step: the next line, <code>nValue *= CENT</code>, multiplies by another 1,000,000 with no check at all, so any whole amount above about 92 billion BTC silently wraps around. Harmless in practice (no one has that balance, and sending is checked against it), but the guard is incomplete."
 
   - line: 295
     type: margin
@@ -101,7 +102,7 @@ annotations:
 
   - line: 342
     type: margin
-    text: "<code class=\"function\">AddTimeData()</code>—collects time samples from peers. When connecting to a peer, nodes exchange timestamps. This function tracks offsets (peer_time - local_time), deduplicates by IP, and computes the median. The logic waits for 5+ samples and only updates on odd counts (ensuring a true median exists). If median offset exceeds 5 minutes, the code notes 'go to NTP servers'—though NTP wasn't actually implemented in v0.1. In this version the branch does nothing beyond the TODO: the median is applied regardless of its size, so the safeguard was aspirational."
+    text: "<code class=\"function\">AddTimeData()</code>—collects time samples from peers. When connecting to a peer, nodes exchange timestamps. This function tracks offsets (peer_time - local_time), deduplicates by IP, and computes the median. The logic waits for 5+ samples — your own clock counts as the first one (the 0 pushed on line 354), so four peers are enough — and only updates on odd counts (ensuring a true median exists). If median offset exceeds 5 minutes, the code notes 'go to NTP servers'—though NTP wasn't actually implemented in v0.1. In this version the branch does nothing beyond the TODO: the median is applied regardless of its size, so the safeguard was aspirational."
 
   - line: 362
     type: margin

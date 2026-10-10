@@ -29,8 +29,9 @@ introduction: |
   </p>
   <p>
     The script system is also why Bitcoin survived its early bugs. When critical
-    vulnerabilities were found (like the OP_CAT memory explosion in August 2010),
-    Satoshi could disable individual opcodes without breaking the entire system.{{cite:opcode-disable-2010}}
+    vulnerabilities were found (like the OP_LSHIFT crash and the OP_RETURN
+    spend-anything bug of July 2010),{{cite:cve-2010-5141}} Satoshi could disable
+    individual opcodes without breaking the entire system.{{cite:opcode-disable-2010}}{{cite:commit-4bd188c}}
     Scripts using disabled opcodes simply fail; everything else continues working.
   </p>
 
@@ -69,11 +70,11 @@ annotations:
 
   - line: 70
     type: margin
-    text: "Data push dispatch: opcodes 0x01–0x4b push that many bytes. OP_PUSHDATA1 uses the next byte as a length, OP_PUSHDATA2 uses two bytes, OP_PUSHDATA4 uses four. These cover everything from a 1-byte integer to pushes of arbitrary size — v0.01 sets no maximum (the 520-byte limit came years later). The vast majority of real scripts are mostly push operations followed by a few crypto opcodes."
+    text: "Data push dispatch: opcodes 0x01–0x4b push that many bytes. OP_PUSHDATA1 uses the next byte as a length, OP_PUSHDATA2 uses two bytes, OP_PUSHDATA4 uses four. These cover everything from a 1-byte integer to pushes of arbitrary size — v0.01 sets no maximum (a 5,000-byte cap arrived in mid-2010, cut to 520 bytes in August 2010).{{cite:commit-4bd188c}} The vast majority of real scripts are mostly push operations followed by a few crypto opcodes."
 
   - line: 78
     type: margin
-    text: "<code>OP_1</code> through OP_16 push small integers onto the stack without encoding them as byte vectors. The value is computed from the opcode byte: (opcode − OP_1 + 1). OP_1NEGATE pushes −1. Multi-signature scripts use these: e.g. OP_2 for \"require 2 of...\" in a 2-of-3 multisig."
+    text: "<code>OP_1</code> through OP_16 push small integers without a separate data push—the value is encoded in the opcode byte itself. The value is computed from the opcode byte: (opcode − OP_1 + 1). OP_1NEGATE pushes −1. Multi-signature scripts use these: e.g. OP_2 for \"require 2 of...\" in a 2-of-3 multisig."
 
   - line: 109
     type: margin
@@ -93,7 +94,7 @@ annotations:
 
   - line: 377
     type: margin
-    text: "<code>OP_CAT</code> — concatenates the top two stack elements. This opcode was present in v0.01 but disabled in August 2010 after a vulnerability was discovered: repeatedly concatenating elements could create exponentially large byte vectors, exhausting memory.{{cite:opcode-disable-2010}} A single transaction could crash nodes. Satoshi pushed a patch disabling it within hours of the report."
+    text: "<code>OP_CAT</code> — concatenates the top two stack elements. This opcode was present in v0.01 but disabled in August 2010 along with the other splice, bitwise, and multiply/shift opcodes.{{cite:commit-4bd188c}}{{cite:opcode-disable-2010}} The danger is easy to see: repeated <code>OP_DUP OP_CAT</code> doubles an element each time, so a few dozen opcodes could request gigabytes of memory."
 
   - line: 444
     type: margin
@@ -101,7 +102,7 @@ annotations:
 
   - line: 484
     type: margin
-    text: "<code>OP_EQUAL</code> compares two stack elements as byte arrays (exact byte-for-byte equality, not numeric). The comment about OP_NOTEQUAL explains why it was disabled: numeric encoding is not unique (0x01 = 0x0001), so byte inequality doesn't imply numeric inequality. Numeric comparison uses OP_NUMNOTEQUAL instead."
+    text: "<code>OP_EQUAL</code> compares two stack elements as byte arrays (exact byte-for-byte equality, not numeric). The comment about OP_NOTEQUAL explains why Satoshi left it out: numeric encoding is not unique (0x01 = 0x0001), so byte inequality doesn't imply numeric inequality. Numeric comparison uses OP_NUMNOTEQUAL instead."
 
   - line: 516
     type: margin
@@ -109,7 +110,7 @@ annotations:
 
   - line: 545
     type: margin
-    text: "Binary arithmetic opcodes: OP_MUL and OP_DIV use OpenSSL BN_mul/BN_div for arbitrary precision. OP_MOD uses BN_mod. These were disabled in 2010 because arbitrary-precision multiplication of untrusted inputs is a DoS vector — a transaction could force validators to multiply 512-byte numbers millions of times.{{cite:opcode-disable-2010}}"
+    text: "Binary arithmetic opcodes: OP_MUL and OP_DIV use OpenSSL BN_mul/BN_div for arbitrary precision. OP_MOD uses BN_mod. These, along with OP_LSHIFT and OP_RSHIFT, were disabled in August 2010 because arbitrary-precision arithmetic on untrusted inputs is a DoS vector.{{cite:commit-4bd188c}}{{cite:opcode-disable-2010}} OP_LSHIFT was the worst offender: a crafted shift could crash nodes outright (CVE-2010-5137, fixed in July 2010).{{cite:cve-2010-5141}}"
 
   - line: 653
     type: margin
@@ -121,7 +122,7 @@ annotations:
 
   - line: 692
     type: margin
-    text: "<code>OP_CHECKSIG</code> — the most important opcode in Bitcoin. Pops a public key and signature from the stack, calls CheckSig() which calls SignatureHash() and ECDSA verify. Pushes 1 if valid, 0 if not. Every standard P2PKH and P2PK transaction ends with this opcode. It is the lock that makes Bitcoin spend-once."
+    text: "<code>OP_CHECKSIG</code> — the most important opcode in Bitcoin. Pops a public key and signature from the stack, calls CheckSig() which calls SignatureHash() and ECDSA verify. Pushes 1 if valid, 0 if not. Every standard P2PKH and P2PK transaction ends with this opcode. It is the lock that ensures only the key holder can spend; preventing the same coin from being spent twice is a separate job, done by the transaction index in main.cpp."
 
   - line: 709
     type: margin
@@ -182,6 +183,10 @@ annotations:
   - line: 1115
     type: margin
     text: "<code>VerifySignature</code> — the full validation path for a transaction input. Concatenates scriptSig + OP_CODESEPARATOR + scriptPubKey into a single script, then calls EvalScript. This is how every transaction in a block is validated during ConnectInputs in main.cpp."
+
+  - line: 1126
+    type: margin
+    text: "This concatenation is v0.01's deepest bug. Because scriptSig and scriptPubKey run as one program, anything the spender's half does can short-circuit the owner's lock: a scriptSig of <code>OP_1 OP_RETURN</code> jumps to the end (line 172), never reaching the scriptPubKey, and leaves true on the stack. Anyone could have spent anyone's coins. Satoshi made OP_RETURN fail in v0.3.5 (July 2010),{{cite:cve-2010-5141}} and later versions evaluate the two scripts separately."
 
 conclusion: |
   <p>

@@ -39,7 +39,7 @@ annotations:
   # Constants - the economic parameters
   - line: 17
     type: margin
-    text: "<code>MAX_SIZE</code> = 32 MB (0x02000000 bytes). This general-purpose limit applies to blocks, transactions, and scripts. Notably, this is NOT the famous '1 MB block size limit'—that was added by Satoshi in July 2010 (commit 172f006), over a year after v0.1. The 1 MB limit was likely a temporary anti-spam measure that became permanent, eventually causing the 'block size wars' and the Bitcoin Cash fork in 2017. In v0.1, blocks could theoretically reach 32 MB, though mining code limited them to 16 MB (MAX_SIZE/2)."
+    text: "<code>MAX_SIZE</code> = 32 MB (0x02000000 bytes). This general-purpose limit applies to blocks, transactions, and scripts. Notably, this is NOT the famous '1 MB block size limit'—that was introduced by Satoshi in July 2010 (commit a30b56e, at first only as a mining limit) and made a validation rule that September (commits 8c9479c and 172f006), over a year after v0.1. The 1 MB limit was likely a temporary anti-spam measure that became permanent, eventually causing the 'block size wars' and the Bitcoin Cash fork in 2017. In v0.1, blocks could theoretically reach 32 MB, though mining code limited them to 16 MB (MAX_SIZE/2)."
 
   - line: 18
     type: margin
@@ -51,11 +51,11 @@ annotations:
 
   - line: 20
     type: margin
-    text: "<code>COINBASE_MATURITY</code> = 100 blocks (~17 hours). Freshly mined coins cannot be spent for 100 blocks. Why? If a miner's block gets orphaned in a chain reorganization, the mining reward disappears—it never existed on the winning chain. Without this delay, recipients of those coins would lose money through no fault of their own. 100 blocks provides statistical certainty that reorganizations won't affect mined coins."
+    text: "<code>COINBASE_MATURITY</code> = 100 blocks (~17 hours). Freshly mined coins cannot be spent for 100 blocks. Why? If a miner's block gets orphaned in a chain reorganization, the mining reward disappears—it never existed on the winning chain. Without this delay, recipients of those coins would lose money through no fault of their own. 100 blocks provides statistical certainty that reorganizations won't affect mined coins. The wallet is more cautious still: <code class=\"function\">GetBlocksToMaturity()</code> waits <code>COINBASE_MATURITY+20</code> = 120 blocks, which is why Satoshi described mined coins as spendable after '120 conf / 6 blocks per hour = 20 hours.'{{cite:nakamoto-block-interval}}"
 
   - line: 22
     type: margin
-    text: "<code>bnProofOfWorkLimit</code>—the easiest possible difficulty, used for the genesis block. Expressed as <code>~uint256(0) >> 32</code>, meaning valid hashes must have at least 32 leading zero bits. This was trivially easy by modern standards: Satoshi's personal computer could find valid blocks in minutes. As more miners joined, difficulty automatically increased. Today's difficulty requires ~80+ leading zeros—approximately 100 trillion times harder than this initial value."
+    text: "<code>bnProofOfWorkLimit</code>—the easiest possible difficulty, used for the genesis block. Expressed as <code>~uint256(0) >> 32</code>, meaning valid hashes must have at least 32 leading zero bits. This was trivially easy by modern standards, though a single 2009 CPU still needed hours, on average, to find a block alone. As more miners joined, difficulty automatically increased. Today's difficulty requires ~80+ leading zeros—approximately 100 trillion times harder than this initial value."
 
   # Global state declarations
   - line: 30
@@ -72,7 +72,7 @@ annotations:
 
   - line: 35
     type: margin
-    text: "<code>pindexBest</code> - pointer to chain tip. All new blocks must extend from here. The 'longest chain' rule implemented as a single pointer."
+    text: "<code>pindexBest</code> - pointer to chain tip. New blocks normally extend this tip; a block that extends another known block starts a side branch, and if that branch grows taller, the node reorganizes onto it. The 'longest chain' rule implemented as a single pointer."
 
   - line: 41
     type: margin
@@ -97,7 +97,7 @@ annotations:
 
   - line: 147
     type: margin
-    text: "<code>COutPoint</code>—a pointer to a specific coin in the UTXO set. Just two fields: a transaction hash and an output index. Together they uniquely identify any output ever created. This simple structure is the foundation of Bitcoin's ownership model: you don't own 'bitcoin in an account,' you own the right to spend specific outputs. When you check your balance, your wallet scans the blockchain for COutPoints that your keys can spend."
+    text: "<code>COutPoint</code>—a pointer to a specific coin in the UTXO set. Just two fields: a transaction hash and an output index. Together they uniquely identify any output ever created. This simple structure is the foundation of Bitcoin's ownership model: you don't own 'bitcoin in an account,' you own the right to spend specific outputs. Your balance is the sum of unspent outputs recorded in your wallet (<code class=\"variable\">mapWallet</code>), which collected them as blocks and transactions arrived."
 
   - line: 193
     type: margin
@@ -109,7 +109,7 @@ annotations:
 
   - line: 274
     type: margin
-    text: "<code>CTxOut</code>—how coins are created. Contains just two fields: nValue (amount in satoshis) and scriptPubKey (the spending conditions). The scriptPubKey is a mini program that specifies who can spend this output—typically 'whoever can provide a signature matching this public key.' Once created, a CTxOut exists forever in the blockchain history, but can only be spent once. The sum of all unspent CTxOuts is the UTXO set—the complete state of who owns what."
+    text: "<code>CTxOut</code>—how coins are created. Contains just two fields: nValue (amount in satoshis) and scriptPubKey (the spending conditions). The scriptPubKey is a mini program that specifies who can spend this output—typically 'whoever can provide a signature matching this public key.' Once created, a CTxOut exists forever in the blockchain history, but can only be spent once. The set of all unspent CTxOuts is the UTXO set—the complete state of who owns what."
 
   # The transaction class
   - line: 357
@@ -118,7 +118,7 @@ annotations:
 
   - line: 363
     type: margin
-    text: "<code class=\"variable\">nLockTime</code> — earliest time/height the transaction may enter a block. <code>0</code> means immediate. Combined with non-final <code class=\"variable\">nSequence</code>, this is the primitive behind payment channels and later CLTV — present from day one.{{cite:nakamoto-script-types}}"
+    text: "<code class=\"variable\">nLockTime</code> — in v0.01, the block height the chain must pass before the transaction is final (a timestamp interpretation came later). <code>0</code> means immediate. Combined with non-final <code class=\"variable\">nSequence</code>, this is the primitive behind payment channels and later CLTV — present from day one.{{cite:nakamoto-script-types}}"
 
   - line: 393
     type: margin
@@ -126,7 +126,7 @@ annotations:
 
   - line: 398
     type: margin
-    text: "<code class=\"function\">IsFinal()</code> — true when <code class=\"variable\">nLockTime</code> has passed (or is zero) and every input is final. Non-final transactions are kept out of blocks until their lock conditions clear."
+    text: "<code class=\"function\">IsFinal()</code> — true when <code class=\"variable\">nLockTime</code> is zero or below the current height, or every input is final. Honest miners skip non-final transactions, but in v0.01 no validation rule (<code class=\"function\">CheckBlock</code>, <code class=\"function\">AcceptBlock</code>, <code class=\"function\">ConnectBlock</code>) rejects a block containing one yet."
 
   - line: 437
     type: margin
@@ -138,7 +138,7 @@ annotations:
 
   - line: 504
     type: margin
-    text: "<code>GetMinFee()</code>—calculates the minimum required fee. Transaction fees are implicit: total inputs minus total outputs. Since inputs don't store amounts (only references), nodes must look up each referenced output to calculate the fee. This elegant design means fees don't bloat transaction size. In v0.1, minimum fee was 0.01 BTC per 1000 bytes—optional but encouraged. As Satoshi wrote: 'Free transactions are nice if people don't abuse them.'{{cite:nakamoto-free-transactions}}"
+    text: "<code>GetMinFee()</code>—calculates the minimum required fee. Transaction fees are implicit: total inputs minus total outputs. Since inputs don't store amounts (only references), nodes must look up each referenced output to calculate the fee. This elegant design means fees don't bloat transaction size. In v0.1, the minimum was 0.01 BTC plus 0.01 BTC per full 1000 bytes, waived for transactions under 10KB among a block's first ~100. The wallet applies the discounted rule when sending (so small payments go free), and miners enforce the fee beyond the free allowance. As Satoshi later wrote: 'Free transactions are nice and we can keep it that way if people don't abuse them.'{{cite:nakamoto-free-transactions}}"
 
   - line: 574
     type: margin
@@ -189,11 +189,11 @@ annotations:
   # Block index
   - line: 1009
     type: margin
-    text: "<code>CBlockIndex</code> - in-memory block metadata. Height, work, timestamps. Enables fast chain traversal without reading full blocks from disk."
+    text: "<code>CBlockIndex</code> - in-memory block metadata. Height, disk position, and header fields (including the timestamp). Enables fast chain traversal without reading full blocks from disk."
 
   - line: 1012
     type: margin
-    text: "Chain links: <code class=\"variable\">pprev</code>/<code class=\"variable\">pnext</code> walk the tree; only the best chain has a forward <code class=\"variable\">pnext</code>. <code class=\"variable\">nHeight</code>, file position, and a copy of header fields let the node compare work and locate raw blocks without reloading every <code class=\"class\">CBlock</code>."
+    text: "Chain links: <code class=\"variable\">pprev</code>/<code class=\"variable\">pnext</code> walk the tree; only the best chain has a forward <code class=\"variable\">pnext</code>. <code class=\"variable\">nHeight</code>, file position, and a copy of header fields let the node compare heights and locate raw blocks without reloading every <code class=\"class\">CBlock</code>."
 
   - line: 1133
     type: margin
@@ -253,6 +253,6 @@ glossary:
   - term: "coinbase maturity"
     definition: "The rule (COINBASE_MATURITY, 100 blocks) that freshly mined coins may not be spent until their block is buried 100 deep."
   - term: "nLockTime"
-    definition: "The transaction field giving the earliest time or block height at which it may be included; zero means it is immediately final."
+    definition: "The transaction field that, in v0.01, gives the block height the chain must pass before the transaction is final; zero means it is immediately final. Later versions also let it hold a timestamp."
   - term: "satoshi"
     definition: "The smallest money unit in this code, one hundred-millionth of a bitcoin (COIN = 100,000,000), used as the integer unit for all amounts."

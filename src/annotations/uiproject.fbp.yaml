@@ -141,8 +141,9 @@ annotations:
       <p>
         <strong>Privacy through multiple addresses.</strong> "You may want to
         give a different one to each sender so you can keep track of who is
-        paying you." This seemingly simple advice encodes a key privacy practice:
-        address reuse makes transactions linkable. Satoshi built address generation
+        paying you." The stated reason is bookkeeping, but the advice doubles as a
+        key privacy practice the whitepaper had already spelled out: address reuse
+        makes transactions linkable.{{cite:nakamoto-whitepaper}} Satoshi built address generation
         into the UI from day one, encouraging users to create fresh addresses—
         a privacy feature that remains best practice today.
       </p>

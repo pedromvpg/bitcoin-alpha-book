@@ -29,15 +29,16 @@ introduction: |
     This serialization format is now a de facto standard. Every Bitcoin
     implementation—whether written in C++, Rust, Go, Python, or JavaScript—must
     reproduce it byte for byte. A single-byte divergence causes a consensus fork.
-    The core format has not changed since v0.01, making it one of the most stable
-    binary protocols in computing history—a testament to Satoshi's foresight in
-    designing for permanence over convenience.{{cite:nakamoto-bitcointalk-set-in-stone}}
+    The legacy encoding still defines every txid today; SegWit (2017) added a
+    witness extension alongside it rather than replacing it.{{cite:bip-144}} That makes it one of
+    the most stable binary protocols in computing history—a testament to
+    Satoshi's foresight in designing for permanence over convenience.{{cite:nakamoto-bitcointalk-set-in-stone}}
   </p>
 
 annotations:
   - line: 22
     type: margin
-    text: "<code class=\"constant\">VERSION = 101</code>—the protocol version embedded in serialized data. This allows format evolution: when reading old data, code can handle legacy formats. Version 101 is v0.1.0 (first digit is major, last two are minor). This version is included in network messages and stored data for compatibility checking."
+    text: "<code class=\"constant\">VERSION = 101</code>—the protocol version embedded in serialized data. This allows format evolution: when reading old data, code can handle legacy formats. Later releases made the scheme explicit (300 for 0.3.0, 31300 for 0.3.13). This version is included in network messages and stored data for compatibility checking."
 
   - line: 34
     type: margin
@@ -57,7 +58,7 @@ annotations:
 
   - line: 91
     type: margin
-    text: "Raw data macros: <code class=\"macro\">WRITEDATA</code> and <code class=\"macro\">READDATA</code>. These directly read/write bytes without interpretation. Used for primitive types where the in-memory representation matches the serialized format. The <code>(char*)&(obj)</code> cast gets a byte pointer; <code>sizeof(obj)</code> determines how many bytes. No endianness conversion—Bitcoin uses native byte order (usually little-endian on modern hardware)."
+    text: "Raw data macros: <code class=\"macro\">WRITEDATA</code> and <code class=\"macro\">READDATA</code>. These directly read/write bytes without interpretation. Used for primitive types where the in-memory representation matches the serialized format. The <code>(char*)&(obj)</code> cast gets a byte pointer; <code>sizeof(obj)</code> determines how many bytes. No endianness conversion. Because the bytes are copied raw, the x86 little-endian layout effectively became the protocol; a big-endian build of v0.01 would have spoken a different, incompatible dialect."
 
   - line: 94
     type: margin

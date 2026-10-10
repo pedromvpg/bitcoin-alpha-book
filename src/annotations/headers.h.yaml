@@ -71,7 +71,7 @@ annotations:
 
   - line: 37
     type: margin
-    text: "C++ Standard Library containers and algorithms. The STL provides the data structures Bitcoin is built on: <code class=\"type\">map</code> for the block index and UTXO lookups, <code class=\"type\">vector</code> for transaction inputs/outputs, <code class=\"type\">set</code> for unique peer addresses, <code class=\"type\">deque</code> for message queues, <code class=\"type\">string</code> and <code class=\"type\">sstream</code> for serialization. These nine includes are the backbone of every data structure in the system."
+    text: "C++ Standard Library containers and algorithms. The STL provides the data structures Bitcoin is built on: <code class=\"type\">map</code> for the block index, the wallet, and the memory pool of unconfirmed transactions (v0.01 has no separate UTXO set), <code class=\"type\">vector</code> for transaction inputs/outputs, <code class=\"type\">set</code> for unique peer addresses, <code class=\"type\">deque</code> for message queues, <code class=\"type\">string</code> and <code class=\"type\">sstream</code> for serialization. These nine includes are the backbone of every data structure in the system."
 
   - line: 46
     type: margin
@@ -111,7 +111,8 @@ conclusion: |
     wanted Bitcoin to be accessible to as many people as possible.
   </p>
   <p>
-    Today, Bitcoin Core has replaced every dependency listed here.{{cite:bitcoin-core-history}} wxWidgets gave way to Qt.{{cite:qt-lgpl-2009}}
+    Today, Bitcoin Core has replaced nearly every dependency listed here — Boost, slimmed
+    down but still present, is the holdout.{{cite:bitcoin-core-history}} wxWidgets gave way to Qt.{{cite:qt-lgpl-2009}}
     Berkeley DB gave way to LevelDB for the block index (the wallet kept BDB for years).{{cite:bdb-license}} The custom SHA-256 implementation was optimized with
     hardware intrinsics. Even the precompiled header pattern itself was eventually abandoned
     in favor of modern build systems. But the layered architecture visible in this include

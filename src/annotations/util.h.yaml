@@ -25,7 +25,7 @@ introduction: |
   <p>
     The file's most consequential contribution is the <code>CRITICAL_BLOCK</code>
     macro -- Satoshi's hand-rolled RAII locking primitive. Bitcoin is heavily
-    multi-threaded: the network thread, mining thread, UI thread, and database thread
+    multi-threaded: the three network threads, the mining thread, and the UI thread
     all share global state. Every access to shared data (<code>mapTransactions</code>,
     <code>mapBlockIndex</code>, <code>mapWallet</code>) must be wrapped in a
     <code>CRITICAL_BLOCK</code>. The macro's clever double-for-loop construction
@@ -61,7 +61,7 @@ annotations:
 
   - line: 30
     type: margin
-    text: "<code>#define printf OutputDebugStringF</code> -- on Windows, Satoshi <em>redefines printf itself</em>. Every <code>printf()</code> call in the entire codebase is silently redirected to <code class=\"function\">OutputDebugStringF()</code> (defined on line 232), which writes to both the debug log file and the Windows debug output stream. This is why Bitcoin's source is littered with <code>printf()</code> calls that appear to print to the console but actually write to <code>debug.log</code>. It is an audacious macro that would horrify most C++ style guides, but it worked — and left a historical record: Hal Finney's January 10, 2009 crash post attached his <code>debug.log</code>, later used to show he joined near block 49 rather than at launch.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer}}"
+    text: "<code>#define printf OutputDebugStringF</code> -- on Windows, Satoshi <em>redefines printf itself</em>. Every <code>printf()</code> call in the entire codebase is silently redirected to <code class=\"function\">OutputDebugStringF()</code> (defined on line 232), which -- in debug builds, the makefile's default -- writes to both the debug log file and the Windows debug output stream. This is why Bitcoin's source is littered with <code>printf()</code> calls that appear to print to the console but actually write to <code>debug.log</code>. It is an audacious macro that would horrify most C++ style guides, but it worked — and left a historical record: Hal Finney's January 10, 2009 crash post attached his <code>debug.log</code>, later used to show he joined near block 49 rather than at launch.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer}}"
 
   - line: 36
     type: margin
@@ -81,7 +81,7 @@ annotations:
 
   - line: 71
     type: margin
-    text: "Utility function declarations. <code class=\"function\">RandAddSeed()</code> feeds entropy into OpenSSL's random number generator -- called at startup and periodically to strengthen key generation. <code class=\"function\">strprintf()</code> is a type-safe sprintf-to-string. <code class=\"function\">FormatMoney()</code> converts satoshi integers to human-readable BTC strings with two decimal places. <code class=\"function\">GetRand()</code> returns a cryptographically secure random number. <code class=\"function\">GetAdjustedTime()</code> returns the current time adjusted by the median offset of all connected peers -- Bitcoin's network time."
+    text: "Utility function declarations. <code class=\"function\">RandAddSeed()</code> feeds entropy into OpenSSL's random number generator -- called at startup and periodically to strengthen key generation. <code class=\"function\">strprintf()</code> is a sprintf that returns a <code>std::string</code> (still varargs, so not type-checked). <code class=\"function\">FormatMoney()</code> converts satoshi integers to human-readable BTC strings with two decimal places. <code class=\"function\">GetRand()</code> returns a cryptographically secure random number. <code class=\"function\">GetAdjustedTime()</code> returns the current time adjusted by the median offset of all connected peers -- Bitcoin's network time."
 
   - line: 84
     type: margin
@@ -105,15 +105,15 @@ annotations:
 
   - line: 159
     type: margin
-    text: "String conversion utilities. <code class=\"function\">i64tostr()</code>, <code class=\"function\">itostr()</code>, <code class=\"function\">atoi64()</code>, <code class=\"function\">atoi()</code> -- Satoshi wrapped every standard conversion function to handle platform differences. The <code class=\"function\">atoi64()</code> implementations use <code>_atoi64</code> on MSVC and <code>strtoll</code> on GCC. <code class=\"function\">roundint()</code> (line 192) rounds a double to the nearest integer using the 'add 0.5 and truncate' technique -- used when converting user-entered BTC amounts to satoshi integers."
+    text: "String conversion utilities. <code class=\"function\">i64tostr()</code>, <code class=\"function\">itostr()</code>, <code class=\"function\">atoi64()</code>, <code class=\"function\">atoi()</code> -- Satoshi wrapped every standard conversion function to handle platform differences. The <code class=\"function\">atoi64()</code> implementations use <code>_atoi64</code> on MSVC and <code>strtoll</code> on GCC. <code class=\"function\">roundint()</code> (line 192) rounds a double to the nearest integer using the 'add 0.5 and truncate' technique. Nothing in v0.01 actually calls it -- amounts are parsed as integers by <code class=\"function\">ParseMoney()</code>, never as floating point."
 
   - line: 197
     type: margin
-    text: "<code class=\"function\">HexStr()</code> and <code class=\"function\">HexNumStr()</code> -- hexadecimal formatting templates. <code class=\"function\">HexStr()</code> outputs bytes left-to-right with optional spaces (used for debug logging of raw data). <code class=\"function\">HexNumStr()</code> outputs bytes in reverse order (big-endian display of little-endian integers) with an optional <code>0x</code> prefix -- used for displaying block hashes and transaction IDs in the conventional format. The distinction matters: a uint256 stored as <code>01 00 ... 00</code> in memory displays as <code>0x00...0001</code>."
+    text: "<code class=\"function\">HexStr()</code> and <code class=\"function\">HexNumStr()</code> -- hexadecimal formatting templates. <code class=\"function\">HexStr()</code> outputs bytes left-to-right with optional spaces (used for debug logging of raw data). <code class=\"function\">HexNumStr()</code> outputs bytes in reverse order (big-endian display of little-endian integers) with an optional <code>0x</code> prefix. In v0.01 its only caller is <code>script.h</code>, which uses it to print data pushed onto a script; block hashes and transaction IDs get their hex from <code class=\"type\">uint256</code>'s own <code>GetHex()</code>. The distinction matters: a uint256 stored as <code>01 00 ... 00</code> in memory displays as <code>0x00...0001</code>."
 
   - line: 232
     type: margin
-    text: "<code class=\"function\">OutputDebugStringF()</code> -- Bitcoin's actual logging implementation, silently called whenever any code writes <code>printf()</code> (due to the macro on line 30). In debug builds, it writes to both <code>debug.log</code> and the Windows debug output stream (visible in Visual Studio's Output window). It accumulates partial lines in a static 50KB buffer (line 250), flushing only on newlines -- this avoids interleaved output from concurrent threads. The mutex <code class=\"variable\">cs_OutputDebugStringF</code> (line 247) protects the buffer. In release builds without wxWidgets, it falls back to console output (line 290). Those logs are historical artifacts: Finney's attached <code>debug.log</code> still lets researchers reconstruct peer discovery and block sync from day two.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer-transcriptions}}"
+    text: "<code class=\"function\">OutputDebugStringF()</code> -- Bitcoin's actual logging implementation, silently called whenever any code writes <code>printf()</code> (due to the macro on line 30). In debug builds (<code>__WXDEBUG__</code>, which the makefile turns on by default), it appends each call straight to <code>debug.log</code>, then feeds the Windows debug output stream (visible in Visual Studio's Output window) through a static 50KB buffer (line 250) that is flushed only on newlines, so that stream gets whole lines. The mutex <code class=\"variable\">cs_OutputDebugStringF</code> (line 247) protects the buffer. In builds without <code>__WXDEBUG__</code>, no <code>debug.log</code> is written at all: output goes to the console (line 290), and only when no wxWidgets app is running. Those logs are historical artifacts: Finney's attached <code>debug.log</code> still lets researchers reconstruct peer discovery and block sync from day two.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer-transcriptions}}"
 
   - line: 310
     type: margin
@@ -121,11 +121,11 @@ annotations:
 
   - line: 323
     type: margin
-    text: "<code>CATCH_PRINT_EXCEPTION</code> -- a macro wrapping try/catch that logs both <code>std::exception</code> and unknown exceptions via <code class=\"function\">PrintException()</code>. Used at the top level of every thread function: if an uncaught exception escapes a thread, this catches it, logs the error with the thread's name, and prevents the entire process from crashing. Defensive programming for a system that must run unattended 24/7."
+    text: "<code>CATCH_PRINT_EXCEPTION</code> -- a macro wrapping try/catch that logs both <code>std::exception</code> and unknown exceptions via <code class=\"function\">PrintException()</code>. Used at the top level of the network thread functions, it looks like a safety net -- but it does not stop a crash. <code class=\"function\">PrintException()</code> logs the error with the thread's name, shows a message box, and then ends with a bare <code>throw;</code> (util.cpp line 185), re-throwing the same exception. It escapes the thread anyway, so the 'sleep and restart' loops wrapped around these threads in net.cpp never actually get to restart anything."
 
   - line: 338
     type: margin
-    text: "<code class=\"function\">Hash()</code> -- Bitcoin's fundamental cryptographic primitive: <strong>double SHA-256</strong>. Takes arbitrary input bytes, hashes them with SHA-256, then hashes the result again with SHA-256. Every block hash, every transaction ID, every merkle tree node uses this function. Why hash twice? It provides protection against length-extension attacks: SHA-256 is vulnerable to an attacker who, given <code>H(m)</code>, can compute <code>H(m || padding || suffix)</code> without knowing <code>m</code>. The second hash destroys this property. Three overloads handle 1, 2, and 3 input segments -- the multi-segment versions use SHA256_CTX to hash concatenated inputs without copying them into a single buffer."
+    text: "<code class=\"function\">Hash()</code> -- Bitcoin's fundamental cryptographic primitive: <strong>double SHA-256</strong>. Takes arbitrary input bytes, hashes them with SHA-256, then hashes the result again with SHA-256. Every block hash, every transaction ID, every merkle tree node uses this function. Why hash twice? Satoshi never said; the usual explanation is protection against length-extension attacks: SHA-256 is vulnerable to an attacker who, given <code>H(m)</code>, can compute <code>H(m || padding || suffix)</code> without knowing <code>m</code>. The second hash destroys this property. Three overloads handle 1, 2, and 3 input segments -- the multi-segment versions use SHA256_CTX to hash concatenated inputs without copying them into a single buffer."
 
   - line: 380
     type: margin
@@ -133,7 +133,7 @@ annotations:
 
   - line: 392
     type: margin
-    text: "<code class=\"function\">Hash160()</code> -- SHA-256 followed by RIPEMD-160, producing a 160-bit (20-byte) hash. This is the hash used in Bitcoin addresses: <code>pubKeyHash = RIPEMD160(SHA256(publicKey))</code>. The 160-bit output is shorter than SHA-256's 256 bits, making addresses more compact (a Base58Check-encoded 160-bit hash is 25-34 characters). Using two different hash functions provides defense in depth: even if one is partially broken, the other still protects the address. RIPEMD-160 was chosen because it was a European-designed algorithm, independent of the NSA-influenced SHA family."
+    text: "<code class=\"function\">Hash160()</code> -- SHA-256 followed by RIPEMD-160, producing a 160-bit (20-byte) hash. This is the hash used in Bitcoin addresses: <code>pubKeyHash = RIPEMD160(SHA256(publicKey))</code>. The 160-bit output is shorter than SHA-256's 256 bits, making addresses more compact (a Base58Check-encoded 160-bit hash is 25-34 characters). Satoshi never explained the pairing. A common reading is defense in depth -- even if one function is partially broken, the other still protects the address -- with RIPEMD-160, an academic European design, offering independence from the NSA-designed SHA family."
 
 conclusion: |
   <p>
@@ -145,8 +145,9 @@ conclusion: |
   </p>
   <p>
     The <code>CRITICAL_BLOCK</code> macro deserves special recognition. Satoshi
-    invented a scoped locking construct with break-detection, debug tracking, and
-    exception safety -- essentially reimplementing what C++11 would later
+    built his own scoped locking construct with break-detection, debug tracking, and
+    exception safety. RAII lock guards already existed (Boost had
+    <code>scoped_lock</code>), but his version is essentially what C++11 would later
     standardize as <code>std::lock_guard</code> plus <code>std::unique_lock</code>.
     That he also built a non-blocking variant (<code>TRY_CRITICAL_BLOCK</code>)
     shows a sophisticated understanding of concurrent programming. The socket

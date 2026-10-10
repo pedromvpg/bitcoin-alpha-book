@@ -25,9 +25,10 @@ introduction: |
     at all, which would have made the legal status ambiguous and discouraged institutional use.
     Instead, the MIT License struck the ideal balance for a protocol that needed to be adopted
     as widely as possible, by as many types of actors as possible — individuals, corporations,
-    governments — without legal friction. As Satoshi wrote on the BitcoinTalk forum: "The nature
-    of Bitcoin is such that once version 0.1 was released, the core design was set in stone for
-    the rest of its lifetime."{{cite:nakamoto-bitcointalk-set-in-stone}} The MIT License ensured that even if Satoshi disappeared — as
+    governments — without legal friction. The protocol itself would prove hard to change — as
+    Satoshi wrote on the BitcoinTalk forum: "The nature of Bitcoin is such that once version 0.1
+    was released, the core design was set in stone for the rest of its lifetime."{{cite:nakamoto-bitcointalk-set-in-stone}}
+    The code's legal status was just as durable: the MIT License ensured that even if Satoshi disappeared — as
     he eventually did{{cite:nakamoto-farewell-2011}} — no one could revoke the right to use, study, or modify the software.{{cite:mit-license}}
   </p>
   <p>
@@ -49,7 +50,7 @@ annotations:
 
   - line: 6
     type: margin
-    text: "The right to <em>sublicense</em> is particularly important. It means you can take Bitcoin's code, modify it, and release it under a different license entirely. This is how Litecoin, Dogecoin, and hundreds of other altcoins were legally created — they forked Bitcoin's MIT-licensed code and released it under their own terms. The GPL would not have permitted this without also requiring the GPL."
+    text: "The right to <em>sublicense</em> is particularly important. It means you can take Bitcoin's code, modify it, and pass your version on under terms of your own choosing — even proprietary ones — so long as Satoshi's notice and this permission text travel with the original portions. Litecoin, Dogecoin, and hundreds of other altcoins forked Bitcoin's code freely; most simply kept the MIT License. The GPL would have required every derivative to stay under the GPL."
 
   - line: 8
     type: margin

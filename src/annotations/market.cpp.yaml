@@ -32,10 +32,10 @@ introduction: |
     block — disabled before launch, so atoms never auto-issued from mining.{{cite:rubin-satoshis-version}}
     Satoshi ultimately decided to focus on getting the core payment system right before
     layering commerce on top. The marketplace was stripped from later releases
-    entirely.{{cite:bitcoin-core-history}} Projects like OpenBazaar (2014) and Bisq (2019)
-    would independently reinvent this concept years later -- peer-to-peer commerce with
-    decentralized reputation -- without knowing Satoshi had prototyped it in January
-    2009.{{cite:nakamoto-institute-code}}
+    entirely — <code>market.cpp</code> is already gone in v0.3.0 (July 2010).{{cite:bitcoin-core-history}}
+    Projects like OpenBazaar (2014) and Bisq (launched as Bitsquare in 2016) would
+    pursue this concept years later -- peer-to-peer commerce with decentralized
+    reputation -- the same idea Satoshi had prototyped in January 2009.{{cite:nakamoto-institute-code}}
   </p>
   <p>
     What remains is 264 lines of C++ that reveal a mind thinking far beyond digital
@@ -55,7 +55,7 @@ annotations:
 
   - line: 29
     type: margin
-    text: "<code class=\"function\">AdvertInsert()</code> -- adds or updates a product listing in the global marketplace. The logic is idempotent: if the product hash already exists, it only overwrites when the incoming <code class=\"variable\">nSequence</code> number is higher (line 43), preventing stale advertisements from overwriting newer ones. This sequence-number versioning is the same pattern used in IP address relay -- a simple but effective way to handle out-of-order message delivery in a P2P network."
+    text: "<code class=\"function\">AdvertInsert()</code> -- adds or updates a product listing in the global marketplace. The logic is idempotent: if the product hash already exists, it only overwrites when the incoming <code class=\"variable\">nSequence</code> number is higher (line 43), preventing stale advertisements from overwriting newer ones. This sequence-number versioning is a simple but effective way to handle out-of-order message delivery in a P2P network. (Address relay in net.cpp has no such counter; it just merges service bits.)"
 
   - line: 50
     type: margin

@@ -26,8 +26,9 @@ introduction: |
     toolchains handle the same project. MSVC uses a precompiled header via <code>/YX</code>
     and <code>/Fp</code> flags rather than GCC's <code>.gch</code> file. Library names gain
     <code>.lib</code> suffixes instead of <code>-l</code> prefixes. Berkeley DB is linked as
-    <code>libdb47s.lib</code> (static library, version 4.7) rather than <code>-l db_cxx</code>
-    (shared library). And the final link step uses <code>link.exe</code> with
+    <code>libdb47s.lib</code> (static library, version 4.7) rather than <code>-l db_cxx</code>,
+    though the MinGW build linked it statically too — the released <code>bitcoin.exe</code>
+    shipped with only <code>libeay32.dll</code> and <code>mingwm10.dll</code>. And the final link step uses <code>link.exe</code> with
     <code>/SUBSYSTEM:WINDOWS</code> rather than <code>g++</code> with <code>-mwindows</code>.
     The same program, two dialects.
   </p>
@@ -58,7 +59,7 @@ annotations:
 
   - line: 18
     type: margin
-    text: "<strong>Library dependencies</strong>. Key differences from the MinGW version: <code>libdb47s$(D).lib</code> is a statically linked Berkeley DB 4.7 (the 's' suffix means static), while MinGW links the shared <code>db_cxx</code>. The wxWidgets and Windows system libraries are identical in content but use <code>.lib</code> suffixes instead of <code>-l</code> prefixes. MSVC's linker resolves libraries by filename, not by naming conventions."
+    text: "<strong>Library dependencies</strong>. Key differences from the MinGW version: <code>libdb47s$(D).lib</code> is a statically linked Berkeley DB 4.7 (the 's' suffix means static); MinGW links <code>db_cxx</code>, and since the released binary shipped without any Berkeley DB DLL, that build was evidently static as well. The wxWidgets and Windows system libraries are identical in content but use <code>.lib</code> suffixes instead of <code>-l</code> prefixes. MSVC's linker resolves libraries by filename, not by naming conventions."
 
   - line: 24
     type: margin

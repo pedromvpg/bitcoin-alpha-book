@@ -7,10 +7,11 @@ introduction: |
   <p>
     This file is not Satoshi's code. It is Crypto++ 5.5.2, written by Wei Dai,
     who adapted it from Steve Reid's public domain SHA-1 implementation.{{cite:crypto-pp-wei-dai}} Three
-    authors, two algorithms, one file — and Bitcoin depends on every byte being
-    correct. <code>sha.cpp</code> is the implementation of the cryptographic
-    hash functions that underpin every transaction ID, every block, and every
-    proof-of-work in the network.
+    authors, two algorithms, one file. In v0.01 it has exactly one customer: the
+    CPU miner, which calls <code>SHA256::Transform</code> directly for speed.
+    Everywhere else — transaction IDs, block validation, Merkle roots, addresses —
+    Bitcoin hashes with OpenSSL's SHA-256 (<code>Hash()</code> in util.h). Two
+    independent implementations of the same algorithm, and they must agree.
   </p>
   <p>
     A hash function takes arbitrary input and produces a fixed-size output —
@@ -32,10 +33,12 @@ introduction: |
     it was unnecessary for Bitcoin's specific usage, but the cost is negligible.
   </p>
   <p>
-    SHA-1 appears here because Crypto++ included it, not because Bitcoin uses it.
-    Satoshi used SHA-256 exclusively.{{cite:fips-180-2}} SHA-1 was already known to be weakening in
-    2009 — Wang Xiaoyun had demonstrated theoretical collision attacks in 2005.{{cite:wang-sha1-2005}}
-    Its presence in the file is a historical artifact, not design.
+    SHA-1 appears here because Crypto++ included it, not because Bitcoin uses
+    this copy. Block and transaction hashing is SHA-256 throughout.{{cite:fips-180-2}} (Script does
+    expose SHA-1 as the <code>OP_SHA1</code> opcode, but that calls OpenSSL, not this
+    file.) SHA-1 was already known to be weakening in 2009 — Wang Xiaoyun had
+    demonstrated theoretical collision attacks in 2005.{{cite:wang-sha1-2005}} Its presence in the
+    file is a historical artifact, not design.
   </p>
 
 annotations:
@@ -97,7 +100,7 @@ annotations:
 
   - line: 141
     type: margin
-    text: "<code>SHA256::Transform</code>: the Bitcoin consensus function. Every node in the network must compute this function identically on every block header. A single-bit divergence in this code — a wrong rotation constant, an off-by-one in the loop bound — would cause a chain split: the node would accept or reject blocks differently from all other nodes. Bitcoin Core has never changed this function's output since 2009. It is consensus-critical in the strictest sense: it is the definition of what a valid Bitcoin block is."
+    text: "<code>SHA256::Transform</code>: the miner's engine. In v0.01 only <code>BitcoinMiner</code> calls this Crypto++ routine (through <code>BlockSHA256</code> in main.cpp), because hashing a pre-formatted header block by block is faster. Every node validates hashes with OpenSSL's SHA-256 instead (<code>Hash()</code> in util.h). Satoshi made the two check each other: before broadcasting a block, the miner asserts <code>hash == pblock-&gt;GetHash()</code>. Had this code contained a wrong rotation or an off-by-one, the miner would have produced blocks the network rejects—wasted work, not a chain split. Consensus rests on the SHA-256 algorithm, not on this particular copy of it."
 
   - line: 141
     type: highlight
@@ -129,11 +132,13 @@ annotations:
 
 conclusion: |
   <p>
-    <code>sha.cpp</code> contains the single most consensus-critical code in
-    all of Bitcoin: <code>SHA256::Transform</code>. Every block that has ever
-    been mined, every transaction that has ever been confirmed, every proof-of-work
-    ever validated — all were computed with this function. It has never changed.
-    Any change would instantly fork the network.
+    <code>sha.cpp</code> holds the routine that found Bitcoin's first blocks:
+    <code>SHA256::Transform</code>, the engine of v0.01's CPU miner. Validation
+    never depended on this copy — nodes checked every hash with OpenSSL — and
+    Bitcoin Core later replaced the Crypto++ code with its own implementation.
+    What has never changed is the SHA-256 <em>algorithm</em> itself. Every block
+    ever mined and every transaction ever confirmed rests on it, and any change
+    to its output would instantly fork the network.
   </p>
   <p>
     The file's structure reveals the engineering pragmatism of the era. Satoshi

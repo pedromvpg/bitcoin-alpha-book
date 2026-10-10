@@ -14,7 +14,8 @@ introduction: |
     The key abstraction is the <code>CNode</code> class: a single connection to
     another Bitcoin node. Each CNode maintains send/receive buffers, tracks what
     data the peer has (to avoid redundant transfers), and handles the message
-    serialization. A typical node maintains 8–125 simultaneous CNode connections.
+    serialization. In v0.01 the connection opener stops seeking peers once 15
+    are connected; modern Bitcoin Core allows up to 125.
   </p>
   <p>
     Satoshi designed the protocol with minimal trust: nodes don't believe what
@@ -92,7 +93,7 @@ annotations:
 
   - line: 434
     type: margin
-    text: "<code class=\"class\">CNode</code>—the heart of Bitcoin's networking: a single peer connection. Each CNode wraps a socket and maintains: send/receive buffers, version information, connection state, inventory tracking (what the peer has/wants), and address gossip state. A running Bitcoin node typically has 8–125 CNode instances, each representing one peer relationship."
+    text: "<code class=\"class\">CNode</code>—the heart of Bitcoin's networking: a single peer connection. Each CNode wraps a socket and maintains: send/receive buffers, version information, connection state, inventory tracking (what the peer has/wants), and address gossip state. A v0.01 node actively dials out until it has 15 CNode instances (modern Core allows up to 125), each representing one peer relationship."
 
   - line: 440
     type: margin
@@ -108,11 +109,11 @@ annotations:
 
   - line: 467
     type: margin
-    text: "<code class=\"variable\">mapAskFor</code>—items we want to request from this peer, keyed by when to ask. When we receive an 'inv' for something we don't have, we don't request immediately (in case multiple peers announce it—we'd get duplicates). Instead, we schedule the request slightly in the future. If another peer delivers it first, we cancel the request."
+    text: "<code class=\"variable\">mapAskFor</code>—items we want to request from this peer, keyed by when to ask. When we receive an 'inv' for something we don't have, the first request is scheduled for right now. If a second peer announces the same item, its request is scheduled 2 minutes after the first (in case the first peer never delivers), and so on. Before sending, the node checks whether the item has already arrived; if another peer delivered it first, the request is skipped."
 
   - line: 493
     type: margin
-    text: "Version message on connect: <code>PushMessage(\"version\", VERSION, nLocalServices, nTime, addr)</code>. The first message any node sends is <code>version</code>, announcing its protocol version, capabilities, and current time. The recipient responds with its own <code>version</code> message. This handshake establishes the connection and negotiates compatible features."
+    text: "Version message on connect: <code>PushMessage(\"version\", VERSION, nLocalServices, nTime, addr)</code>. The first message any node sends is <code>version</code>, announcing its protocol version, capabilities, and current time. Because it is pushed from the <code>CNode</code> constructor, both sides send it unprompted the moment the connection exists — inbound and outbound alike — rather than one replying to the other. There is no <code>verack</code> acknowledgment yet in v0.01; that came later. This exchange establishes the connection and negotiates compatible features."
 
   - line: 533
     type: margin
@@ -128,11 +129,11 @@ annotations:
 
   - line: 632
     type: margin
-    text: "<code class=\"function\">PushMessage()</code>—variadic templates for sending messages with up to four arguments. The syntax <code>vSend << a1 << a2</code> uses operator overloading to serialize each argument. This elegant design lets you write <code>PushMessage(\"block\", block)</code> and have the block automatically serialized according to its type's <code class=\"macro\">IMPLEMENT_SERIALIZE</code> definition."
+    text: "<code class=\"function\">PushMessage()</code>—five overloaded templates for sending messages with zero to four arguments (C++ had no variadic templates until C++11). The syntax <code>vSend << a1 << a2</code> uses operator overloading to serialize each argument. This elegant design lets you write <code>PushMessage(\"block\", block)</code> and have the block automatically serialized according to its type's <code class=\"macro\">IMPLEMENT_SERIALIZE</code> definition."
 
   - line: 766
     type: margin
-    text: "<code class=\"function\">RelayInventory()</code>—broadcasts an announcement to all peers. Iterates through <code class=\"variable\">vNodes</code> calling <code class=\"function\">PushInventory()</code> on each. The per-peer filtering (via <code class=\"variable\">setInventoryKnown</code>) ensures no redundant announcements. This is how new transactions propagate: miner broadcasts to their peers, those peers relay to their peers, exponentially spreading across the network."
+    text: "<code class=\"function\">RelayInventory()</code>—broadcasts an announcement to all peers. Iterates through <code class=\"variable\">vNodes</code> calling <code class=\"function\">PushInventory()</code> on each. The per-peer filtering (via <code class=\"variable\">setInventoryKnown</code>) ensures no redundant announcements. This is how new transactions propagate: the sender broadcasts to their peers, those peers relay to their peers, exponentially spreading across the network."
 
   - line: 783
     type: margin
@@ -140,7 +141,7 @@ annotations:
 
   - line: 818
     type: margin
-    text: "Publish/subscribe system—Satoshi's marketplace feature. <code class=\"function\">AdvertStartPublish()</code> and related functions implement a pub/sub mechanism for <code class=\"class\">CTable</code> and <code class=\"class\">CProduct</code> objects. Nodes could subscribe to channels and receive product listings. This code was largely unused and removed in later versions,{{cite:bitcoin-core-history}} but hints at Satoshi's vision of Bitcoin as a platform for decentralized commerce."
+    text: "Publish/subscribe system—Satoshi's marketplace feature. <code class=\"function\">AdvertStartPublish()</code> and related functions implement a pub/sub mechanism for <code class=\"class\">CTable</code> and <code class=\"class\">CProduct</code> objects. Nodes were meant to subscribe to channels and receive product listings — but v0.01's message handler in main.cpp has no case for <code>publish</code> or <code>subscribe</code>, so a receiving node simply ignores them as unknown commands. This code was largely unused and removed in later versions,{{cite:bitcoin-core-history}} but hints at Satoshi's vision of Bitcoin as a platform for decentralized commerce."
 
 conclusion: |
   <p>

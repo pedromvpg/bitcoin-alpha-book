@@ -44,7 +44,7 @@ annotations:
 
   - line: 17
     type: margin
-    text: "<code class=\"function\">EncodeAddress()</code> — converts a <code class=\"type\">CAddress</code> (Bitcoin's internal address representation) into an IRC-safe nickname. The IP and port are packed into the 6-byte <code class=\"type\">ircaddr</code> struct, then encoded with <code class=\"function\">EncodeBase58Check()</code> — the same encoding used for Bitcoin addresses. The result is prefixed with <code>'u'</code> to mark it as a valid node address. A typical encoded nickname might look like <code>u6R7EfdL3qP</code>. The 'u' prefix distinguishes real nodes from non-routable nodes (which get random 'x' prefixes)."
+    text: "<code class=\"function\">EncodeAddress()</code> — converts a <code class=\"type\">CAddress</code> (Bitcoin's internal address representation) into an IRC-safe nickname. The IP and port are packed into the 6-byte <code class=\"type\">ircaddr</code> struct, then encoded with <code class=\"function\">EncodeBase58Check()</code> — the same encoding used for Bitcoin addresses. The result is prefixed with <code>'u'</code> to mark it as a valid node address. Six data bytes plus a four-byte checksum come out as about 14 Base58 characters, so a typical nickname is 15 characters long: the documentation address 203.0.113.5:8333, for example, becomes <code>uCQVSS4eS2kwNJj</code>. The 'u' prefix distinguishes real nodes from non-routable nodes (which get random 'x' prefixes)."
 
   - line: 27
     type: margin
@@ -56,7 +56,7 @@ annotations:
 
   - line: 63
     type: margin
-    text: "<code class=\"function\">RecvLine()</code> — reads one line from the IRC socket, character by character. IRC uses <code>\\r\\n</code> line endings; this function returns on <code>\\r</code> and skips <code>\\n</code>. Reading one byte at a time with <code class=\"function\">recv()</code> is inefficient but simple — adequate for the low-bandwidth IRC protocol where messages arrive at human-conversation speed. The <code class=\"variable\">WSAGetLastError()</code> call on line 89 reveals this was written for Windows first (Winsock API)."
+    text: "<code class=\"function\">RecvLine()</code> — reads one line from the IRC socket, character by character. IRC uses <code>\\r\\n</code> line endings; this function returns on <code>\\r</code> and skips <code>\\n</code>. Reading one byte at a time with <code class=\"function\">recv()</code> is inefficient but simple — adequate for the low-bandwidth IRC protocol where messages arrive at human-conversation speed. The <code class=\"variable\">WSAGetLastError()</code> call on line 89 reveals this was written for Windows first (Winsock API) — though that branch is dead code: the <code>nBytes &gt; 0</code> and <code>nBytes &lt;= 0</code> tests above it already cover every case, so a socket error is simply treated as a closed connection."
 
   - line: 99
     type: margin
@@ -76,7 +76,7 @@ annotations:
 
   - line: 148
     type: margin
-    text: "<code class=\"function\">gethostbyname(\"chat.freenode.net\")</code> — DNS resolution of the IRC server. In the v0.01 source code this reads <code>chat.freenode.net</code>, though other early versions used <code>irc.lfnet.org</code>. Port 6667 is the standard IRC port — typically allowed through firewalls because IRC was widely used in 2009. Satoshi chose a well-known public IRC network rather than running a private server, avoiding any single point of failure under his control."
+    text: "<code class=\"function\">gethostbyname(\"chat.freenode.net\")</code> — DNS resolution of the IRC server. In the v0.01 source code this reads <code>chat.freenode.net</code>, though later versions (from v0.3.0 in July 2010) added <code>irc.lfnet.org</code>.{{cite:bitcoin-core-history}} Port 6667 is the standard IRC port — typically allowed through firewalls because IRC was widely used in 2009. Satoshi chose a well-known public IRC network rather than running a private server, so no server under his control was needed — though, as he later acknowledged, the IRC server itself was 'a single point of failure.'{{cite:nakamoto-irc-temporary}}"
 
   - line: 152
     type: margin
@@ -104,7 +104,7 @@ annotations:
 
   - line: 202
     type: margin
-    text: "WHO response parsing — IRC numeric reply 352 (<code>RPL_WHOREPLY</code>). The username is at index 7 in the response fields. The comment notes that this field is limited to 16 characters by IRC protocol — long enough for Base58-encoded IPv4 addresses (typically 10-12 characters) but potentially truncating IPv6. Satoshi chose index 7 over index 10 (which could hold the full-length name) for consistency with JOIN messages."
+    text: "WHO response parsing — IRC numeric reply 352 (<code>RPL_WHOREPLY</code>). The nickname is at index 7 in the response fields. The comment notes that this field is limited to 16 characters — and an encoded node address is 'u' plus about 14 Base58 characters, 15 in all, so it just fits. Satoshi chose index 7 over index 10 (the 'real name' field, which also carries the encoded name at full length) for consistency with JOIN messages."
 
   - line: 210
     type: margin
@@ -116,7 +116,7 @@ annotations:
 
   - line: 236
     type: margin
-    text: "<code>fRestartIRCSeed = false</code> — resets the restart flag before closing the socket and looping back to the top of <code class=\"function\">ThreadIRCSeed()</code>. The outer <code>loop</code> keyword (Satoshi's macro for <code>for(;;)</code>) ensures the IRC connection is re-established automatically. This provides resilience against IRC server disconnections, network interruptions, and deliberate restarts triggered by the peer management code."
+    text: "<code>fRestartIRCSeed = false</code> — resets the restart flag before closing the socket and looping back to the top of <code class=\"function\">ThreadIRCSeed()</code>. The outer <code>loop</code> keyword (Satoshi's macro for <code>for(;;)</code>) would reconnect only if something set <code class=\"variable\">fRestartIRCSeed</code> — and nothing in v0.01 does. A dropped connection, socket error, or failed handshake takes one of the <code>return</code> paths above instead, ending the thread; the node then relies on addr messages and its saved addresses."
 
   - line: 250
     type: margin
@@ -139,9 +139,10 @@ conclusion: |
     piggybacked on infrastructure that predated Bitcoin by two decades. The
     code is deliberately minimal — no IRC channel registration, no bot commands,
     no flood protection beyond the basic PING/PONG handler. When asked about
-    alternatives on BitcoinTalk, Satoshi noted: "I really like the complementary
-    redundant attributes of the two different systems" — referring to IRC discovery
-    and addr propagation working together.{{cite:nakamoto-irc-temporary}}
+    alternatives on BitcoinTalk in June 2010, Satoshi weighed IRC (which "lists
+    nodes that are currently online" but is "a single point of failure") against
+    the addr system, and concluded: "The combination of the two gets us the best
+    of both worlds and more total robustness."{{cite:nakamoto-irc-temporary}}
   </p>
   <p>
     The security implications are worth noting. IRC traffic was unencrypted,

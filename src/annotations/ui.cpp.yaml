@@ -92,7 +92,7 @@ annotations:
 
   - line: 420
     type: margin
-    text: "<code>FormatTxStatus</code> — converts confirmation depth to a human-readable status string. Unconfirmed transactions show \"0/unconfirmed\". Transactions with fewer than 6 confirmations show \"N/unconfirmed\". At 6+ confirmations the block depth is shown. This 6-confirmation threshold reflects the probabilistic finality argument in Satoshi's whitepaper.{{cite:nakamoto-whitepaper}}"
+    text: "<code>FormatTxStatus</code> — converts confirmation depth to a human-readable status string. Unconfirmed transactions show \"0/unconfirmed\". Transactions with fewer than 6 confirmations show \"N/unconfirmed\". At 6+ confirmations the block depth is shown. The whitepaper never names 6; its probability tables show how the odds of a successful double-spend fall off exponentially with each block (for an attacker with 10% of the hash power, under 0.1% after 5 blocks), and 6 became the conventional rule of thumb.{{cite:nakamoto-whitepaper}}"
 
   - line: 432
     type: margin
@@ -100,11 +100,11 @@ annotations:
 
   - line: 449
     type: margin
-    text: "Sort key construction: zero-pads block height and time so lexicographic sort matches chronological order. Unconfirmed transactions (not yet in a block) sort to the top using INT_MAX as height. Coinbase transactions within a block sort after regular transactions (the 1 vs 0 flag) so mined coins appear below received ones."
+    text: "Sort key construction: zero-pads block height and time so lexicographic sort matches chronological order. Unconfirmed transactions (not yet in a block) sort to the top using INT_MAX as height. The list control is created with wxLC_SORT_DESCENDING, so higher keys go on top: within the same block, a coinbase (flag 1) sorts above regular transactions (flag 0), putting mined coins above received ones."
 
   - line: 462
     type: margin
-    text: "Coinbase display: mined coins appear as \"Generated\" with a maturity countdown. Until 100 blocks deep, the credit is shown as \"(X BTC matures in N blocks)\" — grayed out and unspendable. This countdown is the visual manifestation of the coinbase maturity rule that prevents miners from spending freshly minted coins immediately."
+    text: "Coinbase display: mined coins appear as \"Generated\" with a maturity countdown. Until 120 blocks deep, the credit is shown as \"(X BTC matures in N blocks)\" and not counted in the balance. This countdown is the visual manifestation of the coinbase maturity rule that prevents miners from spending freshly minted coins immediately — with a twist: consensus only requires 100 blocks (COINBASE_MATURITY in main.h), but GetBlocksToMaturity() counts to COINBASE_MATURITY+20. The wallet is deliberately stricter than the network, adding a 20-block safety margin."
 
   - line: 527
     type: margin
@@ -132,11 +132,11 @@ annotations:
 
   - line: 774
     type: margin
-    text: "Status bar format: three fields. Left: empty. Middle (81px): mining status — \"Generating\" or \"(not connected)\". Right: a live snapshot of connections, chain height, and transaction count. The format string encodes the user's current view of the network's health in one line."
+    text: "Status bar format: three fields. Left: empty. Middle (81px): mining status — \"Generating\" or \"(not connected)\". Right: a live snapshot of connections, block count, and the number of transactions in your wallet's list. The format string encodes the user's current view of the network's health in one line."
 
   - line: 821
     type: margin
-    text: "<code>OnMenuOptionsGenerate</code> — the mining toggle. Writes the new value to wallet.dat settings, then spawns a ThreadBitcoinMiner thread if enabled. Mining cannot be \"stopped\" cleanly in v0.01 — the thread runs to completion. This is why the menu is checked before the thread is ready."
+    text: "<code>OnMenuOptionsGenerate</code> — the mining toggle. Writes the new value to wallet.dat settings, then spawns a ThreadBitcoinMiner thread if enabled. Unchecking it stops mining cleanly: BitcoinMiner() loops <code>while (fGenerateBitcoins)</code> and also checks the flag inside its hashing loop, so it notices the change and exits."
 
   - line: 848
     type: margin
@@ -152,7 +152,7 @@ annotations:
 
   - line: 1141
     type: margin
-    text: "<code>mapValue[\"message\"]</code> — Bitcoin v0.01 supported attaching free-text messages to transactions. For IP-to-IP payments, sender and recipient contact details were also stored in mapValue[\"from\"] and mapValue[\"to\"]. These fields exist only in the local wallet, not on the blockchain — they are never broadcast."
+    text: "<code>mapValue[\"message\"]</code> — Bitcoin v0.01 supported attaching free-text messages to transactions. For IP-to-IP payments, sender and recipient contact details were also stored in mapValue[\"from\"] and mapValue[\"to\"]. These fields never go into the block chain or get relayed across the network, but they are not purely local either: for an IP payment, the whole wallet transaction — message included — is sent directly to the recipient's node in the \"submitorder\" message, and their wallet stores it."
 
   - line: 1201
     type: margin
@@ -184,15 +184,15 @@ annotations:
 
   - line: 1574
     type: margin
-    text: "<code>StartTransfer</code> — the IP-to-IP payment protocol: (1) connect to the recipient's node, (2) send a \"checkorder\" request with the proposed transaction, (3) receive a response with the recipient's public key (OnReply2), (4) build and sign the transaction, (5) send \"submitorder\" with the signed payment. The recipient's wallet responds automatically without user action."
+    text: "<code>StartTransfer</code> — the IP-to-IP payment protocol: (1) connect to the recipient's node, (2) send a \"checkorder\" request carrying the order (at this point just the to/from/message fields — no inputs or outputs yet), (3) receive a response with the recipient's public key (OnReply2), (4) build and sign the transaction, (5) send \"submitorder\" with the signed payment. The recipient's wallet responds automatically without user action."
 
   - line: 1596
     type: margin
-    text: "<code>PushRequest(\"checkorder\")</code> — sends the unsigned transaction to the recipient for approval. The recipient's node can reject it (e.g., amount too small) or return a fresh scriptPubKey. This handshake prevents address reuse — every IP-to-IP payment goes to a new key generated on demand by the recipient."
+    text: "<code>PushRequest(\"checkorder\")</code> — sends the order to the recipient for approval. The protocol leaves room for a refusal, but v0.01's handler never refuses: it carries only the comment '/// we have a chance to check the order here' and always replies with a scriptPubKey. That script is pay-to-public-key (<code>&lt;pubkey&gt; OP_CHECKSIG</code>), not a pay-to-address script, and the key is reused per sender IP ('Keep giving the same key to the same ip until they use it'); a new key is generated only after a payment from that IP arrives."
 
   - line: 1640
     type: margin
-    text: "2-second cancel window: after receiving the recipient's public key but before committing the transaction, the dialog pauses for 2 seconds. During this window the user can still cancel. Once CommitTransactionSpent() is called below, the coins are gone — hence fCanCancel = false immediately before commit."
+    text: "2-second cancel window: after receiving the recipient's public key but before committing the transaction, the dialog waits until at least 2 seconds have passed since it opened (<code>start</code>), so a fast reply still leaves the user a moment. During this window the user can still cancel. Once CommitTransactionSpent() is called below, the coins are gone — hence fCanCancel = false immediately before commit."
 
   - line: 1683
     type: margin
@@ -200,7 +200,7 @@ annotations:
 
   - line: 2850
     type: margin
-    text: "<code class=\"function\">CMyApp::OnInit()</code> — wxWidgets entry point (this is <code>main</code>). Catches exceptions around <code class=\"function\">OnInit2</code> so a startup failure prints instead of silently dying."
+    text: "<code class=\"function\">CMyApp::OnInit()</code> — wxWidgets entry point (this is <code>main</code>). Wraps <code class=\"function\">OnInit2</code> in a try/catch that logs a startup failure and shows a message box — but <code class=\"function\">PrintException()</code> then re-throws (<code>throw;</code> in util.cpp), so the <code>return false</code> after the catch is never reached and the exception still ends the program."
 
   - line: 2885
     type: margin
@@ -223,8 +223,10 @@ conclusion: |
     and their customers.
   </p>
   <p>
-    Much of this vision was shed as Bitcoin evolved. IP-to-IP payments were
-    removed in 2012 (privacy and NAT problems proved insurmountable).{{cite:bitcoin-core-history}} The
+    Much of this vision was shed as Bitcoin evolved. IP-to-IP payments lost their
+    user interface when the wxWidgets GUI was replaced in v0.5.0 (2011), and the
+    protocol messages behind them were removed by v0.8.0 (2013) (privacy and NAT
+    problems proved insurmountable).{{cite:bitcoin-core-history}} The
     marketplace features—products, orders, reviews—were never completed.
     What survived is the simple, elegant core: a transaction list, a balance,
     an address to receive, a button to send. That minimal interface—connecting

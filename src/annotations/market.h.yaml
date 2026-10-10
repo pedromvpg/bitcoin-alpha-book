@@ -33,10 +33,12 @@ introduction: |
     Satoshi's most practical engineering decisions.
   </p>
   <p>
-    Services like OpenBazaar (2014), Particl (2017), and Bisq (2019) would
-    later attempt to build exactly what Satoshi sketched here -- decentralized
-    marketplaces with integrated reputation systems. None of them knew this
-    prototype existed in Bitcoin's first release.
+    Services like OpenBazaar (2014), Bisq (launched as Bitsquare in 2016), and
+    Particl (2017) would later attempt to build what Satoshi sketched here --
+    decentralized marketplaces with integrated reputation systems. Particl went
+    so far as to present its marketplace as a continuation of this unfinished
+    project, quoting Satoshi's 2011 email to Mike Hearn about an "eBay style
+    marketplace built in to the client."{{cite:nakamoto-hearn-emails}}
   </p>
 
 annotations:

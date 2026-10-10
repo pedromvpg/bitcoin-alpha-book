@@ -29,7 +29,7 @@ introduction: |
     Also defined here is <code>uint160</code>, a 160-bit integer used for Bitcoin
     addresses. The address derivation process (RIPEMD160(SHA256(pubkey))) produces
     160 bits. The shorter length was a deliberate trade-off: addresses are 27-34
-    characters instead of ~64, making them more human-manageable while still
+    characters instead of about 50 for a full 256-bit hash, making them more human-manageable while still
     providing 2^80 security against collision attacks (via the birthday paradox).
   </p>
 
@@ -56,7 +56,7 @@ annotations:
 
   - line: 41
     type: margin
-    text: "<code class=\"function\">operator~()</code>—bitwise NOT (complement). Flips every bit. Used in difficulty calculations: the compact difficulty format encodes targets, and some calculations need inverted values. Each word is independently complemented."
+    text: "<code class=\"function\">operator~()</code>—bitwise NOT (complement). Flips every bit. Its key use is <code>~uint256(0)</code>, the all-ones maximum value from which <code>bnProofOfWorkLimit</code> is built (main.h:22). Each word is independently complemented."
 
   - line: 49
     type: margin
@@ -68,19 +68,19 @@ annotations:
 
   - line: 110
     type: margin
-    text: "<code class=\"function\">operator&lt;&lt;=()</code>—left bit shift. Shifts the entire 256-bit value left by <code class=\"variable\">shift</code> positions. The implementation handles cross-word shifts: if shifting by 40 bits, some bits move from word 0 to word 1, others from word 1 to word 2. The calculation <code>k = shift / 32</code> gives whole-word shift; <code>shift % 32</code> gives within-word shift. Used in constructions like <code>bnProofOfWorkLimit</code>; retargeting uses multiply/divide on <code class=\"class\">CBigNum</code>, not these shifts."
+    text: "<code class=\"function\">operator&lt;&lt;=()</code>—left bit shift. Shifts the entire 256-bit value left by <code class=\"variable\">shift</code> positions. The implementation handles cross-word shifts: if shifting by 40 bits, some bits move from word 0 to word 1, others from word 1 to word 2. The calculation <code>k = shift / 32</code> gives whole-word shift; <code>shift % 32</code> gives within-word shift. Retargeting does not use these shifts; it multiplies and divides the target as a <code class=\"class\">CBigNum</code>."
 
   - line: 127
     type: margin
-    text: "<code class=\"function\">operator&gt;&gt;=()</code>—right bit shift. The mirror of left shift, used in the halving formula: <code>nSubsidy >>= (nBestHeight / 210000)</code> divides the block reward by 2 for each halving era. Each right shift by 1 is equivalent to integer division by 2."
+    text: "<code class=\"function\">operator&gt;&gt;=()</code>—right bit shift. The mirror of left shift. Its best-known use is <code>bnProofOfWorkLimit(~uint256(0) >> 32)</code> (main.h:22): all 256 bits set, shifted right 32 places, giving the easiest target allowed—a hash must start with 32 zero bits. Each right shift by 1 is equivalent to integer division by 2. (The halving's <code>nSubsidy >>= …</code> is the same idea on a plain 64-bit integer.)"
 
   - line: 144
     type: margin
-    text: "<code class=\"function\">operator+=()</code>—addition with carry propagation. This is grade-school addition scaled to 256 bits. For each word pair, add plus incoming carry, store low 32 bits as result, carry the high bits to the next word. The <code>uint64</code> temporary naturally captures the 33-bit intermediate result. Used in address derivation and difficulty calculations."
+    text: "<code class=\"function\">operator+=()</code>—addition with carry propagation. This is grade-school addition scaled to 256 bits. For each word pair, add plus incoming carry, store low 32 bits as result, carry the high bits to the next word. The <code>uint64</code> temporary naturally captures the 33-bit intermediate result."
 
   - line: 179
     type: margin
-    text: "<code class=\"function\">operator++()</code>—prefix increment. The elegant implementation: increment word 0; if it wrapped to 0 (overflow), increment word 1; repeat. The <code>while (++pn[i] == 0)</code> chain handles the carry propagation. Used when iterating through nonces during mining: <code>++block.nNonce</code>."
+    text: "<code class=\"function\">operator++()</code>—prefix increment. The elegant implementation: increment word 0; if it wrapped to 0 (overflow), increment word 1; repeat. The <code>while (++pn[i] == 0)</code> chain handles the carry propagation. (The miner's nonce, by contrast, is a plain 32-bit <code>unsigned int</code>.)"
 
   - line: 214
     type: margin
@@ -92,7 +92,7 @@ annotations:
 
   - line: 294
     type: margin
-    text: "<code class=\"function\">GetHex()</code>—converts to hexadecimal string. Transaction IDs, block hashes, and addresses are typically displayed as hex. The loop iterates backward through bytes (big-endian display convention) and formats each as two hex digits. The 64-character result is how you see txids in block explorers."
+    text: "<code class=\"function\">GetHex()</code>—converts to hexadecimal string. Transaction IDs and block hashes are typically displayed as hex. The loop iterates backward through bytes, printing the most significant byte first, so the hex you read is the reverse of the bytes in memory and on the wire. This is why block hashes <em>display</em> with a run of leading zeros: proof-of-work makes the number small, and smallness lives at the high end. It is also why txids look byte-reversed when you find them in raw transaction data. The 64-character result is how you see txids in block explorers."
 
   - line: 302
     type: margin
@@ -112,7 +112,7 @@ annotations:
 
   - line: 397
     type: margin
-    text: "<code class=\"class\">uint160</code>—160-bit integer for address hashes. Bitcoin addresses are RIPEMD160(SHA256(pubkey)), producing 160 bits. Why not 256? Shorter addresses are more usable (27-34 characters vs ~64). The security is still 2^80 against birthday attacks—far beyond brute-forceable. Every 'hash160' in Bitcoin's script system is this type."
+    text: "<code class=\"class\">uint160</code>—160-bit integer for address hashes. Bitcoin addresses are RIPEMD160(SHA256(pubkey)), producing 160 bits. Why not 256? Shorter addresses are more usable (27-34 characters vs about 50). The security is still 2^80 against birthday attacks—far beyond brute-forceable. Every 'hash160' in Bitcoin's script system is this type."
 
   - line: 509
     type: margin
@@ -129,12 +129,14 @@ annotations:
 conclusion: |
   <p>
     The uint256 type is Bitcoin's cryptographic primitive. It represents numbers
-    in a space so vast that randomly generated values are guaranteed never to
-    collide in practice—the probability of two random uint256 values being
-    identical is approximately 1 in 10<sup>77</sup>, a number so small it defies
-    physical analogy. This is why Bitcoin can use hashes as globally unique
-    identifiers without any central registry: cryptographic randomness provides
-    uniqueness as a mathematical certainty.
+    in a space so vast that random values never collide in practice—the
+    probability of two random uint256 values being identical is approximately
+    1 in 10<sup>77</sup>, a number so small it defies physical analogy. This is
+    why Bitcoin can use hashes as globally unique identifiers without any central
+    registry. The caveat is that hashes are deterministic, not random: identical
+    data hashes identically. Two early coinbase transactions were byte-for-byte
+    duplicates of earlier ones and so shared their txids, which is why BIP 30 was
+    added to forbid duplicate transactions.{{cite:bip-30}}
   </p>
   <p>
     The implementation is straightforward but careful. Grade-school arithmetic

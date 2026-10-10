@@ -62,15 +62,15 @@ annotations:
 
   - line: 67
     type: margin
-    text: "Main window state variables. <code class=\"variable\">fRefreshListCtrl</code> and <code class=\"variable\">fRefreshListCtrlRunning</code> form a simple debouncing mechanism: when the blockchain changes, the refresh flag is set, and the idle handler repaints the transaction list when the UI is not busy. <code class=\"variable\">pindexBestLast</code> tracks the last-displayed chain tip to detect when new blocks arrive. <code class=\"variable\">setUnmaturedDisplayed</code> tracks coinbase transactions still waiting for 100-block maturity -- these need periodic UI updates as confirmations accumulate."
+    text: "Main window state variables. <code class=\"variable\">fRefreshListCtrl</code> and <code class=\"variable\">fRefreshListCtrlRunning</code> form a simple debouncing mechanism: when the blockchain changes, the refresh flag is set, and the idle handler repaints the transaction list when the UI is not busy. <code class=\"variable\">pindexBestLast</code> tracks the last-displayed chain tip to detect when new blocks arrive. <code class=\"variable\">setUnmaturedDisplayed</code> was evidently meant to track coinbase transactions still waiting to mature, but nothing in v0.01 ever uses it; RefreshStatus() simply redraws every visible coinbase row instead."
 
   - line: 74
     type: margin
-    text: "<code class=\"function\">InsertLine()</code> and <code class=\"function\">InsertTransaction()</code> -- the transaction list rendering pipeline. <code class=\"function\">InsertTransaction()</code> converts a <code class=\"type\">CWalletTx</code> into five display columns (status, date, description, debit, credit) and calls <code class=\"function\">InsertLine()</code> to add or update the row. The <code class=\"variable\">strSort</code> parameter controls ordering -- transactions are sorted by timestamp with the most recent at the top."
+    text: "<code class=\"function\">InsertLine()</code> and <code class=\"function\">InsertTransaction()</code> -- the transaction list rendering pipeline. <code class=\"function\">InsertTransaction()</code> converts a <code class=\"type\">CWalletTx</code> into five display columns (status, date, description, debit, credit) and calls <code class=\"function\">InsertLine()</code> to add or update the row. The <code class=\"variable\">strSort</code> parameter controls ordering -- transactions are sorted by block height first (unconfirmed ones on top), then by time received, with the most recent at the top."
 
   - line: 83
     type: margin
-    text: "<code class=\"type\">CTxDetailsDialog</code> -- displays the full details of a single transaction. Double-clicking any transaction in the main list opens this dialog. It shows inputs, outputs, confirmation count, fee paid, and the raw transaction data. The <code class=\"type\">CWalletTx</code> is stored by value (line 94), not by reference -- a defensive copy that prevents the dialog from displaying stale data if the wallet updates while the dialog is open."
+    text: "<code class=\"type\">CTxDetailsDialog</code> -- displays the full details of a single transaction. Double-clicking any transaction in the main list opens this dialog. It shows status, date, addresses, amounts, and fee paid, plus the raw transaction data when debug mode is on. The <code class=\"type\">CWalletTx</code> is stored by value (line 94), not by reference -- a defensive copy, so the dialog can never point at a wallet entry that has been changed or moved. The tradeoff is that it shows a snapshot: if the transaction confirms while the dialog is open, the dialog won't update."
 
   - line: 99
     type: margin
@@ -82,7 +82,7 @@ annotations:
 
   - line: 146
     type: margin
-    text: "<code class=\"type\">CSendingDialog</code> -- the real-time transaction progress dialog for IP-to-IP payments. This was Satoshi's original payment model: connect directly to the recipient's IP address, negotiate the transaction, and confirm delivery. The state machine has five boolean flags (<code class=\"variable\">fCanCancel</code>, <code class=\"variable\">fAbort</code>, <code class=\"variable\">fSuccess</code>, <code class=\"variable\">fUIDone</code>, <code class=\"variable\">fWorkDone</code>) tracking the concurrent UI and network threads. <code class=\"function\">OnReply2()</code> and <code class=\"function\">OnReply3()</code> handle the server's responses. This entire dialog became obsolete when address-based payments (via the blockchain) replaced IP-to-IP transactions."
+    text: "<code class=\"type\">CSendingDialog</code> -- the real-time transaction progress dialog for IP-to-IP payments. This was Satoshi's original payment model: connect directly to the recipient's IP address, negotiate the transaction, and confirm delivery. The state machine has five boolean flags (<code class=\"variable\">fCanCancel</code>, <code class=\"variable\">fAbort</code>, <code class=\"variable\">fSuccess</code>, <code class=\"variable\">fUIDone</code>, <code class=\"variable\">fWorkDone</code>) tracking the concurrent UI and network threads. <code class=\"function\">OnReply2()</code> and <code class=\"function\">OnReply3()</code> handle the server's responses. Both payment modes ended up as ordinary transactions in the block chain; the IP mode only added a live handshake for fetching the recipient's key and delivering a message. This entire dialog became obsolete when sending to Bitcoin addresses replaced IP-to-IP transactions."
 
   - line: 188
     type: margin

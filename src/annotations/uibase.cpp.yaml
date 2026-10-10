@@ -22,7 +22,8 @@ introduction: |
     application, not a foreign transplant.{{cite:wxwidgets-license}} When Satoshi posted the first release on the
     cryptography mailing list on January 9, 2009, he noted: "Windows only for now. Open
     source C++ code is included."{{cite:nakamoto-windows-only}} The wxWidgets foundation made the later Linux and Mac
-    ports possible, though they came after Satoshi's active period.
+    ports possible — Linux builds arrived with v0.2.0 (December 2009) and Mac with v0.3.0
+    (July 2010), both while Satoshi was still active.{{cite:bitcoin-core-history}}
   </p>
   <p>
     What makes this file historically significant is not the code itself — it is
@@ -46,7 +47,7 @@ introduction: |
 annotations:
   - line: 6
     type: margin
-    text: "wxFormBuilder version April 16, 2008 — this timestamp predates the Bitcoin whitepaper (October 31, 2008) by six months, confirming that Satoshi was actively developing the GUI well before the public announcement.{{cite:nakamoto-mailing-list-announcement}}{{cite:nakamoto-whitepaper}} The whitepaper described the protocol; the code was already taking shape."
+    text: "wxFormBuilder version April 16, 2008 — this is the build date of the wxFormBuilder tool Satoshi used, not the date he generated this file. It tells us only that the GUI was generated with a release from April 2008 or later. It is consistent with, but does not by itself prove, GUI work under way before the whitepaper appeared on October 31, 2008.{{cite:nakamoto-mailing-list-announcement}}{{cite:nakamoto-whitepaper}}"
 
   - line: 16
     type: margin
@@ -58,7 +59,7 @@ annotations:
 
   - line: 33
     type: margin
-    text: "<code>'&amp;Generate Coins'</code> — the ampersand creates a keyboard accelerator (Alt+G). This is the mining toggle that Satoshi expected ordinary users to enable. On the cryptography mailing list he wrote: 'At first, most users would run network nodes, but as the network grows beyond a certain point, it would be left more and more to specialists with server farms.'{{cite:nakamoto-specialists-quote}} The checkbox proved prophetic — CPU mining became obsolete by 2010."
+    text: "<code>'&amp;Generate Coins'</code> — the ampersand creates a keyboard accelerator (Alt+G). This is the mining toggle that Satoshi expected ordinary users to enable. On the cryptography mailing list he wrote: 'At first, most users would run network nodes, but as the network grows beyond a certain point, it would be left more and more to specialists with server farms of specialized hardware.'{{cite:nakamoto-specialists-quote}} The prediction proved right — GPU mining arrived in late 2010, and by 2011 CPU mining was obsolete."
 
   - line: 51
     type: margin
@@ -86,7 +87,7 @@ annotations:
 
   - line: 207
     type: margin
-    text: "Event wiring — the <code class=\"function\">Connect()</code> calls bind wxWidgets events to virtual handler methods. Every mouse event type (left/right/middle click, double-click, motion, enter, leave, mousewheel) on both the main frame and the address field is captured. This exhaustive event handling suggests Satoshi planned interactive features beyond simple clicking — perhaps drag-and-drop or context menus that were never completed."
+    text: "Event wiring — the <code class=\"function\">Connect()</code> calls bind wxWidgets events to virtual handler methods. Every mouse event type (left/right/middle click, double-click, motion, enter, leave, mousewheel) on both the main frame and the address field is captured. The reason is not interactivity but randomness: the main frame's handler, <code class=\"function\">CMainFrame::OnMouseEvents()</code> in ui.cpp, feeds every mouse event's X and Y coordinates into OpenSSL's random number pool with <code>RAND_add()</code>. Simply moving the mouse over the Bitcoin window strengthened the entropy behind your keys. The address field's handlers do something humbler: select the whole address when you click into it, ready to copy."
 
   - line: 305
     type: margin
@@ -110,7 +111,7 @@ annotations:
 
   - line: 689
     type: margin
-    text: "<code class=\"type\">CYourAddressDialogBase</code> — manages the user's own receiving addresses. The instructional text reads: <code>'These are your Bitcoin addresses for receiving payments. You may want to give a different one to each sender so you can keep track of who is paying you.'</code> This advice — use a unique address per sender — is the earliest expression of Bitcoin's privacy best practice. Satoshi understood from the start that address reuse was an information leak."
+    text: "<code class=\"type\">CYourAddressDialogBase</code> — manages the user's own receiving addresses. The instructional text reads: <code>'These are your Bitcoin addresses for receiving payments. You may want to give a different one to each sender so you can keep track of who is paying you.'</code> The stated reason is bookkeeping — knowing who paid you — but the habit doubles as privacy. The whitepaper had already made that case in October 2008: 'a new key pair should be used for each transaction to keep them from being linked to a common owner.'{{cite:nakamoto-whitepaper}}"
 
   - line: 849
     type: margin
@@ -134,7 +135,7 @@ conclusion: |
     The wxWidgets dependency would prove to be one of Bitcoin's longest-standing
     technical debts. The framework was adequate for a Windows prototype but made
     cross-platform builds difficult and the codebase harder to maintain. Bitcoin Core
-    finally migrated to Qt in version 0.5 (November 2011), two years after the initial
+    finally migrated to Qt in version 0.5 (November 2011), nearly three years after the initial
     release.{{cite:bitcoin-core-history}}{{cite:qt-lgpl-2009}} The Qt interface, designed by Wladimir van der Laan, was cleaner and more
     portable — but it dropped the marketplace, poker, and escrow interfaces entirely.
     Those features existed only here, in Satoshi's original wxFormBuilder project file

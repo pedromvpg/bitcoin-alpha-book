@@ -44,7 +44,7 @@ annotations:
 
   - line: 17
     type: margin
-    text: "<code>opcodetype</code> enum — the complete instruction set (one byte each). Many codes are reserved or later disabled; in August 2010 Satoshi turned off OP_CAT, OP_MUL, OP_DIV and others after DoS bugs.{{cite:opcode-disable-2010}} The names remain as 'ghost opcodes.'"
+    text: "<code>opcodetype</code> enum — the complete instruction set (one byte each, with a two-byte escape noted below). Many codes are reserved or later disabled; in August 2010 Satoshi turned off OP_CAT, OP_MUL, OP_DIV and others after DoS bugs.{{cite:opcode-disable-2010}}{{cite:commit-4bd188c}} The names remain as 'ghost opcodes.'"
 
   - line: 48
     type: margin
@@ -52,7 +52,7 @@ annotations:
 
   - line: 55
     type: margin
-    text: "<code>OP_RETURN</code> in v0.1 simply jumps to the end of the script—it does NOT fail. No data size limits existed. Later (2014), OP_RETURN was changed to immediately fail, making outputs provably unspendable—a 'clean' way to embed data without bloating the UTXO set. A 40-byte limit (later 80 bytes) was added as policy, not consensus. This limit reflects an unresolved tension in Bitcoin's identity: is it purely a monetary system, or also a data layer? Attempts to remove or raise these limits periodically reignite debate. The question isn't technical but philosophical—what should Bitcoin be? Satoshi left no guidance; he included OP_RETURN without restriction."
+    text: "<code>OP_RETURN</code> in v0.1 simply jumps to the end of the script—it does NOT fail. Because scriptSig and scriptPubKey were run as one concatenated script (script.cpp:1126), a scriptSig of <code>OP_1 OP_RETURN</code> skipped the owner's lock entirely and left true on the stack: anyone could spend anyone's coins. Satoshi fixed this in v0.3.5 (July 2010) by making OP_RETURN fail outright.{{cite:cve-2010-5141}} That fix later made OP_RETURN outputs a clean, provably unspendable place to embed data without bloating the UTXO set: standard at 40 bytes in 2014 (later 80), as policy, not consensus.{{cite:bitcoin-core-history}} Bitcoin Core 30 (2025) lifted the default cap,{{cite:core-30-release-notes}} reigniting an unresolved tension in Bitcoin's identity: is it purely a monetary system, or also a data layer? The question isn't technical but philosophical—what should Bitcoin be?"
 
   - line: 69
     type: margin
@@ -77,6 +77,10 @@ annotations:
   - line: 136
     type: margin
     text: "<code>OP_CHECKMULTISIG</code> — M-of-N multi-signature verification, present from day one. Requires M valid signatures from a set of N public keys. Enables shared custody: a company treasury might require 2-of-3 executives to sign, or an escrow might need 2-of-3 (buyer, seller, arbitrator). Satoshi mentioned 'multi-party signature' in his BitcoinTalk posts as a planned feature.{{cite:nakamoto-script-types}} The implementation (script.cpp:727) iterates through signatures and keys, matching each signature to a key in order. A subtle bug existed: an extra unused value was consumed from the stack, constrained years later in BIP 147."
+
+  - line: 141
+    type: margin
+    text: "<code class=\"constant\">OP_SINGLEBYTE_END = 0xF0</code> — Satoshi reserved an escape hatch: in v0.01 any byte ≥ 0xF0 begins a two-byte opcode (see <code>GetOp</code>, line 491), leaving room for thousands of future instructions. The wallet's template placeholders <code>OP_PUBKEY</code> and <code>OP_PUBKEYHASH</code> live up there, beyond anything a real script could contain. The double-byte scheme was later removed."
 
   - line: 327
     type: margin
@@ -106,9 +110,11 @@ conclusion: |
     the halting problem that plagues other smart contract platforms.
   </p>
   <p>
-    The August 2010 opcode disabling (commit 4bd188c) is forensically significant:
-    Satoshi identified that OP_CAT + OP_DUP could create 1TB stack elements,
-    crashing nodes.{{cite:opcode-disable-2010}} His quick response showed active security maintenance.
+    The August 2010 opcode disabling (commit 4bd188c, titled only "misc changes")
+    is forensically significant: it quietly turned off fifteen opcodes and capped
+    stack elements at 520 bytes, closing a whole family of denial-of-service
+    risks.{{cite:commit-4bd188c}}{{cite:opcode-disable-2010}} It followed weeks after the July 2010 fixes for
+    the OP_LSHIFT crash and the OP_RETURN spend-anything bug.{{cite:cve-2010-5141}}
   </p>
 
 glossary:
@@ -121,7 +127,7 @@ glossary:
   - term: "Turing-complete"
     definition: "Describes a language that can loop forever; Script deliberately has no loops or recursion, so every script's running time is provably bounded."
   - term: "OP_RETURN"
-    definition: "The opcode that in v0.01 merely ended script execution; later versions made it fail immediately, giving a clean way to embed data in provably unspendable outputs."
+    definition: "The opcode that in v0.01 merely ended script execution, letting anyone spend any coin; v0.3.5 (July 2010) made it fail immediately, which later gave a clean way to embed data in provably unspendable outputs."
   - term: "OP_HASH160"
     definition: "The opcode computing RIPEMD160(SHA256(x)), the 20-byte hash of a public key that a Bitcoin address encodes."
   - term: "multisig"

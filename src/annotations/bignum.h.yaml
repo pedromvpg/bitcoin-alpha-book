@@ -16,7 +16,9 @@ introduction: |
     private keys (random 256-bit numbers), deriving public keys (elliptic curve
     point multiplication), creating signatures (modular arithmetic), verifying
     signatures (more modular arithmetic), and comparing hashes to difficulty
-    targets. Without this file, none of that would be possible.
+    targets. The elliptic curve work happens inside OpenSSL's own EC code
+    (key.h); this file is Satoshi's direct handle on the same machinery, used for
+    difficulty targets, Script arithmetic, and Base58 encoding.
   </p>
   <p>
     OpenSSL's BIGNUM library has been battle-tested for decades in SSL/TLS—the
@@ -42,7 +44,7 @@ annotations:
 
   - line: 49
     type: margin
-    text: "<code class=\"class\">CBigNum</code>—the heart of Bitcoin's big number support. Inherits from OpenSSL's <code class=\"class\">BIGNUM</code> struct (unusual but valid C++) to add C++ semantics. The inheritance means <code class=\"class\">CBigNum</code> can be passed directly to OpenSSL functions expecting <code>BIGNUM*</code>. All the cryptographic heavy lifting—ECDSA signatures, difficulty comparisons, script arithmetic—flows through this class."
+    text: "<code class=\"class\">CBigNum</code>—the heart of Bitcoin's big number support. Inherits from OpenSSL's <code class=\"class\">BIGNUM</code> struct (unusual but valid C++) to add C++ semantics. The inheritance means <code class=\"class\">CBigNum</code> can be passed directly to OpenSSL functions expecting <code>BIGNUM*</code>. Difficulty targets, Script arithmetic, and Base58 encoding flow through this class; ECDSA itself happens inside OpenSSL's EC code (key.h), which does its own BIGNUM math internally."
 
   - line: 54
     type: margin
@@ -50,7 +52,7 @@ annotations:
 
   - line: 80
     type: margin
-    text: "<code class=\"function\">BN_clear_free()</code>—secure memory wiping. Unlike regular <code class=\"function\">free()</code>, this overwrites memory with zeros before releasing it. Critical for security: freed memory might be reallocated to an attacker-controlled buffer. If private keys weren't cleared, they could leak through memory inspection. This paranoid cleanup appears throughout Bitcoin's key handling code."
+    text: "<code class=\"function\">BN_clear_free()</code>—secure memory wiping. Unlike regular <code class=\"function\">free()</code>, this overwrites memory with zeros before releasing it. CBigNum rarely holds secrets in v0.01, but the habit is sound: a number wiped on release cannot leak through later memory inspection. The same paranoid cleanup appears throughout Bitcoin's key-handling code."
 
   - line: 85
     type: margin
@@ -62,7 +64,7 @@ annotations:
 
   - line: 190
     type: margin
-    text: "<code class=\"function\">setuint256()</code>—converts Bitcoin's <code class=\"class\">uint256</code> type to <code class=\"class\">BIGNUM</code>. This bridges Bitcoin's hash/key representation with OpenSSL's arithmetic. The loop walks backwards through the <code class=\"class\">uint256</code>'s bytes (little-endian to big-endian conversion), skipping leading zeros for compactness. Used when checking if a block hash meets the difficulty target: convert hash to <code class=\"class\">CBigNum</code>, compare to target <code class=\"class\">CBigNum</code>."
+    text: "<code class=\"function\">setuint256()</code>—converts Bitcoin's <code class=\"class\">uint256</code> type to <code class=\"class\">BIGNUM</code>. This bridges Bitcoin's hash/key representation with OpenSSL's arithmetic. The loop walks backwards through the <code class=\"class\">uint256</code>'s bytes (little-endian to big-endian conversion), skipping leading zeros for compactness. Used to build <code>bnProofOfWorkLimit</code> from <code>~uint256(0) &gt;&gt; 32</code> (main.h:22). The proof-of-work check itself goes the other way: it converts the target to a <code class=\"class\">uint256</code> with <code class=\"function\">getuint256()</code> and compares there (main.cpp:1182)."
 
   - line: 257
     type: margin
@@ -74,7 +76,7 @@ annotations:
 
   - line: 282
     type: margin
-    text: "<code class=\"function\">SetHex()</code>—parses hexadecimal string to <code class=\"class\">BIGNUM</code>. Block hashes, transaction IDs, and keys are commonly displayed as hex strings. This function handles optional <code>0x</code> prefix, leading whitespace, and negative signs. The lookup table <code>phexdigit[256]</code> provides O(1) hex-to-value conversion. Used extensively in debugging and when loading hardcoded values like the genesis block hash."
+    text: "<code class=\"function\">SetHex()</code>—parses hexadecimal string to <code class=\"class\">BIGNUM</code>. Block hashes, transaction IDs, and keys are commonly displayed as hex strings. This function handles optional <code>0x</code> prefix, leading whitespace, and negative signs. The lookup table <code>phexdigit[256]</code> provides O(1) hex-to-value conversion. Useful for debugging; hardcoded hashes like the genesis block's use <code class=\"class\">uint256</code>'s own <code class=\"function\">SetHex()</code> instead."
 
   - line: 312
     type: margin
@@ -82,11 +84,11 @@ annotations:
 
   - line: 337
     type: margin
-    text: "Arithmetic operators—make big numbers feel like native types. <code>operator+=</code> calls OpenSSL's <code class=\"function\">BN_add()</code>; <code>operator*=</code> calls <code class=\"function\">BN_mul()</code>; etc. The <code class=\"class\">CAutoBN_CTX</code> provides temporary storage needed by multiplication and division. These operators enable readable code like <code>reward >>= (height / 210000)</code> for the halving calculation, rather than verbose function calls."
+    text: "Arithmetic operators—make big numbers feel like native types. <code>operator+=</code> calls OpenSSL's <code class=\"function\">BN_add()</code>; <code>operator*=</code> calls <code class=\"function\">BN_mul()</code>; etc. The <code class=\"class\">CAutoBN_CTX</code> provides temporary storage needed by multiplication and division. These operators enable readable code like <code>bnNew *= nActualTimespan</code> in difficulty retargeting (main.cpp), rather than verbose function calls."
 
   - line: 370
     type: margin
-    text: "Bit shift operators—essential for Bitcoin's monetary and PoW-limit arithmetic. The halving formula <code>subsidy >>= (height/210000)</code> uses right-shift to divide by powers of two; <code>bnProofOfWorkLimit</code> is defined with <code>~uint256(0) >> 32</code>. Retargeting itself multiplies/divides the target with <code>*=</code>/<code>/=</code>, not shifts. OpenSSL's <code class=\"function\">BN_lshift()</code> and <code class=\"function\">BN_rshift()</code> handle arbitrarily large shifts correctly—you can shift a 256-bit number by 200 bits without overflow issues."
+    text: "Bit shift operators. In v0.01 their main users are Script's OP_2MUL, OP_2DIV, OP_LSHIFT, and OP_RSHIFT (script.cpp) and <code>SetHex()</code> above, which shifts in four bits per hex digit. (The halving's <code>nSubsidy >>= (nBestHeight / 210000)</code> is a plain 64-bit shift, <code>bnProofOfWorkLimit</code>'s <code>~uint256(0) >> 32</code> is a <code>uint256</code> shift, and retargeting uses <code>*=</code>/<code>/=</code>.) OpenSSL's <code class=\"function\">BN_lshift()</code> and <code class=\"function\">BN_rshift()</code> handle arbitrarily large shifts correctly—you can shift a 256-bit number by 200 bits without overflow issues."
 
   - line: 427
     type: margin
@@ -98,7 +100,7 @@ annotations:
 
   - line: 493
     type: margin
-    text: "Comparison operators—enable intuitive comparisons like <code>hash &lt;= target</code>. This comparison is the core of proof-of-work: a block is valid if its hash, interpreted as a 256-bit number, is less than or equal to the difficulty target. <code class=\"function\">BN_cmp()</code> returns -1, 0, or 1 like <code class=\"function\">strcmp()</code>. These operators wrap that into natural boolean expressions."
+    text: "Comparison operators—enable intuitive comparisons like <code>bnNew &gt; bnProofOfWorkLimit</code>, which keeps retargeting from ever making mining easier than the minimum difficulty (main.cpp:719). The proof-of-work test itself—a block's hash must not exceed the target—is done on <code class=\"class\">uint256</code> values after converting the target with <code class=\"function\">getuint256()</code>. <code class=\"function\">BN_cmp()</code> returns -1, 0, or 1 like <code class=\"function\">strcmp()</code>. These operators wrap that into natural boolean expressions."
 
 conclusion: |
   <p>

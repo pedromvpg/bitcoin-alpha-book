@@ -9,7 +9,7 @@ introduction: |
     implements all networking: node discovery, connection management, message
     routing, and the gossip protocol that propagates transactions and blocks
     across the globe in seconds. At any moment, thousands of nodes are running
-    this exact code, forming the backbone of the Bitcoin network.
+    descendants of this code, forming the backbone of the Bitcoin network.
   </p>
   <p>
     Satoshi's design goal from the whitepaper's opening line: "A purely peer-to-peer
@@ -22,7 +22,7 @@ introduction: |
     The network is resilient by design. Nodes join and leave freely. Messages
     propagate via gossip—each node tells its neighbors, who tell theirs. If half
     the network vanished tomorrow, the other half would continue producing blocks
-    on schedule. This architecture has survived government crackdowns, DDoS attacks,
+    (slowly at first, until the difficulty adjusted). This architecture has survived government crackdowns, DDoS attacks,
     and internet outages across seventeen years without a single hour of downtime.
   </p>
   <p>
@@ -49,7 +49,7 @@ annotations:
 
   - line: 27
     type: margin
-    text: "<code>vNodes</code> — the live peer roster. Every TCP connection to another Bitcoin node is represented here as a CNode*. The socket handler, message handler, and connection opener all share this list via cs_vNodes. Typical target: 8–15 peers."
+    text: "<code>vNodes</code> — the live peer roster. Every TCP connection to another Bitcoin node is represented here as a CNode*. The socket handler, message handler, and connection opener all share this list via cs_vNodes. In v0.01 the connection opener stops seeking new peers once vNodes reaches 15."
 
   - line: 29
     type: margin
@@ -57,7 +57,7 @@ annotations:
 
   - line: 31
     type: margin
-    text: "<code>mapRelay</code> — short-lived cache for relayed objects. When a node broadcasts a transaction it stores it here for a few minutes so peers who ask for it via getdata can receive it. vRelayExpiration tracks when entries expire."
+    text: "<code>mapRelay</code> — short-lived cache for relayed objects. When a node broadcasts a transaction it stores it here for 15 minutes so peers who ask for it via getdata can receive it. vRelayExpiration tracks when entries expire."
 
   - line: 34
     type: margin
@@ -85,7 +85,7 @@ annotations:
 
   - line: 209
     type: margin
-    text: "Pub/sub system — Bitcoin v0.01 included a publish-subscribe layer for relaying marketplace messages (products and orders). Nodes could subscribe to channels (MSG_TABLE, MSG_PRODUCT) and receive broadcasts from any subscriber. This was the embryo of an online marketplace, ultimately removed in later versions."
+    text: "Pub/sub system — Bitcoin v0.01 included a publish-subscribe layer for relaying marketplace messages (products and orders). Nodes could subscribe to channels (MSG_TABLE, MSG_PRODUCT) and receive broadcasts from any subscriber. This was the embryo of an online marketplace — and only half of it was built: v0.01 sends <code>subscribe</code> and <code>publish</code> messages, but <code>ProcessMessage</code> in main.cpp has no handler for them, so a receiving node logs 'Ignored unknown message' and drops them. The marketplace code (market.cpp) was gone by v0.3.0.{{cite:bitcoin-core-history}}"
 
   - line: 227
     type: margin
@@ -93,7 +93,7 @@ annotations:
 
   - line: 277
     type: margin
-    text: "<code>FindNode</code> — O(n) search through vNodes. With the target peer count of 8–15 nodes this is fast enough. Returns the CNode* if connected, NULL otherwise. Two overloads: one searches by raw IP, the other by full CAddress (IP+port)."
+    text: "<code>FindNode</code> — O(n) search through vNodes. With at most a few dozen peers (the opener stops at 15) this is fast enough. Returns the CNode* if connected, NULL otherwise. Two overloads: one searches by raw IP, the other by full CAddress (IP+port)."
 
   - line: 299
     type: margin
@@ -109,7 +109,7 @@ annotations:
 
   - line: 444
     type: margin
-    text: "<code>ReadyToDisconnect()</code> checks whether a node's reference count has dropped to zero and its send/receive buffers are empty — safe to close. Disconnected nodes are held in a pool for up to 5 minutes before deletion in case threads still hold references."
+    text: "<code>ReadyToDisconnect()</code> is true when the node is flagged <code>fDisconnect</code> or its reference count has dropped to zero; this line additionally requires both send/receive buffers to be empty before closing. Disconnected nodes are held in a pool for at least 5 minutes (longer if threads still hold references) before deletion."
 
   - line: 488
     type: margin
@@ -137,7 +137,7 @@ annotations:
 
   - line: 735
     type: margin
-    text: "Exponential backoff for failed peers: nDelay doubles with each connection in vNodes — if you have 8 peers, nDelay = 30 min × 2^8 = 128 hours, capped at 8 hours. Adds randomization (nRandomizer) so retries are staggered, preventing thundering-herd reconnects."
+    text: "Retry delay for peers that failed before — scaled by how many peers you already have, not by how many times the address failed. nDelay starts at 30 minutes with no connections and doubles with each connection in vNodes — with 8 peers it would be 30 min × 2^8 = 128 hours, capped at 8 hours. So a lonely node retries aggressively; a well-connected one is picky. nRandomizer (derived from the address and its failure time) scales each address's wait between 0 and 2× nDelay so retries are staggered. An address that has never failed (nLastFailed = 0) gets a randomizer of 0 and is always eligible."
 
   - line: 816
     type: margin
@@ -161,7 +161,7 @@ annotations:
 
   - line: 926
     type: margin
-    text: "Non-blocking sockets: FIONBIO with value 1 sets the socket to non-blocking mode via ioctlsocket(). All subsequent recv/send calls return immediately with WSAEWOULDBLOCK rather than blocking. The select() loop above handles the waiting."
+    text: "Non-blocking sockets: FIONBIO with value 1 sets the listen socket to non-blocking mode via ioctlsocket(), and accepted inbound sockets inherit it — their recv/send calls return immediately with WSAEWOULDBLOCK rather than blocking. Outbound sockets created in ConnectSocket() are never switched over and stay blocking; the select() loop, which only touches sockets reported ready, is what keeps them from stalling."
 
   - line: 961
     type: margin
@@ -173,7 +173,7 @@ annotations:
 
   - line: 974
     type: margin
-    text: "Thread startup sequence: four threads created with _beginthread() (Windows CRT). All but ThreadIRCSeed run inside wrappers (like ThreadSocketHandler) that catch exceptions and restart the inner function after a 5-second sleep, providing fault tolerance. Thread indices 0–3 map to the vfThreadRunning array."
+    text: "Thread startup sequence: four threads created with _beginthread() (Windows CRT). All but ThreadIRCSeed run inside wrappers (like ThreadSocketHandler) that appear to catch exceptions and restart the inner function after a 5-second sleep. In practice the restart never happens: CATCH_PRINT_EXCEPTION calls PrintException(), which logs the error, shows a message box, and then re-throws (<code>throw;</code> in util.cpp), so the exception escapes the loop before the Sleep(5000). The three threads started here use indices 0–2 of vfThreadRunning; the miner, started from ui.cpp, uses index 3."
 
   - line: 998
     type: margin

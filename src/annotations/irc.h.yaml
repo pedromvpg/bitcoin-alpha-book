@@ -35,7 +35,7 @@ introduction: |
 annotations:
   - line: 5
     type: margin
-    text: "<code class=\"function\">RecvLine()</code>—reads one line from a socket. IRC is a line-based text protocol; each command ends with CRLF (\\r\\n). This function accumulates characters until it sees a newline, then returns the complete line. Used to parse IRC server responses: JOIN confirmations, NICK acknowledgments, WHO replies listing channel members."
+    text: "<code class=\"function\">RecvLine()</code>—reads one line from a socket. IRC is a line-based text protocol; each command ends with CRLF (\\r\\n). This function accumulates characters until it sees the carriage return (\\r), skipping any \\n, then returns the complete line. Used to parse IRC server responses — JOIN confirmations, NICK acknowledgments, WHO replies listing channel members — and, because it is exported here, also to read the HTTP reply in <code class=\"function\">GetMyExternalIP()</code> in net.cpp."
 
   - line: 6
     type: margin

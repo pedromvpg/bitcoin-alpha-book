@@ -45,7 +45,7 @@ annotations:
 
   - line: 6
     type: margin
-    text: "Build mode selection using GNU Make conditionals. If <code class=\"variable\">BUILD</code> is not set to 'debug' or 'release' on the command line, it defaults to 'debug'. The <code class=\"variable\">D</code> variable is set to 'd' in debug mode, which is appended to wxWidgets library names (e.g., <code>wxmsw28d_core</code> vs <code>wxmsw28_core</code>) to link against the debug-instrumented versions. This is a wxWidgets convention — debug libraries include assertion checks and memory leak detection."
+    text: "Build mode selection using GNU Make conditionals. If <code class=\"variable\">BUILD</code> is not set to 'debug' or 'release' on the command line, it defaults to 'debug' — which matters more than it looks: only debug builds define <code>__WXDEBUG__</code>, and without it util.h's logger never writes <code>debug.log</code>. The <code class=\"variable\">D</code> variable is set to 'd' in debug mode, which is appended to wxWidgets library names (e.g., <code>wxmsw28d_core</code> vs <code>wxmsw28_core</code>) to link against the debug-instrumented versions. This is a wxWidgets convention — debug libraries include assertion checks and memory leak detection."
 
   - line: 14
     type: margin
@@ -61,7 +61,7 @@ annotations:
 
   - line: 28
     type: margin
-    text: "<strong>Compiler flags</strong>. <code>-mthreads</code> enables thread-safe exception handling on MinGW. <code>-O0</code> disables all optimization — unusual for production code, but Satoshi prioritized debuggability. <code>-w</code> suppresses <em>all</em> warnings, which modern practice would consider reckless, but was common in projects using template-heavy libraries that generated hundreds of harmless warnings. <code>-Wno-invalid-offsetof</code> suppresses a specific C++ warning about using <code>offsetof</code> on non-POD types — likely triggered by Bitcoin's serialization macros. <code>-Wformat</code> re-enables format string checking despite the blanket <code>-w</code> — format string bugs are too dangerous to ignore."
+    text: "<strong>Compiler flags</strong>. <code>-mthreads</code> enables thread-safe exception handling on MinGW. <code>-O0</code> disables all optimization — unusual for production code, but Satoshi prioritized debuggability. <code>-w</code> suppresses <em>all</em> warnings, which modern practice would consider reckless, but was common in projects using template-heavy libraries that generated hundreds of harmless warnings. <code>-Wno-invalid-offsetof</code> suppresses a specific C++ warning about using <code>offsetof</code> on non-POD types — likely triggered by Bitcoin's serialization macros. <code>-Wformat</code> asks for format string checking — but in GCC, <code>-w</code> silences every warning regardless of any <code>-W</code> flags, so in this combination the check never reports anything."
 
   - line: 29
     type: margin

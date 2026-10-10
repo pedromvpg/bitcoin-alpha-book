@@ -12,10 +12,10 @@ nakamoto-whitepaper:
 
 nakamoto-finney-email:
   author: "Satoshi Nakamoto"
-  title: "Email to Hal Finney"
-  date: "March 2009"
-  url: "https://satoshi.nakamotoinstitute.org/emails/hal/6/"
-  note: "On developing the code before writing the paper"
+  title: "Re: Bitcoin P2P e-cash paper (Cryptography Mailing List)"
+  date: "November 8, 2008"
+  url: "https://www.metzdowd.com/pipermail/cryptography/2008-November/014832.html"
+  note: "On writing all the code before writing the paper"
 
 nakamoto-mailing-list-sync:
   author: "Satoshi Nakamoto"
@@ -81,8 +81,8 @@ nakamoto-bitcointalk-set-in-stone:
 nakamoto-irc-temporary:
   author: "Satoshi Nakamoto"
   title: "BitcoinTalk — IRC channel for Bitcoin"
-  date: "2010"
-  url: "https://bitcointalk.org/index.php?topic=14.0"
+  date: "March 16 and June 14, 2010"
+  url: "https://bitcointalk.org/index.php?topic=84.0"
   note: "IRC seeding described as a temporary solution"
 
 nakamoto-script-types:
@@ -108,45 +108,52 @@ nakamoto-specialists-quote:
 
 nakamoto-farewell-2011:
   author: "Satoshi Nakamoto"
-  title: "Final public communications / handover to Gavin Andresen"
-  date: "April 2011"
-  url: "https://satoshi.nakamotoinstitute.org/emails/gavin/"
-  note: "Satoshi stepped away from public development around April 2011"
+  title: "Last known email to Mike Hearn (\"I've moved on to other things\")"
+  date: "April 23, 2011"
+  url: "https://cointelegraph.com/news/satoshi-nakamoto-final-email-revisited-after-13-years"
+  note: "\"I've moved on to other things. It's in good hands with Gavin and everyone.\""
 
 nakamoto-hearn-emails:
   author: "Satoshi Nakamoto"
   title: "Emails to Mike Hearn"
   date: "2009–2011"
-  url: "https://plan99.net/~mike/satoshi-emails/oct2011.html"
+  url: "https://plan99.net/~mike/satoshi-emails/thread4.html"
   note: "Includes coin supply rationale and the abandoned eBay-style marketplace"
 
 nakamoto-central-control-quote:
   author: "Satoshi Nakamoto"
-  title: "Bitcoin P2P e-cash paper (Cryptography Mailing List)"
-  date: "November 2008"
-  url: "https://satoshi.nakamotoinstitute.org/emails/cryptography/4/"
+  title: "Bitcoin open source implementation of P2P currency (P2P Foundation)"
+  date: "February 15, 2009"
+  url: "https://satoshi.nakamotoinstitute.org/posts/p2pfoundation/2/"
   note: "On centrally controlled e-currency systems being doomed"
 
 nakamoto-20-years-volume:
   author: "Satoshi Nakamoto"
-  title: "BitcoinTalk / email — long-term transaction volume"
-  date: "2010"
-  url: "https://bitcointalk.org/index.php?topic=174.msg1445#msg1445"
+  title: "Re: What's with this odd generation? (BitcoinTalk)"
+  date: "February 14, 2010"
+  url: "https://bitcointalk.org/index.php?topic=48.msg329#msg329"
   note: "Either very large transaction volume or no volume in 20 years"
 
 nakamoto-free-transactions:
   author: "Satoshi Nakamoto"
-  title: "BitcoinTalk — free transactions and fee policy"
-  date: "2010"
-  url: "https://bitcointalk.org/index.php?topic=48.msg254#msg254"
-  note: "Free transactions are nice if people don't abuse them / until slashdotted"
+  title: "BitcoinTalk — Re: Flood attack 0.00000001 BC"
+  date: "August 5, 2010"
+  url: "https://bitcointalk.org/index.php?topic=287.msg7687#msg7687"
+  note: "\"Free transactions are nice and we can keep it that way if people don't abuse them.\""
 
 nakamoto-block-interval:
   author: "Satoshi Nakamoto"
   title: "BitcoinTalk — block interval and difficulty retarget rationale"
   date: "2010"
   url: "https://bitcointalk.org/index.php?topic=43.0"
-  note: "On ~10-minute blocks and ~2-week difficulty adjustment"
+  note: "Thread \"Proof-of-work difficulty increasing\" (Feb–Jul 2010): 10-minute rationale (msg376), retarget formula (msg540), hashmeter (msg1648), ExtraNonce (msg1323), 120-block maturity (msg3537)"
+
+nakamoto-p2pfoundation-v01:
+  author: "Satoshi Nakamoto"
+  title: "Bitcoin open source implementation of P2P currency (P2P Foundation)"
+  date: "February 11, 2009"
+  url: "http://p2pfoundation.ning.com/forum/topics/bitcoin-open-source"
+  note: "\"The root problem with conventional currency is all the trust that's required to make it work.\""
 
 nakamoto-logo-approval:
   author: "Satoshi Nakamoto"
@@ -368,8 +375,8 @@ bip-42:
   note: "Right-shifting nSubsidy past bit width would reinflate; soft-fork capped halvings"
 
 bip-50:
-  author: "Pieter Wuille"
-  title: "BIP 50 — Address Delisting Request / March 2013 Chain Fork"
+  author: "Gavin Andresen"
+  title: "BIP 50 — March 2013 Chain Fork Post-Mortem"
   date: "2013"
   url: "https://github.com/bitcoin/bips/blob/master/bip-0050.mediawiki"
   note: "Berkeley DB lock limit caused a consensus fork around block 225430"
@@ -384,7 +391,7 @@ overflow-bug-2010:
 opcode-disable-2010:
   author: "Satoshi Nakamoto / Bitcoin developers"
   title: "OP_RETURN and dangerous opcodes disabled"
-  date: "August 2010"
+  date: "July 2010"
   url: "https://en.bitcoin.it/wiki/Script#Disabled_opcodes"
   note: "Response to early Script vulnerabilities"
 
@@ -442,3 +449,113 @@ van-wirdum-genesis-book:
   date: "2024"
   url: "https://thegenesisbook.com"
   note: "History of the people and projects that inspired Bitcoin"
+
+cve-2010-5141:
+  author: "Bitcoin Wiki"
+  title: "Common Vulnerabilities and Exposures — CVE-2010-5141 (OP_RETURN) and CVE-2010-5137"
+  date: "July 28, 2010"
+  url: "https://en.bitcoin.it/wiki/Common_Vulnerabilities_and_Exposures"
+  note: "Announced 2010-07-28; fixed in Bitcoin 0.3.5"
+
+nakamoto-0-3-14:
+  author: "Satoshi Nakamoto"
+  title: "Version 0.3.14 (BitcoinTalk announcement)"
+  date: "October 21, 2010"
+  url: "https://satoshi.nakamotoinstitute.org/posts/bitcointalk/491/"
+  note: "Key pool; TEST network mode with -testnet (Gavin Andresen); validateaddress"
+
+bitcoin-client-wiki:
+  author: "Bitcoin Wiki"
+  title: "Original Bitcoin client"
+  url: "https://en.bitcoin.it/wiki/Bitcoin_client"
+  note: "0.3.19 was the last release in which Satoshi Nakamoto was chief and main developer"
+
+gavin-0-3-21:
+  author: "Gavin Andresen"
+  title: "Bitcoin 0.3.21 release announcement (BitcoinTalk)"
+  date: "April 27, 2011"
+  url: "https://ic.unicamp.br/~stolfi/bitcoin/projects-bitcoin/bitcointalk/Gavin_Andresen/split/2011-04-27-172917.html"
+  note: "UPnP support; DNS-based peer discovery; full-precision amounts"
+
+core-0-10-release-notes:
+  author: "Bitcoin Core Contributors"
+  title: "Bitcoin Core 0.10.0 release notes"
+  date: "February 2015"
+  url: "https://bitcoincore.org/en/releases/0.10.0/"
+  note: "Signing switched from OpenSSL to libsecp256k1"
+
+core-0-12-release-notes:
+  author: "Bitcoin Core Contributors"
+  title: "Bitcoin Core 0.12.0 release notes"
+  date: "February 2016"
+  url: "https://bitcoincore.org/en/releases/0.12.0/"
+  note: "Signature validation using libsecp256k1; over five times faster on x86_64"
+
+core-0-21-release-notes:
+  author: "Bitcoin Core Contributors"
+  title: "Bitcoin Core 0.21.0 release notes"
+  date: "January 2021"
+  url: "https://bitcoincore.org/en/releases/0.21.0/"
+  note: "Experimental descriptor wallets"
+
+core-0-21-1-release-notes:
+  author: "Bitcoin Core Contributors"
+  title: "Bitcoin Core 0.21.1 release notes"
+  date: "May 1, 2021"
+  url: "https://bitcoincore.org/en/releases/0.21.1/"
+  note: "Taproot activation via Speedy Trial; active as of block 709632"
+
+core-23-release-notes:
+  author: "Bitcoin Core Contributors"
+  title: "Bitcoin Core 23.0 release notes"
+  date: "April 25, 2022"
+  url: "https://bitcoincore.org/en/releases/23.0/"
+  note: "Descriptor wallets are now the default wallet type"
+
+core-26-release-notes:
+  author: "Bitcoin Core Contributors"
+  title: "Bitcoin Core 26.0 release notes"
+  date: "December 2023"
+  url: "https://bitcoincore.org/en/releases/26.0/"
+  note: "Experimental support for the BIP 324 v2 transport protocol"
+
+core-27-release-notes:
+  author: "Bitcoin Core Contributors"
+  title: "Bitcoin Core 27.0 release notes"
+  date: "April 2024"
+  url: "https://bitcoincore.org/en/releases/27.0/"
+  note: "BIP 324 v2 transport enabled by default; CoinGrinder; libbitcoinconsensus deprecated"
+
+core-30-release-notes:
+  author: "Bitcoin Core Contributors"
+  title: "Bitcoin Core 30.0 release notes"
+  date: "October 10, 2025"
+  url: "https://bitcoincore.org/en/releases/30.0/"
+  note: "-datacarriersize default 100,000; legacy BDB wallets removed; Qt 6; bitcoin command"
+
+# ── Script, crypto & storage history (added for script/key/sha/db chapters) ──
+
+commit-4bd188c:
+  author: "Satoshi Nakamoto"
+  title: "bitcoin/bitcoin commit 4bd188c — \"misc changes\" (disables 15 opcodes, 520-byte push limit)"
+  date: "15 August 2010"
+  url: "https://github.com/bitcoin/bitcoin/commit/4bd188c4383d6e614e18f79dc337fbabe8464c82"
+
+bip-30:
+  author: "Pieter Wuille"
+  title: "BIP 30 — Duplicate transactions"
+  date: "2012"
+  url: "https://github.com/bitcoin/bips/blob/master/bip-0030.mediawiki"
+
+bip-144:
+  author: "Eric Lombrozo, Pieter Wuille"
+  title: "BIP 144 — Segregated Witness (Peer Services)"
+  date: "2016"
+  url: "https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki"
+
+finney-cyberspace-1994:
+  author: "Hal Finney"
+  title: "Post to the Cypherpunks mailing list"
+  date: "August 1994"
+  url: "https://cypherpunks.venona.com/date/1994/08/msg00239.html"
+  note: "\"There is no such place as cyberspace\""

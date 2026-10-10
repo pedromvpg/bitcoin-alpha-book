@@ -1033,9 +1033,9 @@ ${typographyCss}
 
     <p class="lead">
       For three decades before Bitcoin, cryptographers tried to build digital money.
-      Every attempt failed. DigiCash went bankrupt.{{cite:chaum-digicash}} e-gold was seized by the federal
-      government.{{cite:egold-seizure}} Liberty Reserve was shut down.{{cite:liberty-reserve}} Hashcash never became currency.{{cite:back-hashcash}}
-      b-money{{cite:dai-bmoney}} and Bit Gold{{cite:szabo-bit-gold}} were never implemented. The problem was always the same:
+      Every attempt failed. DigiCash went bankrupt.{{cite:chaum-digicash}} e-gold was shut down after federal
+      prosecution.{{cite:egold-seizure}} Hashcash never became currency.{{cite:back-hashcash}}
+      b-money{{cite:dai-bmoney}} and Bit Gold{{cite:szabo-bit-gold}} were never implemented. The deployed systems all failed the same way:
       someone had to be in charge, and whoever was in charge could be pressured,
       arrested, or simply lose interest.
     </p>
@@ -1044,8 +1044,8 @@ ${typographyCss}
       On October 31, 2008,{{cite:nakamoto-mailing-list-announcement}} a pseudonymous figure calling themselves Satoshi Nakamoto
       posted a nine-page paper to the Cryptography Mailing List. The paper described
       "a purely peer-to-peer version of electronic cash"{{cite:nakamoto-whitepaper}} requiring no trusted third
-      party. Two months later, on January 3, 2009,{{cite:genesis-block}} Nakamoto released the software
-      and mined the first block.
+      party. On January 3, 2009,{{cite:genesis-block}} Nakamoto mined the first block, and six days
+      later, on January 9, released the software to the public.{{cite:nakamoto-windows-only}}
     </p>
 
     <p>
@@ -1055,7 +1055,8 @@ ${typographyCss}
       that date—and a declaration of intent. The 2008 financial crisis, the bank
       bailouts, the revelation that the global economy depended on institutions that
       had been gambling with depositors' money: these were the conditions that made
-      Bitcoin necessary.
+      Bitcoin necessary. You will meet the headline again in this book: it sits in
+      the source code itself, as the <code>pszTimestamp</code> string in <code>main.cpp</code>.
     </p>
 
     <p>
@@ -1105,9 +1106,10 @@ ${typographyCss}
           central server. Transactions and blocks propagate through gossip: each
           node relays what it receives to its neighbors, reaching the entire
           network in seconds.</li>
-      <li><strong>Consensus</strong> emerges from a simple rule: the chain with the
-          most cumulative proof-of-work wins. No voting, no coordinator, no
-          authority—just thermodynamics.</li>
+      <li><strong>Consensus</strong> emerges from a simple rule: every node follows
+          the longest valid chain—in this first release, simply the one with the
+          most blocks (later versions count total work instead). No voting, no
+          coordinator, no authority.</li>
     </ul>
     <p>
       The key files that implement this system are:
@@ -1116,8 +1118,8 @@ ${typographyCss}
       <li><strong>main.cpp</strong> — Block validation, mining, consensus rules, and the genesis block</li>
       <li><strong>script.cpp</strong> — A stack-based virtual machine for programmable spending conditions</li>
       <li><strong>net.cpp</strong> — Peer-to-peer networking, message relay, and node discovery</li>
-      <li><strong>key.h</strong> — Elliptic curve cryptography on secp256k1 for digital signatures</li>
-      <li><strong>sha.cpp</strong> — The SHA-256 hash function that secures every block and transaction</li>
+      <li><strong>key.h</strong> — A thin wrapper around OpenSSL's elliptic-curve signatures on secp256k1</li>
+      <li><strong>sha.cpp</strong> — A fast SHA-256 core, borrowed from Wei Dai's Crypto++ library, that powers the mining loop</li>
     </ul>
 
     <h2>Reading the Code</h2>
@@ -1189,8 +1191,9 @@ ${typographyCss}
     </ul>
     <p>
       Version 0.01 is remarkably complete. The fundamental architecture—the UTXO
-      model, proof-of-work consensus, the scripting system, peer-to-peer gossip,
-      the halving schedule—remains essentially unchanged after seventeen years and
+      model, proof-of-work consensus, peer-to-peer gossip, the 21-million-coin
+      halving schedule, and the basic shape of the scripting system—remains
+      recognizable after seventeen years and
       over a trillion dollars in value secured. Understanding this code means
       understanding Bitcoin at its deepest level: not what it does, but how and why.
     </p>
@@ -1211,16 +1214,16 @@ ${typographyCss}
     <h2>The Cypherpunk Dream</h2>
     <p>
       In 1992, a group of cryptographers, programmers, and privacy advocates began
-      meeting in San Francisco and communicating over an unmoderated mailing list.
+      meeting in the San Francisco Bay Area and communicating over an unmoderated mailing list.
       They called themselves the <strong>cypherpunks</strong>—a portmanteau of
-      "cipher" and "cyberpunk." Eric Hughes wrote in the founding manifesto:
+      "cipher" and "cyberpunk." Eric Hughes wrote in "A Cypherpunk's Manifesto" (1993):
       "Privacy is necessary for an open society in the electronic age…
       Cypherpunks write code."{{cite:hughes-cypherpunk-manifesto}}
     </p>
     <p>
       Among their goals was anonymous digital cash—money that couldn't be traced,
-      frozen, or confiscated. For two decades the list's members designed, debated,
-      and sometimes built systems to achieve this. They all failed. But their
+      frozen, or confiscated. For the next decade and a half the list's members designed, debated,
+      and sometimes built systems to achieve this. Every attempt failed. But their
       failures mapped the problem space that Satoshi would eventually solve.
     </p>
 
@@ -1250,10 +1253,11 @@ Shared secret: g^(ab) mod p (same for both!)</pre>
       compromising your secrets—is the foundation of all cryptocurrency.
     </p>
     <p>
-      The Bitcoin whitepaper cites Diffie-Hellman indirectly through the cryptographic
-      concepts it enabled.{{cite:nakamoto-whitepaper}} Your Bitcoin public key can be shared with the world, yet
-      no one can reverse-engineer your private key. The math that protects Diffie-Hellman
-      key exchange protects your coins.
+      The Bitcoin whitepaper doesn't cite Diffie and Hellman, but every Bitcoin
+      signature descends from their idea. Your Bitcoin public key can be shared with
+      the world, yet no one can work backward to your private key: Bitcoin's
+      elliptic-curve signatures rest on the same kind of hard problem—the discrete
+      logarithm—that protects Diffie-Hellman key exchange.
     </p>
 
     <h2>David Chaum's DigiCash (1989)</h2>
@@ -1279,12 +1283,18 @@ Shared secret: g^(ab) mod p (same for both!)</pre>
     <pre class="example">Hashcash header: 1:20:060408:adam@cypherspace.org::1QTjaYd7niiQA/sc:ePa
 
 The sender must find a value where SHA1(header) starts with 20 zero bits.
-This requires ~2^20 hash computations—about a second of CPU time.</pre>
+This requires ~2^20 hash computations—about a second of CPU time.
+
+Check it yourself: SHA1 of this exact header begins 00000a4a…
+—five zero hex digits, or 20 zero bits.</pre>
     <p>
       The Bitcoin whitepaper explicitly cites Hashcash in its references.{{cite:nakamoto-whitepaper}}{{cite:back-hashcash}} Satoshi
       adapted the concept: instead of proving work to send email, miners prove
       work to add blocks. The difficulty is adjusted so the network collectively
-      finds one valid proof every 10 minutes.
+      finds one valid proof every 10 minutes on average. Every 2,016 blocks—about two
+      weeks at ten minutes each—v0.01 measures how long they actually took and raises
+      or lowers the target to match (<code>nTargetSpacing = 10 * 60</code> in
+      <code>main.cpp</code>).
     </p>
 
     <h2>b-money (1998)</h2>
@@ -1296,7 +1306,7 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       <li>Money created through proof-of-work</li>
       <li>Transactions broadcast to all participants</li>
       <li>A collective ledger maintained by the network</li>
-      <li>Contracts enforced through cryptographic protocols</li>
+      <li>Contracts enforced by deposits and arbitration</li>
     </ul>
     <p>
       Sound familiar? Wei Dai's b-money was never implemented, but Satoshi cited
@@ -1304,6 +1314,11 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       told Wei Dai: "I was very interested to read your b-money page. I'm getting
       ready to release a paper that expands on your ideas into a complete working
       system."{{cite:nakamoto-dai-email}}
+    </p>
+    <p>
+      Fittingly, Wei Dai's own code ships inside Bitcoin v0.01: the SHA-256 routine
+      in <code>sha.cpp</code>, which Bitcoin's miner runs over and over in its search
+      for a valid block, comes from his Crypto++ library.
     </p>
 
     <h2>Bit Gold (1998-2005)</h2>
@@ -1353,9 +1368,10 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
     <h2>Timestamping (1991)</h2>
     <p>
       Stuart Haber and W. Scott Stornetta published "How to Time-Stamp a Digital
-      Document"{{cite:haber-stornetta-1991}}—a system for proving a document existed at a certain time by
-      publishing hashes in a newspaper. Their subsequent work on hash chains
-      and Merkle trees directly influenced Bitcoin's blockchain structure.
+      Document"{{cite:haber-stornetta-1991}}—a system that proves when a document existed by linking
+      each timestamp to the hash of the one before it. Their follow-up work (1993)
+      added Merkle trees, so that many documents could be summarized in a single
+      hash. Both ideas directly influenced Bitcoin's blockchain structure.
     </p>
     <p>
       The Bitcoin whitepaper cites three Haber-Stornetta papers.{{cite:nakamoto-whitepaper}}{{cite:haber-stornetta-1991}} Their idea of
@@ -1369,9 +1385,10 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
       at Caltech, then spent years
       developing video games for Intellivision and Atari before becoming a
       core contributor to PGP.{{cite:van-wirdum-genesis-book}} Unlike some cypherpunks, Finney was a pragmatist.
-      He didn't believe cryptography could create an anarchist utopia: "There
-      is no such place as cyberspace. I am in California. Its agents carry
-      physical guns which shoot real bullets."
+      He didn't believe cryptography could create an anarchist utopia: "…there
+      is no such place as cyberspace. I am not in cyberspace now; I am in
+      California. … It is the government in physical space I fear. Its agents
+      carry physical guns which shoot real bullets."{{cite:finney-cyberspace-1994}}
     </p>
     <p>
       Still, Finney wanted electronic cash to exist. In 2004, he launched
@@ -1391,9 +1408,10 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
     <p>
       When Satoshi announced Bitcoin on the cryptography mailing list in 2008,{{cite:nakamoto-mailing-list-announcement}}
       Hal Finney was among the first to respond positively. He missed the January 9
-      launch; his node joined around block 49 on January 10 (logged in a crash report
-      <code>debug.log</code>), and on January 12 he received the first Bitcoin
-      transaction ever: 10 BTC from Satoshi in block 170.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer}}{{cite:finney-first-tx}}
+      launch; his node joined around block 49 on January 10 (as recorded in a
+      <code>debug.log</code> file he later shared when reporting a crash), and on
+      January 12 he received the first Bitcoin transaction from one person to
+      another: 10 BTC from Satoshi in block 170.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer}}{{cite:finney-first-tx}}
       Finney ran one of the first Bitcoin nodes and contributed code fixes before
       his death in 2014.
     </p>
@@ -1473,7 +1491,7 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
             <ul>
               <li>Haber-Stornetta</li>
               <li>Merkle Trees</li>
-              <li>Timestamping</li>
+              <li>Hash chains</li>
             </ul>
           </div>
         </div>
@@ -1489,9 +1507,9 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
 
       <div class="synth-stage synth-insight">
         <div class="synth-stage-label">Satoshi's insight</div>
-        <div class="synth-insight-title">Difficulty adjustment</div>
+        <div class="synth-insight-title">Proof-of-work consensus</div>
         <p class="synth-insight-eq">Proof-of-work + time target = decentralized consensus</p>
-        <p class="synth-insight-quote">“The system adjusts to keep ~10 min between blocks”</p>
+        <p class="synth-insight-quote">nTargetSpacing = 10 minutes; retarget every two weeks</p>
       </div>
 
       <div class="synth-join synth-join-simple" aria-hidden="true">
@@ -1505,12 +1523,13 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
     </figure>
     <p>
       Use proof-of-work not just to create money, but to reach <strong>consensus</strong>
-      about which transactions are valid. The longest chain (most cumulative work)
-      is the true history. No trusted party needed—just math and economic incentives.
+      about which transactions are valid. The longest valid chain is the true
+      history, and a difficulty target adjusted every two weeks keeps new blocks
+      arriving at a steady pace. No trusted party needed—just math and economic incentives.
     </p>
     <p>
       As Satoshi wrote: "A lot of people automatically dismiss e-currency as a
-      lost cause because of all the companies that failed since the 1990s. I hope
+      lost cause because of all the companies that failed since the 1990's. I hope
       it's obvious it was only the centrally controlled nature of those systems
       that doomed them."{{cite:nakamoto-central-control-quote}}
     </p>
@@ -1541,7 +1560,7 @@ This requires ~2^20 hash computations—about a second of CPU time.</pre>
     <table class="color-key">
       <tr><th>Size</th><th>Usage</th></tr>
       <tr><td><strong>32 bits (4 bytes)</strong></td><td>Standard integers, timestamps</td></tr>
-      <tr><td><strong>64 bits (8 bytes)</strong></td><td>Large numbers, Bitcoin amounts (in satoshis)</td></tr>
+      <tr><td><strong>64 bits (8 bytes)</strong></td><td>Large numbers, Bitcoin amounts (in the smallest unit, 10⁻⁸ BTC—later nicknamed a satoshi)</td></tr>
       <tr><td><strong>160 bits (20 bytes)</strong></td><td>Bitcoin addresses (RIPEMD-160 hash)</td></tr>
       <tr><td><strong>256 bits (32 bytes)</strong></td><td>SHA-256 hashes, private keys</td></tr>
     </table>
@@ -1739,7 +1758,7 @@ SHA256("bitcoin") =  (just lowercase 'b')
     </table>
     <p>
       <strong>ECDSA</strong> lets you prove you own coins without revealing your
-      private key. <strong>SHA-256</strong> creates a unique 256-bit fingerprint
+      private key. <strong>SHA-256</strong> creates a practically unique 256-bit fingerprint
       of any data—change one bit and the hash changes completely.
     </p>
     
@@ -1769,13 +1788,9 @@ Hard:    3^? mod 17 = 6       (which exponent gives 6?)</pre>
 <span class="token class-name">Bitcoin</span> (<span class="token variable">secp256k1</span>): <span class="token variable">y</span>² = <span class="token variable">x</span>³ + <span class="token number">7</span>   (<span class="token variable">a</span>=<span class="token number">0</span>, <span class="token variable">b</span>=<span class="token number">7</span>)</pre>
     <p>
       The curve has a distinctive shape—symmetric about the x-axis, with a 
-      "bulge" on the left and extending to infinity on the right. Textbooks often
-      show the same Weierstrass equation as the intersection of an algebraic surface
-      with a plane—your mental model can be “the locus lives in a chart embedded in
-      something higher-dimensional,” then projected to the page. For embedded-systems
-      treatments of how modular arithmetic changes the geometry, see for example
-      <a href="https://www.allaboutcircuits.com/technical-articles/elliptic-curve-cryptography-in-embedded-systems/">How Elliptic Curve Cryptography Works</a>
-      (All About Circuits, 2019).
+      rounded "nose" on the left and extending to infinity on the right. The figure
+      below stacks neighboring curves <span class="token variable">y</span>² = <span class="token variable">x</span>³ + <span class="token variable">b</span>
+      to show how secp256k1 sits in its family.
     </p>
     <div class="ecc-block">
       <p class="ecc-caption"><strong>Curve family along z:</strong>
@@ -1826,14 +1841,14 @@ Negation (<span class="token variable">x</span>, <span class="token variable">y<
     </div>
     <p>
       The scatter plot looks nothing like the smooth curve over ℝ — and that is
-      the point. The wrapping of coordinates modulo <span class="token variable">p</span>
-      gives the field a hidden topology. Because both <span class="token variable">x</span>
+      the point. Because both <span class="token variable">x</span>
       and <span class="token variable">y</span> wrap at <span class="token variable">p</span>
-      (0 and <span class="token variable">p</span> are the same value), the flat grid
-      has its top edge identified with its bottom edge, and its left edge identified with
-      its right edge. Gluing one pair of opposite edges gives a cylinder; gluing both pairs
-      gives a <strong>torus</strong>. Mathematically, the coordinate grid wraps like a
-      torus — and the curve points live on that surface.
+      (0 and <span class="token variable">p</span> are the same value), it helps to picture
+      the grid with its top edge glued to its bottom and its left edge glued to its
+      right—like a Pac-Man screen. Gluing one pair of opposite edges gives a cylinder;
+      gluing both pairs gives a <strong>torus</strong>. This is a visualization aid, not
+      literal geometry—though, fittingly, over the complex numbers an elliptic curve
+      really is a torus.
     </p>
     <div class="ecc-block">
       <p class="ecc-caption"><strong>From flat square to torus:</strong> identifying opposite edges.
@@ -1881,6 +1896,17 @@ Negation (<span class="token variable">x</span>, <span class="token variable">y<
       </figure>
     </div>
     <p>
+      Over 𝔽<sub>17</sub> the same recipe is pure arithmetic. Take two dots from
+      the toy grid, <span class="token variable">P</span> = (5, 8) and
+      <span class="token variable">Q</span> = (6, 6). The usual chord formulas apply,
+      with every result reduced mod 17:
+    </p>
+    <pre class="example">slope  s  = (6 − 8) / (6 − 5) = −2 ≡ 15         (mod 17)
+x₃ = s² − x₁ − x₂ = 225 − 5 − 6 = 214 ≡ 10       (mod 17)
+y₃ = s(x₁ − x₃) − y₁ = 15·(5 − 10) − 8 = −83 ≡ 2 (mod 17)
+
+P ⊕ Q = (10, 2)     check: 2² = 4,  10³ + 7 = 1007 ≡ 4 (mod 17) ✓</pre>
+    <p>
       Using these operations, you can compute kG (adding G to itself k times):
     </p>
     <pre class="example"><span class="token class-name">G</span> + <span class="token class-name">G</span> = <span class="token number">2</span><span class="token class-name">G</span>
@@ -1912,8 +1938,11 @@ Negation (<span class="token variable">x</span>, <span class="token variable">y<
       These coordinates look random, and their derivation was never publicly
       explained—but the curve's other parameters are deliberately simple:
       the prime p = 2²⁵⁶ − 2³² − 977, and the coefficients a = 0, b = 7.
-      After the Dual_EC_DRBG revelations, such "nothing up my sleeve"
-      parameters became a mark of trust.{{cite:dual-ec-drbg}} Satoshi didn't define G in Bitcoin's code; he used OpenSSL's built-in
+      (The choice of G doesn't affect security—any generator of the group is
+      equally hard to attack.) Contrast NIST's P-256 curve, whose coefficients
+      come from an unexplained random seed; after the 2013 Dual_EC_DRBG
+      revelations, secp256k1's transparent, "nothing up my sleeve" parameters
+      looked prescient.{{cite:dual-ec-drbg}} Satoshi didn't define G in Bitcoin's code; he used OpenSSL's built-in
       <code class="token variable">NID_secp256k1</code> curve identifier, which includes G and all other
       curve parameters.{{cite:openssl-license}}
     </p>
@@ -1938,11 +1967,13 @@ Negation (<span class="token variable">x</span>, <span class="token variable">y<
     <h3>A Note on the Source Code</h3>
     <p>
       You won't find elliptic curve math in Bitcoin's source code. Satoshi 
-      delegated <strong>all</strong> cryptography to <strong>OpenSSL</strong>,{{cite:openssl-license}}
-      a battle-tested library. In <code>key.h</code>, the entire CKey class 
+      delegated all the elliptic-curve cryptography to <strong>OpenSSL</strong>,{{cite:openssl-license}}
+      a battle-tested library. (The one exception elsewhere: the miner's inner loop
+      uses a public-domain SHA-256 routine borrowed from Wei Dai's Crypto++, in
+      <code>sha.cpp</code>.) In <code>key.h</code>, the entire CKey class 
       is a thin wrapper around OpenSSL functions:
     </p>
-    <pre class="example"><span class="token comment">// From key.h - Satoshi's entire ECC implementation:</span>
+    <pre class="example"><span class="token comment">// Condensed from key.h - Satoshi's entire ECC implementation:</span>
 <span class="token class-name">EC_KEY</span><span class="token operator">*</span> <span class="token variable">pkey</span> <span class="token operator">=</span> <span class="token function">EC_KEY_new_by_curve_name</span>(<span class="token variable">NID_secp256k1</span>);  <span class="token comment">// Create key</span>
 <span class="token function">EC_KEY_generate_key</span>(<span class="token variable">pkey</span>);                           <span class="token comment">// Generate keypair</span>
 <span class="token function">ECDSA_sign</span>(...);                                     <span class="token comment">// Sign data</span>
@@ -1961,18 +1992,27 @@ Negation (<span class="token variable">x</span>, <span class="token variable">y<
       signature that proves you know the private key without revealing it.
     </p>
     <pre class="example">Signing (private key k, message m):
-1. Generate random number r
-2. Compute R = rG (a curve point)
-3. Compute s = (hash(m) + R.x × k) / r
-4. Signature is (R.x, s)
+1. Pick a fresh secret random nonce j
+2. Compute R = jG; let r = R.x mod n
+3. Compute s = (hash(m) + r × k) / j   (all mod n)
+4. Signature is (r, s)
 
-Verification (public key P, message m, signature):
-1. Compute u1 = hash(m) / s
-2. Compute u2 = R.x / s
-3. Verify that u1×G + u2×P = R</pre>
+Verification (public key P, message m, signature (r, s)):
+1. u1 = hash(m) / s,  u2 = r / s   (mod n)
+2. Compute the point u1×G + u2×P
+3. Valid if its x-coordinate equals r</pre>
     <p>
-      The signature proves you know k (private key) because only someone 
+      Here n is the number of points in the group generated by G, and
+      "dividing" means multiplying by a modular inverse.
+      The signature proves you know k (private key) because only someone
       who knows k could produce an s that satisfies the verification equation.
+    </p>
+    <p>
+      The nonce j must be secret and never reused: sign two messages with the
+      same nonce and anyone can solve for your private key. Signing is only as
+      strong as its randomness—in August 2013, a weakness in Android's secure
+      random number generator forced an urgent security alert for every Bitcoin
+      wallet app on that platform.{{cite:android-securerandom-2013}}
     </p>
     
     <h2>Hash Functions in Bitcoin</h2>
@@ -1995,14 +2035,14 @@ Verification (public key P, message m, signature):
     <p>
       SHA-256 processes input through four main steps:
     </p>
-    
-    <h3>Step 1: Padding</h3>
+
+    <h4>Step 1: Padding</h4>
     <p>
       The message is padded to a multiple of 512 bits: append a '1' bit, 
       then '0' bits, then the original length as a 64-bit integer.
     </p>
     
-    <h3>Step 2: Initialize Hash Values</h3>
+    <h4>Step 2: Initialize Hash Values</h4>
     <p>
       Eight 32-bit words are initialized from the square roots of the 
       first 8 primes:
@@ -2012,7 +2052,7 @@ H1 = 0xbb67ae85   H5 = 0x9b05688c
 H2 = 0x3c6ef372   H6 = 0x1f83d9ab
 H3 = 0xa54ff53a   H7 = 0x5be0cd19</pre>
     
-    <h3>Step 3: Process Blocks (64 Rounds)</h3>
+    <h4>Step 3: Process Blocks (64 Rounds)</h4>
     <p>
       For each 512-bit block, run 64 rounds of compression. Each round:
     </p>
@@ -2031,7 +2071,7 @@ Then rotate: h=g, g=f, f=e, e=d+T1, d=c, c=b, b=a, a=T1+T2</pre>
       <li><strong>W[t]</strong>: message schedule derived from input</li>
     </ul>
     
-    <h3>Step 4: Output</h3>
+    <h4>Step 4: Output</h4>
     <p>
       Concatenate the final H0-H7 values to produce 256 bits (64 hex chars):
     </p>
@@ -2042,8 +2082,9 @@ Then rotate: h=g, g=f, f=e, e=d+T1, d=c, c=b, b=a, a=T1+T2</pre>
       of the first 64 primes—nothing up anyone's sleeve.
     </p>
     <p>
-      Bitcoin often uses <strong>double SHA-256</strong> (SHA256(SHA256(x))) for
-      extra security against length-extension attacks.
+      Bitcoin often uses <strong>double SHA-256</strong> (SHA256(SHA256(x))).
+      Satoshi never explained why; a common reading is that it guards against
+      length-extension attacks.
     </p>
 
     <h3>The Avalanche Effect</h3>
@@ -2062,9 +2103,11 @@ Then rotate: h=g, g=f, f=e, e=d+T1, d=c, c=b, b=a, a=T1+T2</pre>
 <span class="token function">SHA256:</span> <span class="token number">d91f6a7a6095c6c936748d7fbd31171f8831538947e782ac1eeb6f648129afc5</span></pre>
     <p>
       Notice how changing just one digit (2009→2008) or one letter's case (T→t)
-      produces a hash that shares virtually nothing with the original. This is why
-      Satoshi embedded the Times headline in the genesis block—it proves the block
-      couldn't have been created before that specific date.{{cite:times-bailout-2009}}{{cite:genesis-block}}
+      produces a hash that shares virtually nothing with the original. Because the
+      hash commits to every byte, the headline can't be altered after the fact
+      without producing a completely different block hash. That is what makes
+      Satoshi's embedded Times headline a timestamp: the block couldn't have been
+      created before that headline existed.{{cite:times-bailout-2009}}{{cite:genesis-block}}
     </p>
     
     <h3>RIPEMD-160</h3>
@@ -2080,8 +2123,10 @@ Then rotate: h=g, g=f, f=e, e=d+T1, d=c, c=b, b=a, a=T1+T2</pre>
     ↓ Base58Check encoding
 Bitcoin Address (e.g., 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa)</pre>
     <p>
-      Using two different hash functions provides defense in depth—even if 
-      one is broken, the other provides protection.
+      RIPEMD-160 shortens the result to 20 bytes, keeping addresses compact.
+      Satoshi never explained why he paired two different hash functions; a
+      common reading is defense in depth, since an attacker would have to
+      defeat both to forge a matching public key.
     </p>
     
     <h2>Merkle Trees</h2>
@@ -2098,8 +2143,9 @@ Bitcoin Address (e.g., 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa)</pre>
       |    |    |    |
      Tx1  Tx2  Tx3  Tx4</pre>
     <p>
-      To prove Tx2 is in the block, you only need H(A), H(CD), and the 
-      Merkle root—not all four transactions. This enables "light clients" 
+      To prove Tx2 is in the block, you need only Tx2 itself, H(A), and
+      H(CD): hash upward and compare with the Merkle root—not all four
+      transactions. This enables "light clients" 
       that verify transactions without downloading the entire blockchain.
     </p>
     
@@ -2108,19 +2154,24 @@ Bitcoin Address (e.g., 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa)</pre>
       Mining is a cryptographic lottery.{{cite:back-hashcash}} Miners must find a number (nonce) 
       such that the block's hash starts with many zeros:
     </p>
-    <pre class="example">Target: Hash must be less than 
-        0000000000000000000abc...
+    <pre class="example">Target (v0.01 minimum difficulty): hash must be less than
+        00000000ffff0000000000000000000000000000000000000000000000000000
 
-Miner tries:
-  nonce=0: SHA256(block) = 7f3a2b... (too high)
-  nonce=1: SHA256(block) = 9c4d5e... (too high)
-  nonce=2: SHA256(block) = 1b8f7a... (too high)
-  ...millions of attempts...
-  nonce=2347893: SHA256(block) = 00000000000000000008f3... (valid!)</pre>
+Miner tries (hash = double SHA-256 of the block header):
+  nonce=0: hash = 7f3a2b... (too high)
+  nonce=1: hash = 9c4d5e... (too high)
+  nonce=2: hash = 1b8f7a... (too high)
+  ...billions of attempts...
+  nonce=2083236893: hash =
+    000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f (valid!)</pre>
     <p>
-      Because SHA-256 is unpredictable, the only way to find a valid nonce 
-      is trial and error. The difficulty adjusts so that the network finds 
+      That last line is real: it is the nonce and hash of the genesis block.{{cite:genesis-block}}
+      Because SHA-256 is unpredictable, the only way to find a valid nonce
+      is trial and error. The difficulty adjusts so that the network finds
       a block approximately every 10 minutes, regardless of total computing power.
+      In v0.01 this is <code>nTargetSpacing = 10 * 60</code> seconds, and the target
+      is recalculated every two weeks' worth of blocks (14 days ÷ 10 minutes =
+      2,016 blocks), not continuously.
     </p>
     
     <h2>Why This Matters</h2>
@@ -2243,6 +2294,10 @@ uint256 <span class="token class-name">CBlock</span><span class="token punctuati
           <td>P2P networking and message handling</td>
         </tr>
         <tr>
+          <td>market.cpp / market.h</td>
+          <td>Peer-to-peer marketplace: signed product listings and reviews (unfinished)</td>
+        </tr>
+        <tr>
           <td>db.cpp / db.h</td>
           <td>Berkeley DB persistence layer{{cite:bdb-license}}</td>
         </tr>
@@ -2319,6 +2374,10 @@ uint256 <span class="token class-name">CBlock</span><span class="token punctuati
           <td>Windows resource file (icons, metadata)</td>
         </tr>
         <tr>
+          <td>rc/</td>
+          <td>Icon and toolbar bitmap files referenced by ui.rc</td>
+        </tr>
+        <tr>
           <td>uiproject.fbp</td>
           <td>wxFormBuilder project (GUI designer)</td>
         </tr>
@@ -2348,13 +2407,21 @@ uint256 <span class="token class-name">CBlock</span><span class="token punctuati
       specifies which files to compile, what compiler flags to use, and what
       libraries to link:
     </p>
-    <pre class="example"># Compile main.cpp into main.o (object file)
-main.o: main.cpp main.h
-    g++ -c main.cpp -o main.o
+    <pre class="example"># Abridged from the v0.01 makefile
 
-# Link all object files into final executable
-bitcoin: main.o net.o db.o script.o ...
-    g++ main.o net.o ... -o bitcoin -lssl -ldb</pre>
+# Precompile the shared header once
+headers.h.gch: headers.h $(HEADERS) net.h irc.h market.h uibase.h ui.h
+    g++ -c $(CFLAGS) -o $@ $&lt;
+
+# Compile main.cpp into obj/main.o (object file)
+obj/main.o: main.cpp $(HEADERS) net.h market.h sha.h
+    g++ -c $(CFLAGS) -o $@ $&lt;
+
+# Link all object files into the final executable
+bitcoin.exe: headers.h.gch $(OBJS)
+    g++ $(CFLAGS) -mwindows ... -o $@ $(LIBPATHS) $(OBJS) $(LIBS)
+
+# $(LIBS) includes -l db_cxx (Berkeley DB), -l eay32 (OpenSSL), wxWidgets ...</pre>
     <p>
       Bitcoin v0.01 includes two makefiles: <code>makefile</code> for MinGW GCC
       and <code>makefile.vc</code> for Microsoft's Visual C++. Both target
@@ -2550,13 +2617,14 @@ a<span class="token operator">--</span>      <span class="token comment">// decr
     <span class="token keyword">int</span> nVersion<span class="token punctuation">;</span>
     <span class="token keyword">vector</span><span class="token operator">&lt;</span>CTxIn<span class="token operator">&gt;</span> vin<span class="token punctuation">;</span>     <span class="token comment">// inputs</span>
     <span class="token keyword">vector</span><span class="token operator">&lt;</span>CTxOut<span class="token operator">&gt;</span> vout<span class="token punctuation">;</span>   <span class="token comment">// outputs</span>
-    
-    <span class="token keyword">uint256</span> <span class="token function">GetHash</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>    <span class="token comment">// member function</span>
-        <span class="token keyword">return</span> <span class="token function">Hash</span><span class="token punctuation">(</span><span class="token function">BEGIN</span><span class="token punctuation">(</span>nVersion<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">END</span><span class="token punctuation">(</span>nLockTime<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
-    <span class="token punctuation">}</span>
-    
-<span class="token keyword">private</span><span class="token operator">:</span>                   <span class="token comment">// only accessible inside class</span>
     <span class="token keyword">int</span> nLockTime<span class="token punctuation">;</span>
+
+    <span class="token keyword">uint256</span> <span class="token function">GetHash</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token keyword">const</span> <span class="token punctuation">{</span>  <span class="token comment">// member function</span>
+        <span class="token keyword">return</span> <span class="token function">SerializeHash</span><span class="token punctuation">(</span><span class="token operator">*</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// hash the serialized bytes</span>
+    <span class="token punctuation">}</span>
+
+<span class="token keyword">protected</span><span class="token operator">:</span>                 <span class="token comment">// only accessible inside class (and subclasses)</span>
+    <span class="token keyword">bool</span> <span class="token function">AddToMemoryPool</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">}</span><span class="token punctuation">;</span>
 
 <span class="token comment">// Creating and using objects:</span>
@@ -2564,8 +2632,9 @@ a<span class="token operator">--</span>      <span class="token comment">// decr
 tx<span class="token punctuation">.</span>nVersion <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span>
 <span class="token keyword">uint256</span> hash <span class="token operator">=</span> tx<span class="token punctuation">.</span><span class="token function">GetHash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></pre>
     <p>
-      <strong>Structs</strong> are like classes but default to public access. 
-      Bitcoin uses both interchangeably.
+      <strong>Structs</strong> are like classes but default to public access.
+      Bitcoin v0.01 almost always uses <code>class</code> with an explicit
+      <code>public:</code> section; <code>struct</code> appears only a handful of times.
     </p>
     
     <h2>Pointers and References</h2>
@@ -2612,7 +2681,8 @@ v<span class="token punctuation">.</span><span class="token function">push_back<
     <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%d\\n"</span><span class="token punctuation">,</span> v<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">}</span>
 
-<span class="token comment">// Range-based (modern C++):</span>
+<span class="token comment">// Range-based (C++11 — not in v0.01, which predates it</span>
+<span class="token comment">// and uses the foreach macro instead):</span>
 <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> n <span class="token punctuation">:</span> v<span class="token punctuation">)</span> <span class="token punctuation">{</span>
     <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%d\\n"</span><span class="token punctuation">,</span> n<span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">}</span></pre>
@@ -2645,9 +2715,9 @@ balances<span class="token punctuation">[</span><span class="token string">"Bob"
 <span class="token keyword">#include</span> <span class="token string">"main.h"</span>        <span class="token comment">// local file</span>
 <span class="token keyword">#include</span> <span class="token operator">&lt;</span>vector<span class="token operator">&gt;</span>        <span class="token comment">// system file</span>
 
-<span class="token comment">// Define constants:</span>
-<span class="token keyword">#define</span> COIN <span class="token number">100000000</span>   <span class="token comment">// 1 BTC in satoshis</span>
-<span class="token keyword">#define</span> MAX_BLOCK_SIZE <span class="token number">1000000</span>
+<span class="token comment">// Define constants (v0.01 prefers typed constants to #define):</span>
+<span class="token keyword">static const</span> int64 COIN <span class="token operator">=</span> <span class="token number">100000000</span><span class="token punctuation">;</span>            <span class="token comment">// 1 BTC in satoshis</span>
+<span class="token keyword">static const unsigned int</span> MAX_SIZE <span class="token operator">=</span> <span class="token number">0x02000000</span><span class="token punctuation">;</span>  <span class="token comment">// 32 MB size cap</span>
 
 <span class="token comment">// Conditional compilation:</span>
 <span class="token keyword">#ifdef</span> WIN32
@@ -2656,8 +2726,22 @@ balances<span class="token punctuation">[</span><span class="token string">"Bob"
     <span class="token comment">// Unix/Linux code</span>
 <span class="token keyword">#endif</span>
 
-<span class="token comment">// Macros (inline code substitution):</span>
-<span class="token keyword">#define</span> <span class="token function">MIN</span><span class="token punctuation">(</span>a<span class="token punctuation">,</span>b<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span> <span class="token operator">&lt;</span> <span class="token punctuation">(</span>b<span class="token punctuation">)</span> <span class="token operator">?</span> <span class="token punctuation">(</span>a<span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token punctuation">(</span>b<span class="token punctuation">)</span><span class="token punctuation">)</span></pre>
+<span class="token comment">// Macros (inline code substitution), from v0.01's util.h:</span>
+<span class="token keyword">#define</span> foreach  BOOST_FOREACH          <span class="token comment">// shorter name</span>
+<span class="token keyword">#define</span> loop     <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span><span class="token punctuation">;</span><span class="token punctuation">)</span>              <span class="token comment">// loop forever</span>
+<span class="token keyword">#define</span> <span class="token function">BEGIN</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span><span class="token punctuation">)</span>
+<span class="token keyword">#define</span> <span class="token function">END</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span>   <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token operator">&amp;</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">)</span></pre>
+    <p>
+      <code>BEGIN(a)</code> and <code>END(a)</code> give the address of a
+      variable's first byte and of the byte just past its last. That is how
+      <code>CBlock::GetHash()</code>, shown earlier, hashes
+      <code>BEGIN(nVersion)</code> through <code>END(nNonce)</code>: the six
+      header fields sit next to each other in memory, so the range covers
+      exactly the 80-byte block header. The trick only works for fields laid
+      out contiguously—a transaction, whose inputs and outputs live in
+      separately allocated vectors, is hashed by serializing it first
+      (<code>SerializeHash(*this)</code>).
+    </p>
     
     <h2>Common Bitcoin Patterns</h2>
     <p>
@@ -2668,10 +2752,10 @@ balances<span class="token punctuation">[</span><span class="token string">"Bob"
     <span class="token comment">// Only one thread can execute this at a time</span>
 <span class="token punctuation">}</span>
 
-<span class="token comment">// BOOST_FOREACH: Iterate over collections</span>
-<span class="token function">BOOST_FOREACH</span><span class="token punctuation">(</span><span class="token class-name">CTransaction</span><span class="token operator">&amp;</span> tx<span class="token punctuation">,</span> block<span class="token punctuation">.</span>vtx<span class="token punctuation">)</span> <span class="token punctuation">{</span>
-    <span class="token function">ProcessTransaction</span><span class="token punctuation">(</span>tx<span class="token punctuation">)</span><span class="token punctuation">;</span>
-<span class="token punctuation">}</span>
+<span class="token comment">// foreach (alias for BOOST_FOREACH): Iterate over collections</span>
+<span class="token function">foreach</span><span class="token punctuation">(</span><span class="token keyword">const</span> <span class="token class-name">CTransaction</span><span class="token operator">&amp;</span> tx<span class="token punctuation">,</span> vtx<span class="token punctuation">)</span>     <span class="token comment">// from CBlock::CheckBlock()</span>
+    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>tx<span class="token punctuation">.</span><span class="token function">CheckTransaction</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span>
+        <span class="token keyword">return</span> <span class="token function">error</span><span class="token punctuation">(</span><span class="token string">"CheckBlock() : CheckTransaction failed"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 
 <span class="token comment">// Serialization: IMPLEMENT_SERIALIZE</span>
 <span class="token function">IMPLEMENT_SERIALIZE</span><span class="token punctuation">(</span>
@@ -2696,6 +2780,7 @@ balances<span class="token punctuation">[</span><span class="token string">"Bob"
 <span class="token comment">// Automatic cleanup with smart pointers:</span>
 auto_ptr<span class="token operator">&lt;</span><span class="token class-name">CBlock</span><span class="token operator">&gt;</span> <span class="token function">pblock</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">CBlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token comment">// automatically deleted when out of scope</span>
+<span class="token comment">// (v0.01 does this in main.cpp; C++11 later deprecated auto_ptr)</span>
 
 <span class="token comment">// Stack allocation (automatic cleanup):</span>
 <span class="token class-name">CBlock</span> block<span class="token punctuation">;</span>  <span class="token comment">// created on stack</span>
@@ -2724,8 +2809,8 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     <p class="lead">
       You've now studied Bitcoin at its origin—the pristine v0.01 code that launched
       a monetary revolution. But Bitcoin didn't stop evolving on January 9, 2009.{{cite:bitcoin-core-history}}{{cite:nakamoto-windows-only}}
-      Over seventeen years, the codebase has grown from ~20,000 lines to over 200,000,
-      with hundreds of contributors refining Satoshi's vision. Here's a chronological
+      Over seventeen years, the codebase has grown from roughly 20,000 lines of C++ to
+      more than 300,000 (counting tests and bundled libraries), with hundreds of contributors refining Satoshi's vision. Here's a chronological
       guide to what came next, so you know which versions to study for specific improvements.
     </p>
 
@@ -2741,12 +2826,12 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v0.1.0</strong></td>
           <td>Jan 9, 2009</td>
-          <td>First public release (this book). Windows only.{{cite:nakamoto-windows-only}} IRC-based peer discovery.{{cite:nakamoto-irc-temporary}}</td>
+          <td>First public release (this book). Windows only.{{cite:nakamoto-windows-only}} IRC-based peer discovery.{{cite:nakamoto-irc-temporary}} First transaction, Satoshi to Hal Finney, in block 170 (Jan 12).{{cite:finney-first-tx}}</td>
         </tr>
         <tr>
           <td><strong>v0.1.5</strong></td>
           <td>Feb 4, 2009</td>
-          <td>Bug fixes. First transaction between Satoshi and Hal Finney (Jan 12).{{cite:finney-first-tx}}</td>
+          <td>Bug fixes.</td>
         </tr>
         <tr>
           <td><strong>v0.2.0</strong></td>
@@ -2760,28 +2845,33 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         </tr>
         <tr>
           <td><strong>v0.3.1</strong></td>
-          <td>Jul 15, 2010</td>
-          <td><strong>1 MB block size limit</strong> added by Satoshi as anti-spam measure. Originally temporary, became contentious years later.{{cite:bitcoin-core-history}}</td>
+          <td>Jul 2010</td>
+          <td><strong>1 MB block size limit</strong> added quietly by Satoshi (widely understood as an anti-spam/DoS measure; no rationale was posted). Originally temporary, became contentious years later.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
-          <td><strong>v0.3.9</strong></td>
-          <td>Aug 15, 2010</td>
-          <td><strong>OP_RETURN disabled</strong> after discovery of a critical script bug allowing anyone to spend any coins. Satoshi's emergency soft fork.{{cite:opcode-disable-2010}}</td>
+          <td><strong>v0.3.5</strong></td>
+          <td>Jul 2010</td>
+          <td><strong>OP_RETURN bug fixed</strong> after discovery of a critical script bug allowing anyone to spend any coins. scriptSig and scriptPubKey now run separately; OP_CAT and other risky opcodes disabled. Satoshi's emergency soft fork.{{cite:cve-2010-5141}}{{cite:opcode-disable-2010}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.10</strong></td>
           <td>Aug 15, 2010</td>
-          <td><strong>Value overflow fix</strong>. Block 74638 exploited integer overflow to create 184 billion BTC. Chain reorganized to remove it.{{cite:overflow-bug-2010}}</td>
+          <td><strong>Value overflow fix</strong>. Block 74638 exploited integer overflow to create 184 billion BTC. The patched client shipped within five hours; the corrected chain overtook the bad one the next day.{{cite:overflow-bug-2010}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.14</strong></td>
           <td>Oct 21, 2010</td>
-          <td><strong>Testnet</strong> introduced by Gavin Andresen for development testing without real value.{{cite:bitcoin-core-history}}</td>
+          <td><strong>Testnet</strong> introduced by Gavin Andresen for development testing without real value.{{cite:nakamoto-0-3-14}}</td>
+        </tr>
+        <tr>
+          <td><strong>v0.3.19</strong></td>
+          <td>Dec 2010</td>
+          <td>Satoshi's final release (DoS protections). He stepped away from public development by April 2011, leaving Bitcoin to the community.{{cite:bitcoin-client-wiki}}{{cite:nakamoto-farewell-2011}}{{cite:nakamoto-bitcointalk-set-in-stone}}</td>
         </tr>
         <tr>
           <td><strong>v0.3.21</strong></td>
           <td>Apr 27, 2011</td>
-          <td>Satoshi's final release. He disappeared shortly after, leaving Bitcoin to the community.{{cite:nakamoto-farewell-2011}}{{cite:nakamoto-bitcointalk-set-in-stone}}</td>
+          <td>First major release under Gavin Andresen. UPnP, and <strong>DNS seeding</strong> for finding peers—the beginning of the end for v0.01's IRC bootstrap.{{cite:gavin-0-3-21}}</td>
         </tr>
       </tbody>
     </table>
@@ -2789,7 +2879,8 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     <p>
       <strong>Study these versions if:</strong> You want to trace Satoshi's thinking as
       he responded to real-world usage. The JSON-RPC API (v0.3.0+) enabled the first
-      exchanges and services. The testnet (v0.3.14) is still used today.
+      exchanges and services. The testnet idea (v0.3.14) lives on in its successors,
+      testnet3 (v0.7) and testnet4 (v28).
     </p>
 
     <h2>Early Community Development (2011–2013)</h2>
@@ -2824,7 +2915,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v0.8.0</strong></td>
           <td>Feb 18, 2013</td>
-          <td><strong>LevelDB</strong> replaces Berkeley DB for UTXO set. Bloom filters (BIP 37) for SPV clients. 10x sync speed improvement.{{cite:bitcoin-core-history}}</td>
+          <td><strong>LevelDB</strong> replaces Berkeley DB for UTXO set. Bloom filters (BIP 37) for SPV clients. Parallel signature checking.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.8.1</strong></td>
@@ -2836,7 +2927,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     <p>
       <strong>Study these versions if:</strong> You're interested in wallet encryption (v0.4),
-      SPV/light clients (v0.6), or the database architecture (v0.8). The March 2013 chain split{{cite:bip-50}}
+      SPV/light-client support via Bloom filters (v0.8), or the database architecture (v0.8). The March 2013 chain split{{cite:bip-50}}
       is a critical lesson in consensus-critical code changes—even "non-consensus" changes can break consensus.
     </p>
 
@@ -2858,17 +2949,17 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v0.10.0</strong></td>
           <td>Feb 16, 2015</td>
-          <td><strong>Headers-first sync</strong>. Download block headers before blocks for faster IBD.{{cite:bitcoin-core-history}}</td>
+          <td><strong>Headers-first sync</strong>. Download block headers before blocks for faster IBD. Signing moves from OpenSSL to libsecp256k1.{{cite:bitcoin-core-history}}{{cite:core-0-10-release-notes}}</td>
         </tr>
         <tr>
           <td><strong>v0.11.0</strong></td>
           <td>Jul 12, 2015</td>
-          <td><strong>Block pruning</strong>. <strong>libsecp256k1</strong> replaces OpenSSL for ECDSA—7x faster. OP_RETURN limit raised to 80 bytes.{{cite:bitcoin-core-history}}</td>
+          <td><strong>Block pruning</strong>. OP_RETURN limit raised to 80 bytes.{{cite:bitcoin-core-history}}</td>
         </tr>
         <tr>
           <td><strong>v0.12.0</strong></td>
           <td>Feb 23, 2016</td>
-          <td><strong>Opt-in RBF</strong> (Replace-By-Fee). Memory pool limiting. Faster signature validation.{{cite:bitcoin-core-history}}</td>
+          <td><strong>Opt-in RBF</strong> (Replace-By-Fee). Memory pool limiting. Signature validation moves to <strong>libsecp256k1</strong>—over five times faster on x86_64.{{cite:bitcoin-core-history}}{{cite:core-0-12-release-notes}}</td>
         </tr>
         <tr>
           <td><strong>v0.13.0</strong></td>
@@ -2880,7 +2971,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     <p>
       <strong>Study these versions if:</strong> You want to understand modern sync
-      strategies (v0.10), the libsecp256k1 library (v0.11), or prepare for SegWit.
+      strategies (v0.10), the libsecp256k1 library (v0.10–v0.12), or prepare for SegWit.
       The shift from OpenSSL to libsecp256k1 is a masterclass in security-focused refactoring.
     </p>
 
@@ -2950,17 +3041,17 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v0.21.0</strong></td>
           <td>Jan 14, 2021</td>
-          <td><strong>Descriptor wallets default</strong>. Tor V3 support. Signet test network.{{cite:bitcoin-core-history}}</td>
+          <td><strong>Descriptor wallets (experimental)</strong>. Tor V3 support. Signet test network.{{cite:bitcoin-core-history}}{{cite:core-0-21-release-notes}}</td>
         </tr>
         <tr>
           <td><strong>v22.0</strong></td>
           <td>Sep 13, 2021</td>
-          <td><strong>Taproot activation</strong> (BIPs 340, 341, 342). Version numbering change.{{cite:bitcoin-core-history}}</td>
+          <td><strong>Taproot</strong> (BIPs 340, 341, 342) activates on mainnet at block 709632 in November 2021; the activation logic shipped in 0.21.1. Version numbering change.{{cite:bitcoin-core-history}}{{cite:core-0-21-1-release-notes}}</td>
         </tr>
         <tr>
           <td><strong>v23.0</strong></td>
           <td>Apr 25, 2022</td>
-          <td>Taproot wallet support (bech32m addresses). CJDNS network support. Tracepoints for debugging.{{cite:bitcoin-core-history}}</td>
+          <td><strong>Descriptor wallets become default</strong>. Taproot wallet support (bech32m addresses). CJDNS network support. Tracepoints for debugging.{{cite:bitcoin-core-history}}{{cite:core-23-release-notes}}</td>
         </tr>
         <tr>
           <td><strong>v24.0</strong></td>
@@ -2975,12 +3066,12 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v26.0</strong></td>
           <td>Dec 6, 2023</td>
-          <td><strong>V2 transport protocol</strong> (BIP 324). Encrypted P2P connections.{{cite:bitcoin-core-history}}</td>
+          <td><strong>V2 transport protocol</strong> (BIP 324), opt-in and experimental. Encrypted P2P connections.{{cite:bitcoin-core-history}}{{cite:core-26-release-notes}}</td>
         </tr>
         <tr>
           <td><strong>v27.0</strong></td>
           <td>Apr 17, 2024</td>
-          <td>libbitcoinkernel progress. Improved assumeUTXO. Fee estimation improvements.{{cite:bitcoin-core-history}}</td>
+          <td><strong>V2 encrypted transport on by default</strong>. CoinGrinder coin selection. libbitcoinconsensus deprecated.{{cite:bitcoin-core-history}}{{cite:core-27-release-notes}}</td>
         </tr>
         <tr>
           <td><strong>v28.0</strong></td>
@@ -2995,14 +3086,14 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v30.0</strong></td>
           <td>Oct 10, 2025</td>
-          <td>Qt 6 GUI. New unified <code>bitcoin</code> command. Legacy BDB wallets removed.{{cite:bitcoin-core-history}}</td>
+          <td>Qt 6 GUI. New unified <code>bitcoin</code> command. Legacy BDB wallets removed. <code>-datacarriersize</code> default raised to 100,000 bytes, effectively uncapping OP_RETURN data.{{cite:bitcoin-core-history}}{{cite:core-30-release-notes}}</td>
         </tr>
       </tbody>
     </table>
 
     <p>
       <strong>Study these versions if:</strong> You want to understand Schnorr signatures
-      and Taproot (v22), Miniscript (v25), or encrypted P2P (v26). The libbitcoinkernel
+      and Taproot (v0.21.1–v22), Miniscript (v25), or encrypted P2P (v26–v27). The libbitcoinkernel
       project (ongoing) is modularizing the consensus code for use by other implementations.
     </p>
 
@@ -3016,19 +3107,19 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     <table class="version-history">
       <tbody>
         <tr>
-          <td><strong>Aug 2010</strong></td>
+          <td><strong>Jul 2010</strong></td>
           <td>OP_RETURN Bug</td>
-          <td><em>Introduced by: Satoshi (v0.1)</em> — A flaw in script evaluation let anyone spend anyone's coins using OP_RETURN. Present since day one but undiscovered. Satoshi disabled multiple opcodes via emergency soft fork within hours of disclosure.{{cite:opcode-disable-2010}}</td>
+          <td><em>Introduced by: Satoshi (v0.1)</em> — A flaw in script evaluation let anyone spend anyone's coins using OP_RETURN. Present since day one but undiscovered. Fixed in v0.3.5 by running scriptSig and scriptPubKey separately; Satoshi also disabled multiple opcodes in the same emergency soft fork.{{cite:cve-2010-5141}}{{cite:opcode-disable-2010}}</td>
         </tr>
         <tr>
           <td><strong>Aug 2010</strong></td>
           <td>Value Overflow</td>
-          <td><em>Introduced by: Satoshi (v0.1)</em> — Integer overflow created 184 billion BTC in block 74638. Missing overflow check in transaction validation. Community coordinated to orphan the block within 5 hours.{{cite:overflow-bug-2010}}</td>
+          <td><em>Introduced by: Satoshi (v0.1)</em> — Integer overflow created 184 billion BTC in block 74638. Missing overflow check in transaction validation. A patched client (v0.3.10) was released within five hours; the corrected chain overtook the bad one the next day.{{cite:overflow-bug-2010}}</td>
         </tr>
         <tr>
           <td><strong>Mar 2013</strong></td>
           <td>BDB Lock Crisis</td>
-          <td><em>Introduced by: Pieter Wuille (v0.8)</em> — LevelDB migration inadvertently changed consensus behavior. BerkeleyDB's lock limits caused v0.7 nodes to reject blocks v0.8 accepted. 6-hour chain split resolved by emergency downgrade.{{cite:bip-50}}</td>
+          <td><em>Root cause: Berkeley DB lock limits in all pre-0.8 versions</em> — Version 0.8's switch to LevelDB removed an undocumented limit that had silently become a consensus rule. A large block accepted by 0.8 was rejected by 0.7 nodes. 6-hour chain split resolved by miners downgrading.{{cite:bip-50}}</td>
         </tr>
         <tr>
           <td><strong>Jul 2015</strong></td>
@@ -3038,7 +3129,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>Sep 2018</strong></td>
           <td>CVE-2018-17144</td>
-          <td><em>Introduced by: Core developers (v0.14)</em> — Optimization to skip duplicate input checking inadvertently allowed double-spends within a single block. Silently patched in v0.16.3. Most critical vulnerability since 2010.{{cite:cve-2018-17144}}</td>
+          <td><em>Introduced by: Core developers (v0.14)</em> — Optimization to skip duplicate input checking: in v0.14 it caused a crash; from v0.15 it allowed inflation via a duplicated input within a single block. Silently patched in v0.16.3. Most critical vulnerability since 2010.{{cite:cve-2018-17144}}</td>
         </tr>
       </tbody>
     </table>
@@ -3078,7 +3169,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         </tr>
         <tr>
           <td>Peer Discovery</td>
-          <td>IRC channels</td>
+          <td>IRC channel, plus addr gossip</td>
           <td>DNS seeds, addr gossip</td>
         </tr>
         <tr>
@@ -3088,7 +3179,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         </tr>
         <tr>
           <td>Addresses</td>
-          <td>1... (P2PKH only)</td>
+          <td>Raw public keys (P2PK, used by coinbase and pay-to-IP) and 1... (P2PKH)</td>
           <td>3... (P2SH), bc1q... (SegWit), bc1p... (Taproot)</td>
         </tr>
         <tr>
@@ -3109,7 +3200,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td>Code Size</td>
           <td>~20,000 lines</td>
-          <td>~200,000+ lines</td>
+          <td>300,000+ lines (with tests and bundled libraries)</td>
         </tr>
       </tbody>
     </table>
@@ -3122,12 +3213,12 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     <ul>
       <li><strong>Consensus Rules:</strong> v0.3.10 (overflow fix) → v0.8.1 (DB fork) → v22.0 (Taproot)</li>
-      <li><strong>Cryptography:</strong> v0.11.0 (libsecp256k1) → v22.0 (Schnorr/Taproot)</li>
-      <li><strong>Wallet Development:</strong> v0.4.0 (encryption) → v0.18.0 (descriptors) → v0.21.0 (descriptor default)</li>
+      <li><strong>Cryptography:</strong> v0.12.0 (libsecp256k1 validation) → v22.0 (Schnorr/Taproot)</li>
+      <li><strong>Wallet Development:</strong> v0.4.0 (encryption) → v0.18.0 (descriptors) → v0.21.0 (descriptor wallets) → v23.0 (descriptor default)</li>
       <li><strong>Networking:</strong> v0.3.0 (daemon) → v0.8.0 (Bloom filters) → v26.0 (encrypted P2P)</li>
       <li><strong>Script/Smart Contracts:</strong> v0.6.0 (P2SH) → v0.13.0 (SegWit) → v22.0 (Tapscript) → v25.0 (Miniscript)</li>
       <li><strong>Lightning Prerequisites:</strong> v0.13.0 (SegWit) → v0.19.0 (CPFP carve-out) → v24.0 (full RBF)</li>
-      <li><strong>Security & Bugs:</strong> v0.3.9 (OP_RETURN){{cite:opcode-disable-2010}} → v0.3.10 (overflow){{cite:overflow-bug-2010}} → v0.8.1 (BDB){{cite:bip-50}} → v0.16.3 (CVE-2018-17144){{cite:cve-2018-17144}}</li>
+      <li><strong>Security & Bugs:</strong> v0.3.5 (OP_RETURN){{cite:cve-2010-5141}} → v0.3.10 (overflow){{cite:overflow-bug-2010}} → v0.8.1 (BDB){{cite:bip-50}} → v0.16.3 (CVE-2018-17144){{cite:cve-2018-17144}}</li>
     </ul>
 
     <h2>Resources for Continued Study</h2>

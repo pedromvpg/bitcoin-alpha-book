@@ -111,6 +111,7 @@
       background: var(--chrome-3);
     }
     .tb-btn:active { background: var(--chrome-4); }
+    .tb-btn:disabled { opacity: 0.55; cursor: wait; }
 
     .tb-page-input {
       font-family: var(--mono); font-size: 11px;
@@ -372,6 +373,10 @@
 
     <div class="tb-sep"></div>
 
+    <button class="tb-btn" id="btn-rebuild" title="Rebuild the book and reload this preview">Rebuild</button>
+
+    <div class="tb-sep"></div>
+
     <!-- Rendering badge -->
     <div id="render-badge"><span class="spinner"></span> Rendering</div>
 
@@ -458,6 +463,8 @@ let totalPages = 0;
 let currentPage = 1;
 let renderDone = false;
 let shortcutsOpen = false;
+let pageWatch = null;
+let fittedOnce = false;
 
 /* ── DOM REFS ────────────────────────────────────────────────────── */
 const frame       = document.getElementById('book-frame');
@@ -877,11 +884,12 @@ function getDoc() {
 
 /* ── PAGED.JS WATCH ──────────────────────────────────────────────── */
 function startPageWatch() {
+  if (pageWatch) clearInterval(pageWatch);
   renderBadge.classList.add('visible');
   let lastCount = 0;
   let stableFor = 0;
 
-  const check = setInterval(() => {
+  pageWatch = setInterval(() => {
     const doc = getDoc();
     if (!doc) return;
     const count = doc.querySelectorAll('.pagedjs_page').length;
@@ -890,7 +898,8 @@ function startPageWatch() {
     if (count > 0 && count === lastCount) {
       stableFor++;
       if (stableFor >= 2) {
-        clearInterval(check);
+        clearInterval(pageWatch);
+        pageWatch = null;
         onRenderComplete(doc, count);
       }
     } else {
@@ -916,9 +925,15 @@ function onRenderComplete(doc, count) {
   injectStyles(doc);
   placeMarginGuides(doc);
 
-  // fit page on first load
-  setZoom('fit-page');
-  applyZoomToFrame(zoom);
+  if (!fittedOnce) {
+    setZoom('fit-page');
+    fittedOnce = true;
+  } else {
+    applyZoomToFrame(zoom);
+    applySpreadLayout(doc, isSpread);
+    const restore = currentPage;
+    requestAnimationFrame(() => scrollToPage(restore));
+  }
 
   // scroll tracking
   try {
@@ -958,6 +973,42 @@ btnSingle.addEventListener('click', () => toggleSpread(false));
 btnSpread.addEventListener('click', () => toggleSpread(true));
 btnGuides.addEventListener('click', () => toggleGuides(!showGuides));
 btnRulers.addEventListener('click', () => toggleRulers(!showRulers));
+
+document.getElementById('btn-rebuild').addEventListener('click', rebuildBook);
+
+async function rebuildBook() {
+  const btn = document.getElementById('btn-rebuild');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const label = btn.textContent;
+  btn.textContent = 'Building…';
+  renderDone = false;
+  loading.classList.remove('done');
+  document.getElementById('load-msg').textContent = 'Rebuilding book';
+  loadCount.textContent = '0';
+  try {
+    const res = await fetch('/api/review/rebuild', { method: 'POST' });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok || body.ok === false) {
+      throw new Error(body.error || `Rebuild failed (${res.status})`);
+    }
+    const bookSrc = sectionId
+      ? `bitcoin-alpha-book.html?section=${encodeURIComponent(sectionId)}&t=${Date.now()}`
+      : `bitcoin-alpha-book.html?t=${Date.now()}`;
+    frame.src = bookSrc;
+  } catch (err) {
+    loading.classList.add('done');
+    btn.title = String(err.message || err);
+    btn.textContent = 'Failed';
+    setTimeout(() => {
+      btn.textContent = label;
+      btn.title = 'Rebuild the book and reload this preview';
+    }, 2400);
+  } finally {
+    btn.disabled = false;
+    if (btn.textContent === 'Building…') btn.textContent = label;
+  }
+}
 
 document.getElementById('btn-help').addEventListener('click', () => {
   shortcutsOpen = !shortcutsOpen;

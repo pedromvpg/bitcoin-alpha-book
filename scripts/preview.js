@@ -5,6 +5,7 @@
  *   /            → project home page (templates/home.html)
  *   /book        → DTP preview chrome (templates/preview.html)
  *                  ?section=<id> opens only that chapter in the iframe
+ *                  Rebuild posts to /api/review/rebuild, then reloads the book
  *   /cover       → cover HTML (auto-rebuilds when stale; nav + inspect + proof PDF)
  *   /api/cover/rebuild → POST force-rebuild cover
  *   /api/cover/pdf → POST generate print-proof cover.pdf

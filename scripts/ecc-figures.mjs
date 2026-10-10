@@ -224,6 +224,7 @@ function curveSpatialFigure() {
   let curvesSvg = '';
   for (let z = Z_LO; z <= Z_HI; z++) {
     if (z === 0) continue;
+    if (z === -7) continue; // b = 0: y² = x³ is a singular cusp, not an elliptic curve
     curvesSvg += drawLevel(z);
   }
   curvesSvg += drawLevel(0);

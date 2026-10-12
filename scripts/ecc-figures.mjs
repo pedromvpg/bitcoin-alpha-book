@@ -14,7 +14,7 @@ const STROKE = {
   line: '#2563eb',
   tangent: '#7c3aed',
   point: '#111',
-  grid: '#e5e7eb',
+  grid: '#d9dde3',
   guide: '#94a3b8',
   panelTitle: '#374151',
 };
@@ -55,19 +55,6 @@ function sumDouble(x1, y1) {
   const x = lam * lam - 2 * x1;
   const y = lam * (x1 - x) - y1;
   return { x, y, lam };
-}
-
-function sampleCurve(xMin, xMax, steps) {
-  const upper = [];
-  const lower = [];
-  for (let i = 0; i <= steps; i++) {
-    const x = xMin + (i / steps) * (xMax - xMin);
-    const yu = yUpper(x);
-    if (yu == null) continue;
-    upper.push({ x, y: yu });
-    lower.push({ x, y: -yu });
-  }
-  return { upper, lower };
 }
 
 function makeProjector(xMin, xMax, yMin, yMax, width, height, pad) {
@@ -133,9 +120,9 @@ function dot(proj, x, y, r = 3.5) {
   return `<circle cx="${p.x.toFixed(2)}" cy="${p.y.toFixed(2)}" r="${r}" fill="${STROKE.point}"/>`;
 }
 
-function label(proj, x, y, text, dx = 6, dy = -6, size = 11) {
+function label(proj, x, y, text, dx = 6, dy = -6, size = 11, anchor = 'start') {
   const p = proj(x, y);
-  return `<text x="${(p.x + dx).toFixed(2)}" y="${(p.y + dy).toFixed(2)}" font-family="Basis Grotesque Mono Pro, monospace" font-size="${size}" fill="${STROKE.panelTitle}">${text}</text>`;
+  return `<text x="${(p.x + dx).toFixed(2)}" y="${(p.y + dy).toFixed(2)}" font-family="Basis Grotesque Mono Pro, monospace" font-size="${size}" font-weight="600" text-anchor="${anchor}" fill="${STROKE.panelTitle}" stroke="#ffffff" stroke-width="4" stroke-linejoin="round" paint-order="stroke fill">${text}</text>`;
 }
 
 /** Demo points — compact so constructions fit a readable zoom window */
@@ -148,148 +135,104 @@ const P_DBL = { x: 2, y: yUpper(2) };
 const R2_DBL = sumDouble(P_DBL.x, P_DBL.y); // 2P
 const RPRIME_DBL = { x: R2_DBL.x, y: -R2_DBL.y };
 
-/** Shared framing for op figures — room for labels without cropping */
-const OP_VIEW = { xMin: -3.0, xMax: 4.4, yMin: -5.2, yMax: 7.2 };
+/** x of the curve's nose (where y = 0) */
+const NOSE_X = Math.cbrt(-B);
+
+/** Subtraction demo: P − Q = P ⊕ (−Q) lands at (1.08, 2.88), inside the view */
+const P_SUB = { x: -1.8, y: yUpper(-1.8) };
+const Q_SUB = { x: 2.6, y: yUpper(2.6) };
+
+/** Shared framing for op figures — symmetric in y so the curve's mirror reads */
+const OP_VIEW = { xMin: -2.8, xMax: 4.2, yMin: -6.8, yMax: 6.8 };
 
 
 /**
  * Stacked curve slices: y² = x³ + (7 + z) for integer z.
- * Each horizontal slice is one Weierstrass curve; z = 0 is secp256k1 (red).
- * Titles / legend live in HTML (build.js); SVG is diagram-only.
+ * Oblique projection — each slice keeps its upright shape (x right, y up) and
+ * z recedes diagonally up-right, so every curve reads as an elliptic curve.
+ * z = 0 is secp256k1 (red). Titles live in HTML (build.js).
  */
 function curveSpatialFigure() {
-  const W = 720, H = 400;
+  const W = 770, H = 700;
+  const SC = 34;                 // px per unit in x and y
+  const KX = 10, KY = -7;       // px offset per unit of z (depth up-right)
+  const CX = 300, CY = 350;      // screen position of the origin at z = 0
+  const toSc = (x, y, z) => ({ x: CX + x * SC + z * KX, y: CY - y * SC + z * KY });
 
-  const PHI = Math.PI * 0.18;
-  const EPS = Math.PI * 0.24;
-  const cPhi = Math.cos(PHI), sPhi = Math.sin(PHI);
-  const cEps = Math.cos(EPS), sEps = Math.sin(EPS);
-
-  const SC = 22, CX = W * 0.44, CY = H * 0.56;
-
-  function toSc(x, y, z) {
-    const r = x * sPhi + y * cPhi;
-    return {
-      x: CX + (x * cPhi - y * sPhi) * SC,
-      y: CY - (r * sEps + z * cEps) * SC,
-    };
-  }
-
-  const X_MAX = 5.0, Y_CLIP = 5.0, STEPS = 320;
-  const Z_LO = -8, Z_HI = 6;
+  const X_MAX = 4.6, Y_CLIP = 8.4;
+  const Z_LO = -6, Z_HI = 6, Z_STEP = 1;
+  const F = `font-family="${FONT_MONO}"`;
 
   // Cool below z=0 (cyan family), warm above (orange family) — same language as torus figures
   function levelStyle(z) {
-    if (z === 0) return { col: '#dc2626', w: 2.4, op: 1 };
-    const t = z < 0 ? (z - Z_LO) / (0 - Z_LO) : (z - 0) / (Z_HI - 0); // 0 far → 1 near zero
-    if (z < 0) {
-      // deep blue → ECC cyan
-      const u = 0.25 + 0.75 * t;
-      return {
-        col: `rgb(${Math.round(6 + 0 * u)}, ${Math.round(80 + 102 * u)}, ${Math.round(140 + 72 * u)})`,
-        w: 0.7 + 0.7 * t,
-        op: 0.28 + 0.62 * t,
-      };
-    }
-    const u = 1 - t; // near zero brighter
-    return {
-      col: `rgb(${Math.round(180 + 69 * (1 - u))}, ${Math.round(90 + 25 * (1 - u))}, ${Math.round(20 + 5 * (1 - u))})`,
-      w: 0.7 + 0.7 * (1 - u),
-      op: 0.28 + 0.62 * (1 - u),
-    };
+    if (z === 0) return { col: '#dc2626', w: 3.0, op: 1 };
+    const near = z < 0 ? (z - Z_LO) / (0 - Z_LO) : (Z_HI - z) / Z_HI; // 1 next to z = 0
+    const col = z < 0 ? ECC_CYAN : ECC_ORANGE;
+    return { col, w: 1.1 + 0.6 * near, op: 0.35 + 0.55 * near };
   }
 
   function drawLevel(z) {
     const { col, w, op } = levelStyle(z);
-    const b = 7 + z;
-    const xMin = Math.max(-2.7, Math.cbrt(-b) + (b <= 0 ? 0.08 : 0));
-    const upper = [], lower = [];
-    for (let i = 0; i <= STEPS; i++) {
-      const x = xMin + (i / STEPS) * (X_MAX - xMin);
-      const y2 = x * x * x + b;
-      if (y2 < 0) continue;
-      const y = Math.sqrt(y2);
-      if (y > Y_CLIP) continue;
-      upper.push(toSc(x, y, z));
-      lower.push(toSc(x, -y, z));
-    }
-    if (upper.length < 2) return '';
-    const up = 'M ' + upper.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L ');
-    const lo = 'M ' + lower.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' L ');
-    return `<path d="${up}" fill="none" stroke="${col}" stroke-width="${w.toFixed(2)}" opacity="${op.toFixed(2)}" stroke-linejoin="round"${VEC}/>` +
-           `<path d="${lo}" fill="none" stroke="${col}" stroke-width="${w.toFixed(2)}" opacity="${op.toFixed(2)}" stroke-linejoin="round"${VEC}/>`;
+    const pts = curveLoopPoints(7 + z, X_MAX, Y_CLIP, 200);
+    if (pts.length < 2) return '';
+    const d = 'M ' + pts.map((p) => {
+      const q = toSc(p.x, p.y, z);
+      return `${q.x.toFixed(1)},${q.y.toFixed(1)}`;
+    }).join(' L ');
+    return `<path d="${d}" fill="none" stroke="${col}" stroke-width="${w.toFixed(2)}" opacity="${op.toFixed(2)}" stroke-linejoin="round"${VEC}/>`;
   }
 
-  // Painter order: far (low z) → near (high z), secp256k1 last
+  function seg(a, b, col, sw, extra = '') {
+    return `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${col}" stroke-width="${sw}"${extra}${VEC}/>`;
+  }
+
+  // Painter order: far (high z, drawn up-right/behind) → near; secp256k1 drawn last
   let curvesSvg = '';
-  for (let z = Z_LO; z <= Z_HI; z++) {
+  // z ≥ −6 keeps b = 7 + z > 0, so the singular cusp b = 0 (z = −7) never appears
+  for (let z = Z_HI; z >= Z_LO; z -= Z_STEP) {
     if (z === 0) continue;
-    if (z === -7) continue; // b = 0: y² = x³ is a singular cusp, not an elliptic curve
     curvesSvg += drawLevel(z);
   }
-  curvesSvg += drawLevel(0);
 
-  function seg(x1, y1, z1, x2, y2, z2, col = '#94a3b8', sw = 0.9, dash = '', marker = '') {
-    const a = toSc(x1, y1, z1), b = toSc(x2, y2, z2);
-    const da = dash ? ` stroke-dasharray="${dash}"` : '';
-    const mk = marker ? ` marker-end="url(#${marker})"` : '';
-    return `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${col}" stroke-width="${sw}"${da}${mk}${VEC}/>`;
-  }
-  function lbl(x, y, z, txt, dx, dy) {
-    const p = toSc(x, y, z);
-    return `<text x="${(p.x + dx).toFixed(1)}" y="${(p.y + dy).toFixed(1)}" font-family="${FONT_MONO}" font-size="11" font-style="italic" fill="${STROKE.axisStrong}">${txt}</text>`;
-  }
+  // z = 0 frame — makes the red slice read as "the" chart
+  const fr = [toSc(-2.4, -Y_CLIP - 0.3, 0), toSc(X_MAX + 0.3, -Y_CLIP - 0.3, 0), toSc(X_MAX + 0.3, Y_CLIP + 0.3, 0), toSc(-2.4, Y_CLIP + 0.3, 0)];
+  const frame = `<polygon points="${fr.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')}" fill="rgba(220,38,38,0.05)" stroke="#dc2626" stroke-width="0.9" opacity="0.7"${VEC}/>`;
 
-  // z = 0 plane (parallelogram) — makes the red slice read as “the” chart
-  const planeCorners = [
-    toSc(-2.4, -4.6, 0),
-    toSc(5.0, -4.6, 0),
-    toSc(5.0, 4.6, 0),
-    toSc(-2.4, 4.6, 0),
-  ];
-  const planePts = planeCorners.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  const plane = `
-    <polygon points="${planePts}" fill="rgba(220,38,38,0.06)" stroke="#dc2626" stroke-width="0.7" opacity="0.85"${VEC}/>
-    ${seg(-2.4, 0, 0, 5.0, 0, 0, '#dc2626', 0.55, '4,3')}
-    ${lbl(5.05, 0, 0, 'z = 0', 6, -2)}`;
-
-  const X0 = -2.6, Y0 = 5.0, Z0 = -9;
+  const arrow = (id) => `<marker id="${id}" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><polygon points="0 0.5, 9 4.5, 0 8.5" fill="${STROKE.axisStrong}"/></marker>`;
+  const o = toSc(0, 0, 0);
+  const xEnd = toSc(X_MAX + 0.9, 0, 0);
+  const yEnd = toSc(0, Y_CLIP + 1.0, 0);
+  const zEnd = toSc(0, 0, Z_HI + 5);
+  const zStart = toSc(0, 0, Z_LO - 3);
   const axes = `
-    <defs>
-      <marker id="ecc-arr-cs-x" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-        <polygon points="0 0.5, 6 3, 0 5.5" fill="${STROKE.axisStrong}"/>
-      </marker>
-      <marker id="ecc-arr-cs-y" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-        <polygon points="0 0.5, 6 3, 0 5.5" fill="${STROKE.axisStrong}"/>
-      </marker>
-      <marker id="ecc-arr-cs-z" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-        <polygon points="0 0.5, 6 3, 0 5.5" fill="${STROKE.axisStrong}"/>
-      </marker>
-    </defs>
-    ${seg(X0, 0, Z0, 5.4, 0, Z0, STROKE.axisStrong, 1.0, '', 'ecc-arr-cs-x')}
-    ${seg(X0, -Y0, Z0, X0, Y0, Z0, STROKE.axisStrong, 1.0, '', 'ecc-arr-cs-y')}
-    ${seg(X0, 0, Z0, X0, 0, 7.2, STROKE.axisStrong, 1.0, '', 'ecc-arr-cs-z')}
-    ${lbl(5.55, 0, Z0, 'x', 0, 4)}
-    ${lbl(X0, Y0 + 0.25, Z0, 'y', -2, 4)}
-    ${lbl(X0, 0, 7.5, 'z', 5, 0)}`;
+    <defs>${arrow('ecc-arr-cs')}</defs>
+    ${seg(toSc(-2.6, 0, 0), xEnd, STROKE.axisStrong, 1.2, ' marker-end="url(#ecc-arr-cs)"')}
+    ${seg(toSc(0, -Y_CLIP - 0.6, 0), yEnd, STROKE.axisStrong, 1.2, ' marker-end="url(#ecc-arr-cs)"')}
+    ${seg(zStart, zEnd, STROKE.axisStrong, 1.2, ' marker-end="url(#ecc-arr-cs)"')}
+    <text x="${(xEnd.x + 8).toFixed(1)}" y="${(xEnd.y + 6).toFixed(1)}" ${F} font-size="18" font-style="italic" fill="${STROKE.panelTitle}">x</text>
+    <text x="${(yEnd.x - 18).toFixed(1)}" y="${(yEnd.y + 6).toFixed(1)}" ${F} font-size="18" font-style="italic" fill="${STROKE.panelTitle}">y</text>
+    <text x="${(zEnd.x + 8).toFixed(1)}" y="${(zEnd.y + 2).toFixed(1)}" ${F} font-size="18" font-style="italic" fill="${STROKE.panelTitle}">z</text>`;
 
-  // Tiny in-figure key (no floating white box) — full legend is HTML
-  const keyX = W - 148, keyY = 22;
-  const miniKey = `
-    <line x1="${keyX}" y1="${keyY}" x2="${keyX + 18}" y2="${keyY}" stroke="#dc2626" stroke-width="2.4"${VEC}/>
-    <text x="${keyX + 24}" y="${keyY + 3.5}" font-family="${FONT_MONO}" font-size="9.5" fill="#374151">secp256k1</text>
-    <line x1="${keyX}" y1="${keyY + 16}" x2="${keyX + 18}" y2="${keyY + 16}" stroke="${ECC_CYAN}" stroke-width="1.5"${VEC}/>
-    <text x="${keyX + 24}" y="${keyY + 19.5}" font-family="${FONT_MONO}" font-size="9.5" fill="#6b7280">z &lt; 0</text>
-    <line x1="${keyX}" y1="${keyY + 32}" x2="${keyX + 18}" y2="${keyY + 32}" stroke="${ECC_ORANGE}" stroke-width="1.5"${VEC}/>
-    <text x="${keyX + 24}" y="${keyY + 35.5}" font-family="${FONT_MONO}" font-size="9.5" fill="#6b7280">z &gt; 0</text>`;
+  const zLbl = toSc(X_MAX + 0.3, -Y_CLIP - 0.3, 0);
+  const planeLabel = `<text x="${(zLbl.x + 8).toFixed(1)}" y="${(zLbl.y + 4).toFixed(1)}" ${F} font-size="15" fill="#dc2626">z = 0</text>`;
+
+  const keyX = 520, keyY = 60;
+  const keyRow = (i, col, sw, txt, fill) => `
+    <line x1="${keyX}" y1="${keyY + i * 32}" x2="${keyX + 30}" y2="${keyY + i * 32}" stroke="${col}" stroke-width="${sw}"${VEC}/>
+    <text x="${keyX + 40}" y="${keyY + i * 32 + 6}" ${F} font-size="19" fill="${fill}">${txt}</text>`;
+  const key = keyRow(0, '#dc2626', 3, 'secp256k1 (b = 7)', '#374151')
+    + keyRow(1, ECC_CYAN, 2, 'z &lt; 0 (b &lt; 7)', '#4b5563')
+    + keyRow(2, ECC_ORANGE, 2, 'z &gt; 0 (b &gt; 7)', '#4b5563');
 
   const body = `
     <rect width="${W}" height="${H}" fill="#ffffff"/>
     <g stroke-linecap="round" stroke-linejoin="round">
-      ${axes}
-      ${plane}
       ${curvesSvg}
-      ${miniKey}
+      ${frame}
+      ${axes}
+      ${drawLevel(0)}
+      ${planeLabel}
+      ${key}
     </g>`;
 
   return svgWrap(W, H, body);
@@ -322,40 +265,46 @@ function toyCurvePoints(p = TOY_P) {
   return pts;
 }
 
-/** One F_p scatter panel at origin (ox, oy); plot is size×size. */
+/** "𝔽" with a real subscript (Unicode subscript digits fall back to tiny glyphs) */
+function fieldLabel(p) {
+  return `𝔽<tspan baseline-shift="sub" font-size="70%">${p}</tspan>`;
+}
+
+/**
+ * One F_p scatter panel at origin (ox, oy); plot is size×size.
+ * Integer coordinates 0…p−1 sit on grid intersections; the orange midline is
+ * y = p/2, the mirror for negation (x, y) ↦ (x, p − y).
+ */
 function finiteFieldPanelSvg(p, ox, oy, size, {
-  showGrid = true,
   gridStep = 1,
   tickVals = null,
   dotR = null,
   title = '',
   subtitle = '',
+  font = 13,
 } = {}) {
   const pts = toyCurvePoints(p);
-  const cell = size / p;
-  const r = dotR ?? Math.max(0.55, Math.min(3.4, cell * 0.38));
+  const inset = size / (p + 1) / 2 + 2; // keep edge dots off the frame
+  const cell = (size - 2 * inset) / (p - 1);
+  const r = dotR ?? Math.max(0.55, Math.min(4, cell * 0.3));
   const toPx = (xv, yv) => ({
-    x: ox + xv * cell + cell / 2,
-    y: oy + (p - 1 - yv) * cell + cell / 2,
+    x: ox + inset + xv * cell,
+    y: oy + size - inset - yv * cell,
   });
+  const F = `font-family="${FONT_MONO}"`;
 
   let grid = '';
-  if (showGrid) {
-    const step = Math.max(1, gridStep | 0);
-    for (let i = 0; i <= p; i += step) {
-      const x = ox + i * cell;
-      const y = oy + i * cell;
-      grid += `<line x1="${x.toFixed(2)}" y1="${oy}" x2="${x.toFixed(2)}" y2="${(oy + size).toFixed(2)}" stroke="${STROKE.grid}" stroke-width="0.5"${VEC}/>`;
-      grid += `<line x1="${ox}" y1="${y.toFixed(2)}" x2="${(ox + size).toFixed(2)}" y2="${y.toFixed(2)}" stroke="${STROKE.grid}" stroke-width="0.5"${VEC}/>`;
-    }
-    // Always draw outer frame
-    grid += `<rect x="${ox}" y="${oy}" width="${size}" height="${size}" fill="none" stroke="${STROKE.axisStrong}" stroke-width="0.9"${VEC}/>`;
-  } else {
-    grid += `<rect x="${ox}" y="${oy}" width="${size}" height="${size}" fill="none" stroke="${STROKE.axisStrong}" stroke-width="0.9"${VEC}/>`;
+  const step = Math.max(1, gridStep | 0);
+  for (let i = 0; i < p; i += step) {
+    const a = toPx(i, 0);
+    grid += `<line x1="${a.x.toFixed(2)}" y1="${oy}" x2="${a.x.toFixed(2)}" y2="${oy + size}" stroke="${STROKE.grid}" stroke-width="0.6"${VEC}/>`;
+    const c = toPx(0, i);
+    grid += `<line x1="${ox}" y1="${c.y.toFixed(2)}" x2="${ox + size}" y2="${c.y.toFixed(2)}" stroke="${STROKE.grid}" stroke-width="0.6"${VEC}/>`;
   }
+  grid += `<rect x="${ox}" y="${oy}" width="${size}" height="${size}" fill="none" stroke="${STROKE.axisStrong}" stroke-width="1"${VEC}/>`;
 
-  const midY = oy + (p / 2) * cell;
-  const midLine = `<line x1="${ox}" y1="${midY.toFixed(2)}" x2="${(ox + size).toFixed(2)}" y2="${midY.toFixed(2)}" stroke="${ECC_ORANGE}" stroke-width="1.1" stroke-dasharray="3 2" opacity="0.95"${VEC}/>`;
+  const midY = toPx(0, p / 2).y;
+  const midLine = `<line x1="${ox}" y1="${midY.toFixed(2)}" x2="${ox + size}" y2="${midY.toFixed(2)}" stroke="${ECC_ORANGE}" stroke-width="1.4"${VEC}/>`;
 
   let dots = '';
   for (const q of pts) {
@@ -367,18 +316,17 @@ function finiteFieldPanelSvg(p, ox, oy, size, {
   if (tickVals && tickVals.length) {
     for (const t of tickVals) {
       if (t < 0 || t >= p) continue;
-      const px = ox + t * cell + cell / 2;
-      const py = oy + (p - 1 - t) * cell + cell / 2;
-      ticks += `<text x="${px.toFixed(1)}" y="${(oy + size + 12).toFixed(1)}" font-family="${FONT_MONO}" font-size="8" text-anchor="middle" fill="${STROKE.axisStrong}">${t}</text>`;
-      ticks += `<text x="${(ox - 5).toFixed(1)}" y="${(py + 3).toFixed(1)}" font-family="${FONT_MONO}" font-size="8" text-anchor="end" fill="${STROKE.axisStrong}">${t}</text>`;
+      const c = toPx(t, t);
+      ticks += `<text x="${c.x.toFixed(1)}" y="${(oy + size + font + 4).toFixed(1)}" ${F} font-size="${font}" text-anchor="middle" fill="${STROKE.axisStrong}">${t}</text>`;
+      ticks += `<text x="${(ox - 6).toFixed(1)}" y="${(c.y + font * 0.35).toFixed(1)}" ${F} font-size="${font}" text-anchor="end" fill="${STROKE.axisStrong}">${t}</text>`;
     }
   }
 
   const cap = title
-    ? `<text x="${(ox + size / 2).toFixed(1)}" y="${(oy - 8).toFixed(1)}" font-family="${FONT_MONO}" font-size="10" font-weight="600" text-anchor="middle" fill="${STROKE.panelTitle}">${title}</text>`
+    ? `<text x="${(ox + size / 2).toFixed(1)}" y="${(oy - 12).toFixed(1)}" ${F} font-size="${font + 4}" font-weight="600" text-anchor="middle" fill="${STROKE.panelTitle}">${title}</text>`
     : '';
   const sub = subtitle
-    ? `<text x="${(ox + size / 2).toFixed(1)}" y="${(oy + size + (tickVals ? 26 : 14)).toFixed(1)}" font-family="${FONT_MONO}" font-size="9" text-anchor="middle" fill="${STROKE.axisStrong}">${subtitle}</text>`
+    ? `<text x="${(ox + size / 2).toFixed(1)}" y="${(oy + size + (tickVals ? 2 * font + 12 : font + 6)).toFixed(1)}" ${F} font-size="${font}" text-anchor="middle" fill="${STROKE.axisStrong}">${subtitle}</text>`
     : '';
 
   return `${cap}${grid}${midLine}${dots}${ticks}${sub}`;
@@ -386,24 +334,27 @@ function finiteFieldPanelSvg(p, ox, oy, size, {
 
 function finiteFieldToyFigure() {
   const p = TOY_P;
-  const cell = 16;
-  const leftPad = 36;
-  const topPad = 12;
-  const rightPad = 58;
-  const plot = p * cell;
+  const plot = 400;
+  const leftPad = 58;
+  const topPad = 14;
+  const rightPad = 96;
   const w = leftPad + plot + rightPad;
-  const h = topPad + plot + 36;
+  const h = topPad + plot + 58;
+  const F = `font-family="${FONT_MONO}"`;
+  const inset = plot / (p + 1) / 2 + 2;
+  const midY = topPad + plot - inset - (p / 2) * ((plot - 2 * inset) / (p - 1));
 
   const body = `
+  <rect width="${w}" height="${h}" fill="#ffffff"/>
   <g stroke-linecap="round">
     ${finiteFieldPanelSvg(p, leftPad, topPad, plot, {
-      showGrid: true,
-      tickVals: [0, 8, 16],
-      dotR: 3.6,
+      tickVals: [0, 4, 8, 12, 16],
+      dotR: 4,
+      font: 16,
     })}
-    <text x="${leftPad + plot + 6}" y="${(topPad + (p / 2) * cell + 4).toFixed(1)}" font-family="${FONT_MONO}" font-size="10" fill="${ECC_ORANGE}">y = p/2</text>
-    <text x="${leftPad + plot / 2}" y="${topPad + plot + 30}" font-family="${FONT_MONO}" font-size="10" font-style="italic" text-anchor="middle" fill="${STROKE.axisStrong}">x</text>
-    <text x="${leftPad - 22}" y="${topPad + plot / 2}" font-family="${FONT_MONO}" font-size="10" font-style="italic" text-anchor="middle" fill="${STROKE.axisStrong}">y</text>
+    <text x="${leftPad + plot + 10}" y="${(midY + 6).toFixed(1)}" ${F} font-size="17" fill="${ECC_ORANGE}">y = p/2</text>
+    <text x="${leftPad + plot / 2}" y="${topPad + plot + 50}" ${F} font-size="18" font-style="italic" text-anchor="middle" fill="${STROKE.panelTitle}">x</text>
+    <text x="${leftPad - 44}" y="${topPad + plot / 2 + 6}" ${F} font-size="18" font-style="italic" text-anchor="middle" fill="${STROKE.panelTitle}">y</text>
   </g>`;
 
   return svgWrap(w, h, body);
@@ -414,42 +365,46 @@ function finiteFieldToyFigure() {
  * Same curve y² = x³ + 7; orange midline = negation mirror.
  */
 function finiteFieldScaleFigure() {
-  const W = 740;
-  const H = 290;
-  const plot = 200;
-  const top = 28;
-  const gap = 28;
-  const x0 = 36;
+  const plot = 236;
+  const top = 40;
+  const gap = 96;
+  const x0 = 46;
   const x1 = x0 + plot + gap;
   const x2 = x1 + plot + gap;
+  const W = x2 + plot + 34;
+  const H = top + plot + 76;
+  const FONT = 19;
+  const F = `font-family="${FONT_MONO}"`;
 
   const n17 = toyCurvePoints(17).length;
   const n251 = toyCurvePoints(251).length;
 
   const panelA = finiteFieldPanelSvg(17, x0, top, plot, {
-    showGrid: true,
     tickVals: [0, 8, 16],
     dotR: 3.2,
-    title: '𝔽₁₇',
-    subtitle: `${n17} curve points`,
+    title: fieldLabel(17),
+    subtitle: `${n17} points`,
+    font: FONT,
   });
 
   const panelB = finiteFieldPanelSvg(251, x1, top, plot, {
-    showGrid: true,
     gridStep: 25,
     tickVals: [0, 125, 250],
-    dotR: 1.05,
-    title: '𝔽₂₅₁',
-    subtitle: `${n251} curve points`,
+    dotR: 1.3,
+    title: fieldLabel(251),
+    subtitle: `${n251} points`,
+    font: FONT,
   });
 
   // Panel C: fake a near-continuous field (secp256k1 cannot be plotted literally).
-  // Seeded uniform scatter + mirror across midline — avoid lattice/hash Moire.
+  // Seeded uniform scatter mirrored across the midline. Dots are tiny filled
+  // squares batched into a few <path>s: zero-length round-cap strokes are
+  // dropped by Chrome's PDF backend, and one <circle> each bloats the HTML.
   const ox = x2;
   const oy = top;
   const midY = oy + plot / 2;
   const pad = 2;
-  const seam = 1.4; // keep a thin clear band so the orange midline reads
+  const seam = 2;
   let seed = 0x9e3779b9;
   const rand = () => {
     seed = (seed + 0x6d2b79f5) | 0;
@@ -457,46 +412,57 @@ function finiteFieldScaleFigure() {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  // Dots are zero-length round-cap strokes batched into a few <path>s (bucketed by
-  // size/opacity) — far fewer bytes than one <circle> each. 28k <circle>s once made
-  // a 16MB HTML that stalled Paged.js; this keeps ~28k dots to a few hundred KB.
-  const nDots = 14000; // upper half; mirrored → ~28000 visible
-  const R_BUCKETS = [0.62, 0.86, 1.1]; // stroke widths (dot diameters)
-  const O_BUCKETS = [0.62, 0.78, 0.94];
-  const buckets = R_BUCKETS.map(() => O_BUCKETS.map(() => []));
+  // Coordinates are written in tenths of a px inside a scale(0.1) group with
+  // relative moves, so ~50k dots stay well under 1 MB of HTML.
+  const nDots = 25000; // upper half; mirrored → ~50000 visible
+  const SIZES = [5, 7, 9]; // tenths of a px
+  const OPAC = [0.55, 0.75, 0.95];
+  const buckets = SIZES.map(() => OPAC.map(() => ({ d: [], cx: 0, cy: 0 })));
+  const put = (b, x, y, sz) => {
+    const X = Math.round(x * 10 - sz / 2);
+    const Y = Math.round(y * 10 - sz / 2);
+    b.d.push(`m${X - b.cx} ${Y - b.cy}h${sz}v${sz}h-${sz}z`);
+    b.cx = X; // after z the current point is back at the subpath start
+    b.cy = Y;
+  };
   for (let k = 0; k < nDots; k++) {
     const x = ox + pad + rand() * (plot - 2 * pad);
     const yTop = oy + pad + rand() * (midY - oy - pad - seam);
     const yBot = oy + plot - (yTop - oy);
-    const oi = Math.floor(rand() * O_BUCKETS.length);
-    const ri = Math.floor(rand() * R_BUCKETS.length);
-    const xs = x.toFixed(1);
-    buckets[ri][oi].push(`M${xs} ${yTop.toFixed(1)}h0M${xs} ${yBot.toFixed(1)}h0`);
+    const b = buckets[Math.floor(rand() * SIZES.length)][Math.floor(rand() * OPAC.length)];
+    const sz = SIZES[buckets.findIndex((row) => row.includes(b))];
+    put(b, x, yTop, sz);
+    put(b, x, yBot, sz);
   }
-  let stipple = '';
-  R_BUCKETS.forEach((w, ri) => O_BUCKETS.forEach((op, oi) => {
-    stipple += `<path d="${buckets[ri][oi].join('')}" fill="none" stroke="${STROKE.curve}" stroke-width="${w}" stroke-linecap="round" opacity="${op}"/>`;
+  let stipple = '<g transform="scale(0.1)">';
+  buckets.forEach((row) => row.forEach((b, oi) => {
+    stipple += `<path d="M0 0${b.d.join('')}" fill="${STROKE.curve}" opacity="${OPAC[oi]}"/>`;
   }));
+  stipple += '</g>';
   const clipId = 'ff-scale-secp-clip';
   const panelC = `
     <defs>
       <clipPath id="${clipId}"><rect x="${ox}" y="${oy}" width="${plot}" height="${plot}"/></clipPath>
     </defs>
-    <text x="${(ox + plot / 2).toFixed(1)}" y="${(oy - 8).toFixed(1)}" font-family="${FONT_MONO}" font-size="10" font-weight="600" text-anchor="middle" fill="${STROKE.panelTitle}">secp256k1</text>
-    <rect x="${ox}" y="${oy}" width="${plot}" height="${plot}" fill="#fff" stroke="${STROKE.axisStrong}" stroke-width="0.9"${VEC}/>
+    <text x="${(ox + plot / 2).toFixed(1)}" y="${(oy - 12).toFixed(1)}" ${F} font-size="${FONT + 4}" font-weight="600" text-anchor="middle" fill="${STROKE.panelTitle}">secp256k1</text>
+    <rect x="${ox}" y="${oy}" width="${plot}" height="${plot}" fill="#fff"/>
     <g clip-path="url(#${clipId})">${stipple}</g>
-    <line x1="${ox + 1}" y1="${midY}" x2="${ox + plot - 1}" y2="${midY}" stroke="#fff" stroke-width="2.4"${VEC}/>
-    <line x1="${ox + 1}" y1="${midY}" x2="${ox + plot - 1}" y2="${midY}" stroke="${ECC_ORANGE}" stroke-width="1.2" stroke-dasharray="3 2"${VEC}/>
-    <text x="${(ox + plot / 2).toFixed(1)}" y="${(oy + plot + 14).toFixed(1)}" font-family="${FONT_MONO}" font-size="9" text-anchor="middle" fill="${STROKE.axisStrong}">p ≈ 2²⁵⁶ · ~10⁷⁷ pts (schematic)</text>`;
+    <rect x="${ox}" y="${oy}" width="${plot}" height="${plot}" fill="none" stroke="${STROKE.axisStrong}" stroke-width="1"${VEC}/>
+    <line x1="${ox + 1}" y1="${midY}" x2="${ox + plot - 1}" y2="${midY}" stroke="#fff" stroke-width="3"${VEC}/>
+    <line x1="${ox + 1}" y1="${midY}" x2="${ox + plot - 1}" y2="${midY}" stroke="${ECC_ORANGE}" stroke-width="1.4"${VEC}/>
+    <text x="${(ox + plot / 2).toFixed(1)}" y="${(oy + plot + FONT + 4).toFixed(1)}" ${F} font-size="${FONT}" text-anchor="middle" fill="${STROKE.axisStrong}">p ≈ 2<tspan baseline-shift="super" font-size="70%">256</tspan></text>
+    <text x="${(ox + plot / 2).toFixed(1)}" y="${(oy + plot + 2 * FONT + 12).toFixed(1)}" ${F} font-size="${FONT}" text-anchor="middle" fill="${STROKE.axisStrong}">~10<tspan baseline-shift="super" font-size="70%">77</tspan> points (schematic)</text>`;
 
+  // Arrows sit in the gaps, clear of panel B's left-hand tick labels
+  const ay = top + plot / 2;
   const arrows = `
     <defs>
-      <marker id="ff-scale-arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-        <polygon points="0 0.5, 6 3, 0 5.5" fill="${STROKE.axisStrong}"/>
+      <marker id="ff-scale-arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+        <polygon points="0 0.5, 9 4.5, 0 8.5" fill="${STROKE.axisStrong}"/>
       </marker>
     </defs>
-    <line x1="${x0 + plot + 6}" y1="${top + plot / 2}" x2="${x1 - 6}" y2="${top + plot / 2}" stroke="${STROKE.axis}" stroke-width="1.1" marker-end="url(#ff-scale-arr)"${VEC}/>
-    <line x1="${x1 + plot + 6}" y1="${top + plot / 2}" x2="${x2 - 6}" y2="${top + plot / 2}" stroke="${STROKE.axis}" stroke-width="1.1" marker-end="url(#ff-scale-arr)"${VEC}/>`;
+    <line x1="${x0 + plot + 6}" y1="${ay}" x2="${x1 - 52}" y2="${ay}" stroke="${STROKE.axisStrong}" stroke-width="1.4" marker-end="url(#ff-scale-arr)"${VEC}/>
+    <line x1="${x1 + plot + 8}" y1="${ay}" x2="${x2 - 8}" y2="${ay}" stroke="${STROKE.axisStrong}" stroke-width="1.4" marker-end="url(#ff-scale-arr)"${VEC}/>`;
 
   const body = `
     <rect width="${W}" height="${H}" fill="#ffffff"/>
@@ -510,21 +476,30 @@ function finiteFieldScaleFigure() {
   return svgWrap(W, H, body);
 }
 
-function reflectionGuide(proj, x, yFrom, yTo, suffix) {
+function reflectionGuide(proj, x, yFrom, yTo, suffix, { labelSide = 'left', size = 11, labelX = null } = {}) {
   const p1 = proj(x, yFrom);
   const p2 = proj(x, yTo);
-  const xMid = (p1.x + p2.x) / 2;
-  const yTop = Math.min(p1.y, p2.y) - 2;
+  // Stop short of both dots so the arrowhead never sits on a point
+  const dir = Math.sign(p2.y - p1.y) || 1;
+  const yA = p1.y + dir * 9;
+  const yB = p2.y - dir * 11;
+  const yMid = (p1.y + p2.y) / 2;
+  const left = labelSide === 'left';
+  // labelX (data units) lets a label sit clear of the curve, e.g. left of the nose
+  const lx = labelX != null ? proj(labelX, 0).x : p1.x + (left ? -16 : 16);
   return `
     <defs>
-      <marker id="ecc-arrow-${suffix}" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
-        <polygon points="0 0, 5 2.5, 0 5" fill="${ECC_ORANGE}"/>
+      <marker id="ecc-arrow-${suffix}" markerWidth="7" markerHeight="7" refX="5.5" refY="3.5" orient="auto" markerUnits="userSpaceOnUse">
+        <polygon points="0 0.5, 7 3.5, 0 6.5" fill="${ECC_ORANGE}"/>
       </marker>
     </defs>
-    <path d="M ${p1.x.toFixed(2)} ${p1.y.toFixed(2)} L ${p2.x.toFixed(2)} ${p2.y.toFixed(2)}"
-      stroke="${ECC_ORANGE}" stroke-width="1.4" fill="none" stroke-dasharray="3 3" marker-end="url(#ecc-arrow-${suffix})"${VEC}/>
-    <text x="${(xMid + 8).toFixed(2)}" y="${yTop.toFixed(2)}" font-family="${FONT_MONO}" font-size="9.5" fill="${ECC_ORANGE}">reflect</text>`;
+    <path d="M ${p1.x.toFixed(2)} ${yA.toFixed(2)} L ${p2.x.toFixed(2)} ${yB.toFixed(2)}"
+      stroke="${ECC_ORANGE}" stroke-width="1.6" fill="none" marker-end="url(#ecc-arrow-${suffix})"${VEC}/>
+    <text x="${lx.toFixed(2)}" y="${(yMid - 10).toFixed(2)}" font-family="${FONT_MONO}" font-size="${size}" text-anchor="${left ? 'end' : 'start'}" fill="${ECC_ORANGE}" ${HALO}>reflect</text>`;
 }
+
+/** White outline behind text so labels stay legible where they meet strokes */
+const HALO = 'stroke="#ffffff" stroke-width="4" stroke-linejoin="round" paint-order="stroke fill"';
 
 /** Clip an infinite-ish line segment to the data view (keeps strokes inside the plot). */
 function clipSegToView(x1, y1, x2, y2, view) {
@@ -559,144 +534,112 @@ function clipSegToView(x1, y1, x2, y2, view) {
   return null;
 }
 
+/** Full line through (x, y) with slope lam, clipped to the view */
+function slopeLine(proj, x, y, lam, view, color, sw = 1.6) {
+  const span = 50;
+  const seg = clipSegToView(x - span, y - lam * span, x + span, y + lam * span, view);
+  if (!seg) return '';
+  return `<path d="${linePath(proj, seg.a.x, seg.a.y, seg.b.x, seg.b.y)}" stroke="${color}" stroke-width="${sw}" fill="none"${VEC}/>`;
+}
+
+/**
+ * y² = x³ + b as ONE continuous path: lower branch (far → nose), through the
+ * exact root (∛−b, 0), then upper branch (nose → far). Samples cluster near the
+ * root (x = x₀ + t²·span) so the nose is smooth; |y| is clipped to yLimit.
+ */
+function curveLoopPoints(b, xLimit, yLimit, steps = 240) {
+  const x0 = Math.cbrt(-b);
+  const xTop = Math.min(xLimit, Math.cbrt(yLimit * yLimit - b));
+  if (!(xTop > x0)) return [];
+  const upper = [];
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const x = x0 + t * t * (xTop - x0);
+    upper.push({ x, y: Math.sqrt(Math.max(0, x * x * x + b)) });
+  }
+  upper[0].y = 0;
+  const lower = upper.slice(1).reverse().map((p) => ({ x: p.x, y: -p.y }));
+  return [...lower, ...upper];
+}
+
+function curvePath(proj, view, b = B) {
+  const yLim = Math.min(view.yMax, -view.yMin);
+  return pathFromPoints(proj, curveLoopPoints(b, view.xMax, yLim));
+}
+
 function curveAndAxes(proj, view, overhang = 0.35) {
   const { xMin, xMax, yMin, yMax } = view;
-  const curveX0 = Math.max(Math.cbrt(-B) + 0.02, xMin);
-  const { upper, lower } = sampleCurve(curveX0, xMax, 180);
   const x0 = proj(xMin - overhang, 0);
   const x1 = proj(xMax + overhang * 1.4, 0);
   const y0 = proj(0, yMin);
   const y1 = proj(0, yMax);
   return `
-    <line x1="${y0.x.toFixed(2)}" y1="${y0.y.toFixed(2)}" x2="${y1.x.toFixed(2)}" y2="${y1.y.toFixed(2)}" stroke="${STROKE.axisStrong}" stroke-width="1.1" fill="none"${VEC}/>
-    <line x1="${x0.x.toFixed(2)}" y1="${x0.y.toFixed(2)}" x2="${x1.x.toFixed(2)}" y2="${x1.y.toFixed(2)}" stroke="${STROKE.axisStrong}" stroke-width="1.45" fill="none"${VEC}/>
-    <path d="${pathFromPoints(proj, upper)}" stroke="${STROKE.curve}" stroke-width="1.7" fill="none"${VEC}/>
-    <path d="${pathFromPoints(proj, lower)}" stroke="${STROKE.curve}" stroke-width="1.7" fill="none"${VEC}/>
-    <text x="${(x1.x - 1).toFixed(2)}" y="${(x1.y + 13).toFixed(2)}" font-family="${FONT_MONO}" font-size="11" font-style="italic" font-weight="600" text-anchor="end" fill="${STROKE.panelTitle}">x</text>
-    <text x="${(y1.x + 7).toFixed(2)}" y="${(y1.y + 4).toFixed(2)}" font-family="${FONT_MONO}" font-size="11" font-style="italic" font-weight="600" fill="${STROKE.panelTitle}">y</text>`;
-}
-
-function pointAddFigure() {
-  const view = OP_VIEW;
-  const w = 680;
-  const h = 300;
-  const pad = 42;
-  const proj = makeProjector(view.xMin, view.xMax, view.yMin, view.yMax, w, h, pad);
-
-  // Chord through R′ and Q (contains P) — clipped so strokes stay in-frame
-  const ext = clipSegToView(
-    RPRIME_ADD.x - 1.2, RPRIME_ADD.y - R_ADD.lam * 1.2,
-    Q_ADD.x + 0.8, Q_ADD.y + R_ADD.lam * 0.8,
-    view,
-  );
-
-  const body = `
-  <g stroke-linecap="round" stroke-linejoin="round">
-    ${curveAndAxes(proj, view)}
-    ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${ECC_CYAN}" stroke-width="1.55" fill="none" stroke-dasharray="5 4"${VEC}/>` : ''}
-    ${reflectionGuide(proj, RPRIME_ADD.x, RPRIME_ADD.y, R_ADD.y, 'add')}
-    ${dot(proj, P_ADD.x, P_ADD.y, 4.5)}
-    ${dot(proj, Q_ADD.x, Q_ADD.y, 4.5)}
-    ${dot(proj, RPRIME_ADD.x, RPRIME_ADD.y, 4.5)}
-    ${dot(proj, R_ADD.x, R_ADD.y, 4.5)}
-    ${label(proj, P_ADD.x, P_ADD.y, 'P', -16, -8)}
-    ${label(proj, Q_ADD.x, Q_ADD.y, 'Q', 7, -8)}
-    ${label(proj, RPRIME_ADD.x, RPRIME_ADD.y, "R′", 8, 14)}
-    ${label(proj, R_ADD.x, R_ADD.y, 'R = P ⊕ Q', 8, -8, 10)}
-  </g>`;
-
-  return svgWrap(w, h, body);
-}
-
-function pointDoubleFigure() {
-  const view = OP_VIEW;
-  const w = 680;
-  const h = 300;
-  const pad = 42;
-  const proj = makeProjector(view.xMin, view.xMax, view.yMin, view.yMax, w, h, pad);
-
-  const { lam } = R2_DBL;
-  const ext = clipSegToView(
-    P_DBL.x - 3.2, P_DBL.y - lam * 3.2,
-    P_DBL.x + 2.4, P_DBL.y + lam * 2.4,
-    view,
-  );
-
-  const body = `
-  <g stroke-linecap="round" stroke-linejoin="round">
-    ${curveAndAxes(proj, view)}
-    ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${STROKE.tangent}" stroke-width="1.55" fill="none" stroke-dasharray="5 4"${VEC}/>` : ''}
-    ${reflectionGuide(proj, RPRIME_DBL.x, RPRIME_DBL.y, R2_DBL.y, 'dbl')}
-    ${dot(proj, P_DBL.x, P_DBL.y, 4.5)}
-    ${dot(proj, RPRIME_DBL.x, RPRIME_DBL.y, 4.5)}
-    ${dot(proj, R2_DBL.x, R2_DBL.y, 4.5)}
-    ${label(proj, P_DBL.x, P_DBL.y, 'P', -16, -8)}
-    ${label(proj, RPRIME_DBL.x, RPRIME_DBL.y, "R′", 8, 14)}
-    ${label(proj, R2_DBL.x, R2_DBL.y, '2P = P ⊕ P', 8, -8, 10)}
-  </g>`;
-
-  return svgWrap(w, h, body);
+    <line x1="${y0.x.toFixed(2)}" y1="${y0.y.toFixed(2)}" x2="${y1.x.toFixed(2)}" y2="${y1.y.toFixed(2)}" stroke="${STROKE.axis}" stroke-width="1.1" fill="none"${VEC}/>
+    <line x1="${x0.x.toFixed(2)}" y1="${x0.y.toFixed(2)}" x2="${x1.x.toFixed(2)}" y2="${x1.y.toFixed(2)}" stroke="${STROKE.axis}" stroke-width="1.1" fill="none"${VEC}/>
+    <path d="${curvePath(proj, view)}" stroke="${STROKE.curve}" stroke-width="2.2" fill="none"${VEC}/>
+    <text x="${(x1.x - 1).toFixed(2)}" y="${(x1.y + 18).toFixed(2)}" font-family="${FONT_MONO}" font-size="15" font-style="italic" font-weight="600" text-anchor="end" fill="${STROKE.panelTitle}">x</text>
+    <text x="${(y1.x + 9).toFixed(2)}" y="${(y1.y + 12).toFixed(2)}" font-family="${FONT_MONO}" font-size="15" font-style="italic" font-weight="600" fill="${STROKE.panelTitle}">y</text>`;
 }
 
 /**
  * Jimmy Song–style overview: addition, doubling, inverse → 𝒪, subtraction.
- * Small 2×2 grid of the same real curve with the essential construction in each cell.
+ * 2×2 grid of the same real curve with the essential construction in each cell.
+ * Every construction point is checked against the view at build time.
  */
 function pointOpsGridFigure() {
   const COLS = 2;
   const ROWS = 2;
-  const pw = 420;
-  const ph = 460;
-  const gapX = 96;
-  const gapY = 168;
-  const titleH = 46; // room under panel titles
-  const padTop = 8;
-  const padBot = 8;
+  const pw = 440;
+  const ph = 560;
+  const gapX = 40;
+  const gapY = 44;
+  const titleH = 34;
   const W = COLS * pw + (COLS - 1) * gapX;
-  const H = padTop + ROWS * (ph + titleH) + (ROWS - 1) * gapY + padBot;
+  const H = ROWS * (ph + titleH) + (ROWS - 1) * gapY;
   const view = OP_VIEW;
-  const pad = 30;
+  const pad = 22;
+  const LBL = 20;
+  const DOT = 5.6;
+
+  const assertInView = (name, pts) => {
+    for (const [k, p] of Object.entries(pts)) {
+      const ok = p.x > view.xMin + 0.2 && p.x < view.xMax - 0.2
+        && p.y > view.yMin + 0.2 && p.y < view.yMax - 0.2;
+      if (!ok) throw new Error(`ecc-figures: ${name} point ${k} (${p.x.toFixed(2)}, ${p.y.toFixed(2)}) is outside the view`);
+    }
+  };
 
   const panels = [
     {
       title: '(a)  Addition  P ⊕ Q',
       draw: (proj) => {
-        const ext = clipSegToView(
-          RPRIME_ADD.x - 1.0, RPRIME_ADD.y - R_ADD.lam * 1.0,
-          Q_ADD.x + 0.6, Q_ADD.y + R_ADD.lam * 0.6,
-          view,
-        );
+        assertInView('addition', { P: P_ADD, Q: Q_ADD, R: R_ADD, Rp: RPRIME_ADD });
         return `
-          ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${ECC_CYAN}" stroke-width="1.35" fill="none" stroke-dasharray="4 3"${VEC}/>` : ''}
-          ${reflectionGuide(proj, RPRIME_ADD.x, RPRIME_ADD.y, R_ADD.y, 'g-add')}
-          ${dot(proj, P_ADD.x, P_ADD.y, 5.2)}
-          ${dot(proj, Q_ADD.x, Q_ADD.y, 5.2)}
-          ${dot(proj, RPRIME_ADD.x, RPRIME_ADD.y, 5.2)}
-          ${dot(proj, R_ADD.x, R_ADD.y, 5.2)}
-          ${label(proj, P_ADD.x, P_ADD.y, 'P', -18, -8, 15)}
-          ${label(proj, Q_ADD.x, Q_ADD.y, 'Q', 8, -8, 15)}
-          ${label(proj, RPRIME_ADD.x, RPRIME_ADD.y, "R′", 8, 16, 15)}
-          ${label(proj, R_ADD.x, R_ADD.y, 'R', 8, -8, 15)}`;
+          ${slopeLine(proj, P_ADD.x, P_ADD.y, R_ADD.lam, view, ECC_CYAN)}
+          ${reflectionGuide(proj, RPRIME_ADD.x, RPRIME_ADD.y, R_ADD.y, 'g-add', { labelSide: 'left', size: 16, labelX: NOSE_X - 0.2 })}
+          ${dot(proj, P_ADD.x, P_ADD.y, DOT)}
+          ${dot(proj, Q_ADD.x, Q_ADD.y, DOT)}
+          ${dot(proj, RPRIME_ADD.x, RPRIME_ADD.y, DOT)}
+          ${dot(proj, R_ADD.x, R_ADD.y, DOT)}
+          ${label(proj, P_ADD.x, P_ADD.y, 'P', 12, 18, LBL)}
+          ${label(proj, Q_ADD.x, Q_ADD.y, 'Q', 12, 18, LBL)}
+          ${label(proj, RPRIME_ADD.x, RPRIME_ADD.y, 'R′', 10, 34, LBL)}
+          ${label(proj, R_ADD.x, R_ADD.y, 'R', -26, -8, LBL)}`;
       },
     },
     {
       title: '(b)  Doubling  2P = P ⊕ P',
       draw: (proj) => {
-        const { lam } = R2_DBL;
-        const ext = clipSegToView(
-          P_DBL.x - 3.0, P_DBL.y - lam * 3.0,
-          P_DBL.x + 2.2, P_DBL.y + lam * 2.2,
-          view,
-        );
+        assertInView('doubling', { P: P_DBL, R: R2_DBL, Rp: RPRIME_DBL });
         return `
-          ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${STROKE.tangent}" stroke-width="1.35" fill="none" stroke-dasharray="4 3"${VEC}/>` : ''}
-          ${reflectionGuide(proj, RPRIME_DBL.x, RPRIME_DBL.y, R2_DBL.y, 'g-dbl')}
-          ${dot(proj, P_DBL.x, P_DBL.y, 5.2)}
-          ${dot(proj, RPRIME_DBL.x, RPRIME_DBL.y, 5.2)}
-          ${dot(proj, R2_DBL.x, R2_DBL.y, 5.2)}
-          ${label(proj, P_DBL.x, P_DBL.y, 'P', -18, -8, 15)}
-          ${label(proj, RPRIME_DBL.x, RPRIME_DBL.y, "R′", 8, 16, 15)}
-          ${label(proj, R2_DBL.x, R2_DBL.y, '2P', 8, -8, 15)}`;
+          ${slopeLine(proj, P_DBL.x, P_DBL.y, R2_DBL.lam, view, STROKE.tangent)}
+          ${reflectionGuide(proj, RPRIME_DBL.x, RPRIME_DBL.y, R2_DBL.y, 'g-dbl', { labelSide: 'left', size: 16, labelX: NOSE_X - 0.2 })}
+          ${dot(proj, P_DBL.x, P_DBL.y, DOT)}
+          ${dot(proj, RPRIME_DBL.x, RPRIME_DBL.y, DOT)}
+          ${dot(proj, R2_DBL.x, R2_DBL.y, DOT)}
+          ${label(proj, P_DBL.x, P_DBL.y, 'P', 12, 18, LBL)}
+          ${label(proj, RPRIME_DBL.x, RPRIME_DBL.y, 'R′', 14, 7, LBL)}
+          ${label(proj, R2_DBL.x, R2_DBL.y, '2P', -36, -8, LBL)}`;
       },
     },
     {
@@ -704,43 +647,46 @@ function pointOpsGridFigure() {
       draw: (proj) => {
         const P = P_DBL;
         const nP = { x: P.x, y: -P.y };
-        const top = proj(P.x, view.yMax - 0.15);
-        const bot = proj(P.x, view.yMin + 0.15);
+        assertInView('inverse', { P, nP });
+        const top = proj(P.x, view.yMax);
+        const bot = proj(P.x, view.yMin);
         return `
-          <line x1="${top.x.toFixed(2)}" y1="${top.y.toFixed(2)}" x2="${bot.x.toFixed(2)}" y2="${bot.y.toFixed(2)}"
-            stroke="${ECC_CYAN}" stroke-width="1.35" fill="none" stroke-dasharray="4 3"${VEC}/>
-          ${dot(proj, P.x, P.y, 5.2)}
-          ${dot(proj, nP.x, nP.y, 5.2)}
-          ${label(proj, P.x, P.y, 'P', 10, -8, 15)}
-          ${label(proj, nP.x, nP.y, '−P', 10, 16, 15)}
-          <text x="${top.x.toFixed(2)}" y="${(top.y + 18).toFixed(2)}" font-family="${FONT_MONO}" font-size="16" font-weight="600" text-anchor="middle" fill="${STROKE.panelTitle}">𝒪</text>`;
+          <defs>
+            <marker id="ecc-arrow-g-inf" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto" markerUnits="userSpaceOnUse">
+              <polygon points="0 0.5, 8 4, 0 7.5" fill="${ECC_CYAN}"/>
+            </marker>
+          </defs>
+          <line x1="${bot.x.toFixed(2)}" y1="${bot.y.toFixed(2)}" x2="${top.x.toFixed(2)}" y2="${(top.y + 4).toFixed(2)}"
+            stroke="${ECC_CYAN}" stroke-width="1.6" fill="none" marker-end="url(#ecc-arrow-g-inf)"${VEC}/>
+          ${dot(proj, P.x, P.y, DOT)}
+          ${dot(proj, nP.x, nP.y, DOT)}
+          ${label(proj, P.x, P.y, 'P', 12, 20, LBL)}
+          ${label(proj, nP.x, nP.y, '−P', 12, -10, LBL)}
+          <text x="${(top.x - 12).toFixed(2)}" y="${(top.y + 18).toFixed(2)}" font-family="${FONT_MONO}" font-size="${LBL + 2}" font-weight="600" text-anchor="end" fill="${STROKE.panelTitle}" ${HALO}>𝒪</text>`;
       },
     },
     {
       title: '(d)  Subtraction  P − Q = P ⊕ (−Q)',
       draw: (proj) => {
-        const P = P_ADD;
-        const Q = Q_ADD;
+        const P = P_SUB;
+        const Q = Q_SUB;
         const nQ = { x: Q.x, y: -Q.y };
-        const S = sumDistinct(P.x, P.y, nQ.x, nQ.y);
+        const S = sumDistinct(P.x, P.y, nQ.x, nQ.y); // P ⊕ (−Q)
         const Sp = { x: S.x, y: -S.y };
-        const ext = clipSegToView(
-          Sp.x - 0.8, Sp.y - S.lam * 0.8,
-          nQ.x + 0.5, nQ.y + S.lam * 0.5,
-          view,
-        );
+        assertInView('subtraction', { P, Q, nQ, S, Sp });
         return `
-          ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${ECC_CYAN}" stroke-width="1.35" fill="none" stroke-dasharray="4 3"${VEC}/>` : ''}
-          ${reflectionGuide(proj, Sp.x, Sp.y, S.y, 'g-sub')}
-          ${dot(proj, P.x, P.y, 5.2)}
-          ${dot(proj, Q.x, Q.y, 4.4)}
-          ${dot(proj, nQ.x, nQ.y, 5.2)}
-          ${dot(proj, Sp.x, Sp.y, 5.2)}
-          ${dot(proj, S.x, S.y, 5.2)}
-          ${label(proj, P.x, P.y, 'P', -18, -8, 15)}
-          ${label(proj, Q.x, Q.y, 'Q', 8, -8, 13)}
-          ${label(proj, nQ.x, nQ.y, '−Q', 8, 16, 15)}
-          ${label(proj, S.x, S.y, 'P−Q', 8, -8, 15)}`;
+          ${slopeLine(proj, P.x, P.y, S.lam, view, ECC_CYAN)}
+          ${reflectionGuide(proj, Sp.x, Sp.y, S.y, 'g-sub', { labelSide: 'right', size: 16 })}
+          ${dot(proj, P.x, P.y, DOT)}
+          <circle cx="${proj(Q.x, Q.y).x.toFixed(2)}" cy="${proj(Q.x, Q.y).y.toFixed(2)}" r="${DOT}" fill="#ffffff" stroke="${STROKE.point}" stroke-width="1.8"/>
+          ${dot(proj, nQ.x, nQ.y, DOT)}
+          ${dot(proj, Sp.x, Sp.y, DOT)}
+          ${dot(proj, S.x, S.y, DOT)}
+          ${label(proj, P.x, P.y, 'P', -30, 16, LBL)}
+          ${label(proj, Q.x, Q.y, 'Q', 12, 6, LBL)}
+          ${label(proj, nQ.x, nQ.y, '−Q', 12, 6, LBL)}
+          ${label(proj, Sp.x, Sp.y, 'R′', -36, 26, LBL)}
+          ${label(proj, S.x, S.y, 'P − Q', 10, 26, LBL)}`;
       },
     },
   ];
@@ -750,18 +696,16 @@ function pointOpsGridFigure() {
     const col = i % COLS;
     const row = Math.floor(i / COLS);
     const ox = col * (pw + gapX);
-    const oy = padTop + row * (ph + titleH + gapY);
-    const proj = makeProjector(view.xMin, view.xMax, view.yMin, view.yMax, pw, ph, pad);
-    // Offset projector into panel
-    const base = proj;
+    const oy = row * (ph + titleH + gapY);
+    const base = makeProjector(view.xMin, view.xMax, view.yMin, view.yMax, pw, ph, pad);
     const off = (x, y) => {
       const p = base(x, y);
       return { x: p.x + ox, y: p.y + oy + titleH };
     };
     body += `
-      <text x="${(ox + pw / 2).toFixed(1)}" y="${(oy + 18).toFixed(1)}" font-family="${FONT_MONO}" font-size="15" font-weight="600" text-anchor="middle" fill="${STROKE.panelTitle}">${panel.title}</text>
+      <text x="${(ox + pw / 2).toFixed(1)}" y="${(oy + 20).toFixed(1)}" font-family="${FONT_MONO}" font-size="21" font-weight="600" text-anchor="middle" fill="${STROKE.panelTitle}">${panel.title}</text>
       <g stroke-linecap="round" stroke-linejoin="round">
-        ${curveAndAxes(off, view, 0.25)}
+        ${curveAndAxes(off, view, 0.15)}
         ${panel.draw(off)}
       </g>`;
   });
@@ -790,8 +734,8 @@ function torusFigure() {
     flatGrid += `<line x1="${FX + i * cell}" y1="${FY}" x2="${FX + i * cell}" y2="${FY + flatW}" stroke="#cbd5e1" stroke-width="0.7" opacity="0.85"${VEC}/>`;
     flatGrid += `<line x1="${FX}" y1="${FY + i * cell}" x2="${FX + flatW}" y2="${FY + i * cell}" stroke="#cbd5e1" stroke-width="0.7" opacity="0.85"${VEC}/>`;
   }
-  const aEdge = `stroke="${ECC_CYAN}" stroke-width="2.1" stroke-dasharray="4 3" fill="none"${VEC}`;
-  const bEdge = `stroke="${ECC_RED}" stroke-width="2.1" stroke-dasharray="4 3" fill="none"${VEC}`;
+  const aEdge = `stroke="${ECC_CYAN}" stroke-width="2.6" fill="none"${VEC}`;
+  const bEdge = `stroke="${ECC_RED}" stroke-width="2.6" fill="none"${VEC}`;
   flatGrid += `<line x1="${FX}" y1="${FY}" x2="${FX + flatW}" y2="${FY}" ${aEdge}/>`;
   flatGrid += `<line x1="${FX}" y1="${FY + flatW}" x2="${FX + flatW}" y2="${FY + flatW}" ${aEdge}/>`;
   flatGrid += `<line x1="${FX}" y1="${FY}" x2="${FX}" y2="${FY + flatW}" ${bEdge}/>`;
@@ -805,8 +749,8 @@ function torusFigure() {
   }
 
   const flatKey = `
-    <text x="${FX}" y="${FY + flatW + 28}" ${F} font-size="12" fill="${ECC_CYAN}" stroke="#ffffff" stroke-width="3" paint-order="stroke fill">a — top = bottom  (→ latitude)</text>
-    <text x="${FX}" y="${FY + flatW + 46}" ${F} font-size="12" fill="${ECC_RED}" stroke="#ffffff" stroke-width="3" paint-order="stroke fill">b — left = right  (→ longitude)</text>`;
+    <text x="${FX}" y="${FY + flatW + 28}" ${F} font-size="15" fill="${ECC_CYAN}" stroke="#ffffff" stroke-width="3" paint-order="stroke fill">a: top = bottom → big circle</text>
+    <text x="${FX}" y="${FY + flatW + 50}" ${F} font-size="15" fill="${ECC_RED}" stroke="#ffffff" stroke-width="3" paint-order="stroke fill">b: left = right → small circle</text>`;
 
   /* ── Arrow + RIGHT: stroke-only torus ────────────────────────────────── */
   const R = 1.55, r = 0.58;
@@ -848,7 +792,7 @@ function torusFigure() {
   dotData.sort((a, b) => a.d - b.d);
   let torusDots = '';
   let maxX = FX + flatW;
-  let maxY = FY + flatW + 56; // room for a/b key under the grid
+  let maxY = FY + flatW + 60; // room for a/b key under the grid
   let minY = FY;
   for (const pt of dotData) {
     const t = (pt.d - dMin) / span;
@@ -871,17 +815,15 @@ function torusFigure() {
 
   const AY = FY + flatW / 2;
   const midX = AX + arrowLen / 2;
-  const labelGap = 38; // clear zone so the shaft never crosses the words
   const arrow = `
     <defs>
-      <marker id="ecc-arrow-tor" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-        <polygon points="0 0.5, 6 3, 0 5.5" fill="${STROKE.axisStrong}"/>
+      <marker id="ecc-arrow-tor" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+        <polygon points="0 0.5, 9 4.5, 0 8.5" fill="${STROKE.axisStrong}"/>
       </marker>
     </defs>
-    <line x1="${AX}" y1="${AY}" x2="${(midX - labelGap).toFixed(1)}" y2="${AY}" stroke="${STROKE.axis}" stroke-width="1.25"${VEC}/>
-    <line x1="${(midX + labelGap).toFixed(1)}" y1="${AY}" x2="${AX + arrowLen}" y2="${AY}" stroke="${STROKE.axis}" stroke-width="1.25" marker-end="url(#ecc-arrow-tor)"${VEC}/>
-    <text x="${midX.toFixed(1)}" y="${(AY - 5).toFixed(1)}" ${F} font-size="10.5" text-anchor="middle" fill="${STROKE.axisStrong}" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill">identify</text>
-    <text x="${midX.toFixed(1)}" y="${(AY + 11).toFixed(1)}" ${F} font-size="10.5" text-anchor="middle" fill="${STROKE.axisStrong}" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill">both pairs</text>`;
+    <line x1="${AX}" y1="${AY}" x2="${AX + arrowLen}" y2="${AY}" stroke="${STROKE.axisStrong}" stroke-width="1.4" marker-end="url(#ecc-arrow-tor)"${VEC}/>
+    <text x="${midX.toFixed(1)}" y="${(AY - 26).toFixed(1)}" ${F} font-size="14" text-anchor="middle" fill="${STROKE.axisStrong}">identify</text>
+    <text x="${midX.toFixed(1)}" y="${(AY - 9).toFixed(1)}" ${F} font-size="14" text-anchor="middle" fill="${STROKE.axisStrong}">both pairs</text>`;
 
   const pad = 16;
   const W = Math.ceil(maxX + pad);
@@ -970,10 +912,10 @@ function strokeParametricGrid(toSc, sample, nu, nv, {
   return out;
 }
 
-function strokeHighlight(toSc, pts3, color, sw = 1.7) {
+function strokeHighlight(toSc, pts3, color, sw = 2.4) {
   const sp = spatialPath(toSc, pts3);
   if (!sp.d) return '';
-  return `<path d="${sp.d}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-dasharray="4 3" stroke-linecap="round" stroke-linejoin="round"${VEC}/>`;
+  return `<path d="${sp.d}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"${VEC}/>`;
 }
 
 function meshSquareStroke(cx, cy, scale = 26, {
@@ -1209,8 +1151,8 @@ function meshTorusStroke(cx, cy, scale = 14) {
 function planeToTorusChrome(idSuffix) {
   const F = `font-family="${FONT_MONO}"`;
   const defs = `<defs>
-    <marker id="ptt-arr-step-${idSuffix}" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
-      <polygon points="0 0.5, 6 3, 0 5.5" fill="${STROKE.axisStrong}"/>
+    <marker id="ptt-arr-step-${idSuffix}" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+      <polygon points="0 0.5, 9 4.5, 0 8.5" fill="${STROKE.axisStrong}"/>
     </marker>
   </defs>`;
   function stepArrow(x1, y1, x2, y2, label, color) {
@@ -1227,68 +1169,69 @@ function planeToTorusChrome(idSuffix) {
   return { F, defs, stepArrow };
 }
 
-/** Flat square → rolling → cylinder → bent → torus (single row, stroke camera). */
+/** Flat square → rolling → cylinder → bent → torus (3 + 2 rows, stroke camera). */
 function planeToTorusFigure() {
-  const N = 5;
-  const pw = 188;
-  const ph = 148;
-  const gapX = 14;
-  const W = N * pw + (N - 1) * gapX;
-  const H = ph;
+  const pw = 290;
+  const ph = 250;
+  const gapX = 34;
+  const gapY = 18;
+  const W = 3 * pw + 2 * gapX;
+  const H = 2 * ph + gapY;
   const { defs } = planeToTorusChrome('spatial');
   const F = `font-family="${FONT_MONO}"`;
-  const cap = `${F} font-size="10" text-anchor="middle" fill="#4b5563"`;
+  const cap = `${F} font-size="19" text-anchor="middle" fill="#374151"`;
   const ECC_RED = '#dc2626';
 
-  // Geometry high; caption sits snug under the lowest mesh stroke
-  const cellCx = (i) => i * (pw + gapX) + pw / 2;
-  const geomCy = 68;
-  const capY = 134;
+  // Row 1 holds stages 1–3; row 2 centers stages 4–5 under the gaps
+  const cells = [
+    { col: 0, row: 0 }, { col: 1, row: 0 }, { col: 2, row: 0 },
+    { col: 0.5, row: 1 }, { col: 1.5, row: 1 },
+  ];
+  const cellCx = (c) => c.col * (pw + gapX) + pw / 2;
+  const cellTop = (c) => c.row * (ph + gapY);
+  const geomDy = 110;
+  const capDy = 238;
 
   const panels = [
     {
-      scale: 34,
-      draw: (cx, cy, scale) => `
-        ${meshSquareStroke(cx, cy, scale, { aColor: ECC_CYAN, bColor: ECC_RED, rotZDeg: 90, edgeLabels: true })}
-        <text x="${cx}" y="${capY}" ${cap}>flat square</text>`,
+      scale: 58,
+      label: '1  flat square',
+      draw: (cx, cy, s) => meshSquareStroke(cx, cy, s, { aColor: ECC_CYAN, bColor: ECC_RED, rotZDeg: 90, edgeLabels: true }),
     },
-    {
-      scale: 30,
-      draw: (cx, cy, scale) => `
-        ${meshRollingStroke(cx, cy, scale)}
-        <text x="${cx}" y="${capY}" ${cap}>rolling (a closing)</text>`,
-    },
-    {
-      scale: 28,
-      draw: (cx, cy, scale) => `
-        ${meshCylinderStroke(cx, cy, scale)}
-        <text x="${cx}" y="${capY}" ${cap}>cylinder (a glued)</text>`,
-    },
-    {
-      scale: 30,
-      draw: (cx, cy, scale) => `
-        ${meshBentTubeStroke(cx, cy, scale)}
-        <text x="${cx}" y="${capY}" ${cap}>bent tube</text>`,
-    },
-    {
-      scale: 26,
-      draw: (cx, cy, scale) => `
-        ${meshTorusStroke(cx, cy, scale)}
-        <text x="${cx}" y="${capY}" ${cap}>torus (a and b glued)</text>`,
-    },
+    { scale: 52, label: '2  rolling (a closing)', draw: meshRollingStroke },
+    { scale: 50, label: '3  cylinder (a glued)', draw: meshCylinderStroke },
+    { scale: 52, label: '4  bent tube', draw: meshBentTubeStroke, dy: -34 },
+    { scale: 46, label: '5  torus (a and b glued)', draw: meshTorusStroke },
   ];
 
-  let cells = '';
-  for (let i = 0; i < panels.length; i++) {
-    const p = panels[i];
-    cells += p.draw(cellCx(i), geomCy, p.scale);
+  let out = '';
+  panels.forEach((p, i) => {
+    const c = cells[i];
+    const cx = cellCx(c);
+    const top = cellTop(c);
+    out += `${p.draw(cx, top + geomDy + (p.dy || 0), p.scale)}
+      <text x="${cx}" y="${top + capDy}" ${cap}>${p.label}</text>`;
+  });
+
+  // Step arrows between neighbors in the same row
+  const arrowY = (row) => row * (ph + gapY) + geomDy;
+  const stepArrow = (xa, xb, y) =>
+    `<line x1="${xa.toFixed(1)}" y1="${y}" x2="${xb.toFixed(1)}" y2="${y}" stroke="${STROKE.axisStrong}" stroke-width="1.4" marker-end="url(#ptt-arr-step-spatial)"${VEC}/>`;
+  let arrows = '';
+  for (let i = 0; i < panels.length - 1; i++) {
+    const a = cells[i], b = cells[i + 1];
+    if (a.row !== b.row) continue;
+    const xa = cellCx(a) + pw / 2 - 6;
+    const xb = cellCx(b) - pw / 2 + 6;
+    arrows += stepArrow(xa, xb, arrowY(a.row));
   }
 
   const body = `
     <rect width="${W}" height="${H}" fill="#ffffff"/>
     <g stroke-linecap="round" stroke-linejoin="round">
       ${defs}
-      ${cells}
+      ${out}
+      ${arrows}
     </g>`;
 
   return svgWrap(W, H, body);
@@ -1301,8 +1244,6 @@ export function getEccPrimerFigures() {
     finiteFieldScale: finiteFieldScaleFigure(),
     planeToTorus: planeToTorusFigure(),
     torus: torusFigure(),
-    pointAdd: pointAddFigure(),
-    pointDouble: pointDoubleFigure(),
     pointOpsGrid: pointOpsGridFigure(),
   };
 }

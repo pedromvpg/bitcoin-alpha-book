@@ -524,26 +524,27 @@ dd {
 
 .title-page .annotations-credit {
   font-family: var(--font-code);
-  font-size: 8pt;
+  font-size: 6.5pt;
   line-height: 1.5;
-  color: #666666;
-  letter-spacing: 0.5px;
-  margin: 0 0 0.35em 0;
-}
-
-.title-page .copyright {
-  font-family: var(--font-code);
-  font-size: 8pt;
+  text-wrap: balance;
   color: #666666;
   letter-spacing: 0.5px;
   margin: 0;
 }
 
+.title-page .copyright {
+  font-family: var(--font-body);
+  font-size: 8pt;
+  color: #666666;
+  letter-spacing: 0.5px;
+  margin: 0 0 0.35em 0;
+}
+
 .title-page .publisher-logo {
   display: block;
-  width: 0.75in;
+  width: 1.1in;
   height: auto;
-  margin: 0.22in auto 0;
+  margin: 0.25in auto 0;
 }
 
 /* ============================================
@@ -973,6 +974,11 @@ pre.example {
 .concepts .ecc-figure.ecc-figure--wide,
 .cryptography-primer .ecc-figure.ecc-figure--wide {
   max-width: min(100%, 42rem);
+}
+
+.concepts .ecc-figure.ecc-figure--narrow,
+.cryptography-primer .ecc-figure.ecc-figure--narrow {
+  max-width: min(100%, 4.4in);
 }
 
 .concepts .ecc-figure.ecc-figure--xwide,
@@ -1417,7 +1423,8 @@ sup:has(> a.cite-ref) + sup:has(> a.cite-ref)::before {
   color: var(--color-text);
 }
 
-.footnotes-list {
+.footnotes-list,
+.concepts .footnotes-list {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -1759,23 +1766,33 @@ sup:has(> a.cite-ref) + sup:has(> a.cite-ref)::before {
    READING PATHS (end of Part I)
    ============================================ */
 
-.reading-steps {
-  list-style: decimal;
-  padding-left: 1.6em;
+.concepts .reading-steps {
+  list-style: none;
+  padding: 0;
   margin: 0.5em 0 1.75em 0;
 }
 
+/* Number flush with the path title, text in a column after it — the same
+   geometry as .footnote (1.6em marker + 0.35em gap at the same font size).
+   Number from <li value>, not a CSS counter: Paged.js unsets counter-reset
+   on split lists. */
 .reading-step {
+  position: relative;
+  padding-left: 1.95em;
   break-inside: avoid;
   margin-bottom: 0.65em;
   font-size: var(--font-size-sm);
   line-height: 1.4;
 }
 
-.reading-step::marker {
+.reading-step::before {
+  content: attr(value) ".";
+  position: absolute;
+  left: 0;
   font-family: var(--font-code);
   font-size: 7pt;
   color: #666;
+  font-variant-numeric: tabular-nums;
 }
 
 .reading-step-head {

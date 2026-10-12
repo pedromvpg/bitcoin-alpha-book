@@ -765,6 +765,7 @@ function generateReadingPathsHtml() {
   const paths = doc.paths || [];
   if (!paths.length) return '';
   const pathsHtml = paths.map((path) => {
+    let stepNum = 0;
     const steps = (path.steps || []).map((step) => {
       const r = resolveStep(step);
       if (r.error) {
@@ -773,8 +774,9 @@ function generateReadingPathsHtml() {
       }
       const id = requestLineAnchor(r.file, r.line);
       const label = r.symbol || `${r.file}:${r.line}`;
+      stepNum += 1;
       return `
-        <li class="reading-step">
+        <li class="reading-step" value="${stepNum}">
           <div class="reading-step-head"><code>${escapeHtml(label)}</code> <span class="xref-file">${escapeHtml(r.file)}:${r.line}</span> <a class="xref" href="#${id}"></a></div>
           <div class="reading-step-note">${step.note}</div>
         </li>`;
@@ -1161,8 +1163,8 @@ ${typographyCss}
       <p class="book-edition-banner">Annotated edition — ${EDITION}</p>
     </div>
     <div class="footer-content">
-      <p class="annotations-credit">${ANNOTATIONS_CREDIT}</p>
       <p class="copyright">Copyright (c) 2009 Satoshi Nakamoto</p>
+      <p class="annotations-credit">${ANNOTATIONS_CREDIT}</p>
       ${PIRATEHASH_LOGO_SVG}
     </div>
   </section>
@@ -2023,7 +2025,7 @@ Hard:    3^? mod 17 = 6       (which exponent gives 6?)</pre>
       <p class="ecc-caption"><strong>Curve family along z:</strong>
         each slice is <span class="token variable">y</span>² = <span class="token variable">x</span>³ + <span class="token variable">b</span> for <span class="token variable">b</span> = 7 + <span class="token variable">z</span>.
         Red = secp256k1 at <span class="token variable">z</span> = 0 · cyan = smaller <span class="token variable">b</span> · orange = larger <span class="token variable">b</span>.</p>
-      <figure class="ecc-figure ecc-figure--wide" aria-label="Family of real elliptic curves y squared equals x cubed plus seven plus z, with secp256k1 highlighted at z equals zero">
+      <figure class="ecc-figure ecc-figure--narrow" aria-label="Family of real elliptic curves y squared equals x cubed plus seven plus z, with secp256k1 highlighted at z equals zero">
         ${eccFigs.curveSpatial}
       </figure>
     </div>

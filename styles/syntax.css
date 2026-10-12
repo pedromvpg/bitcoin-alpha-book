@@ -41,6 +41,7 @@
 /* Line number - fixed width, doesn't wrap */
 .line-num {
   flex-shrink: 0;
+  box-sizing: border-box;
   width: 3em;
   color: #888;
   text-align: right;
@@ -101,10 +102,11 @@
 }
 
 /* Line notes inside code: indent to the code column so they read apart from
-   the line numbers. .line-num width + padding-right (3em + 1.5em) at the 6pt
-   code size = 27pt; absolute because the note text is 8pt. */
+   the line numbers. .line-num is border-box (as Paged.js forces), so the code
+   column starts at its 3em width at the 6pt code size = 18pt; absolute because
+   the note text is 8pt. */
 .code-content .annotation-content {
-  padding-left: 27pt;
+  padding-left: 18pt;
 }
 
 /* Inline code in annotations - matches syntax highlighting */
@@ -342,9 +344,9 @@ code.inline {
   font-size: 7.5pt;
 }
 
-/* Code column: (2.8em + 1.2em) at 5pt = 20pt */
+/* Code column: 2.8em at 5pt = 14pt */
 .chapter-compact .code-content .annotation-content {
-  padding-left: 20pt;
+  padding-left: 14pt;
 }
 
 .chapter-dense .code-container {
@@ -372,9 +374,9 @@ code.inline {
   column-span: all;
 }
 
-/* Code column: (2.5em + 0.8em) at the 4pt line-num size = 13.2pt */
+/* Code column: 2.5em at the 4pt line-num size = 10pt */
 .chapter-dense .code-content .annotation-content {
-  padding-left: 13.2pt;
+  padding-left: 10pt;
 }
 
 
@@ -385,7 +387,7 @@ code.inline {
    ============================================ */
 
 .xref-note {
-  padding: 0.2em 0.5em 0.15em 27pt;
+  padding: 0.2em 0.5em 0.15em 18pt;
   font-family: var(--font-code);
   font-size: 6pt;
   line-height: 1.45;

@@ -46,7 +46,7 @@ annotations:
 
   - line: 38
     type: margin
-    text: "<code class=\"function\">RAND_screen()</code>—Windows-specific entropy harvesting. This OpenSSL function captures screen pixels, mouse position, and other visual data as randomness sources. The idea: screen content is unpredictable and attacker-unobservable. On non-Windows systems, OpenSSL uses /dev/urandom instead. Satoshi's paranoia about entropy was justified—weak RNG caused the 2013 Android Bitcoin wallet vulnerability that drained users' funds.{{cite:android-securerandom-2013}}"
+    text: "<code class=\"function\">RAND_screen()</code>—Windows-specific entropy harvesting. This OpenSSL function first runs <code>RAND_poll</code>, which gathers the Windows CryptoAPI generator, process and heap lists, the cursor position, and other system state, then tries to hash the screen's pixels. The screen half never ran here: in the OpenSSL 0.9.8h build v0.1.0 shipped with, a reversed test made it return early for ordinary desktop programs, a \"logical bug\" OpenSSL fixed in 2010 (see the OpenSSL appendix).{{cite:openssl-readscreen-fix-2010}} Satoshi's paranoia about entropy was justified—weak RNG caused the 2013 Android Bitcoin wallet vulnerability that drained users' funds.{{cite:android-securerandom-2013}}"
 
   - line: 57
     type: margin

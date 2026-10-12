@@ -11,6 +11,10 @@
  *     required fields for that type are present
  *   - `glossary:` entries are {term, definition} (missing glossary = warning)
  *   - every step in src/reading-paths.yaml resolves to a source line
+ *   - src/appendix/openssl.yaml: the committed OpenSSL 0.9.8h excerpts match
+ *     src/openssl-manifest.json, excerpt ranges and annotation lines exist,
+ *     citations resolve, and the function table names exactly the OpenSSL
+ *     identifiers the v0.1.0 source uses
  *
  * Before any of that, the source tree itself is verified against the committed
  * src/source-manifest.json (scripts/source-manifest.mjs) — line anchors are
@@ -32,6 +36,7 @@ import { fileURLToPath } from 'url';
 import yaml from 'js-yaml';
 import { verifyTree } from './source-manifest.mjs';
 import { resolveStep } from './symbols.mjs';
+import { loadOpenSSLManifest, readOpenSSLLines, scanOpenSSLUsage, verifyOpenSSL } from './openssl-source.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = join(__dirname, '..');
@@ -39,6 +44,7 @@ const ANNOTATIONS_DIR = join(ROOT_DIR, 'src', 'annotations');
 const SOURCE_DIR = join(ROOT_DIR, 'src', 'bitcoin-0.01', 'src');
 const REFERENCES_PATH = join(ROOT_DIR, 'src', 'references.yaml');
 const READING_PATHS_PATH = join(ROOT_DIR, 'src', 'reading-paths.yaml');
+const OPENSSL_APPENDIX_PATH = join(ROOT_DIR, 'src', 'appendix', 'openssl.yaml');
 
 const VALID_TYPES = new Set(['margin', 'block', 'highlight']);
 const CITE_RE = /\{\{cite:([a-zA-Z0-9][a-zA-Z0-9_-]*)\}\}/g;
@@ -149,6 +155,82 @@ function validateFile(fname, globalKeys, warnings = []) {
   return issues;
 }
 
+/** The OpenSSL appendix: excerpts, annotation anchors, citations, function table. */
+function validateOpenSSLAppendix(globalKeys) {
+  const problems = verifyOpenSSL().map((p) => `src/openssl-0.9.8h: ${p}`);
+  if (problems.length) return problems;
+  let doc;
+  try {
+    doc = yaml.load(readFileSync(OPENSSL_APPENDIX_PATH, 'utf8'));
+  } catch (err) {
+    return [`YAML parse error: ${err.message}`];
+  }
+  const issues = [];
+  const localKeys = new Set(doc.sources && typeof doc.sources === 'object' ? Object.keys(doc.sources) : []);
+  const checkCites = (where, text) => {
+    for (const m of String(text ?? '').matchAll(CITE_RE)) {
+      if (!globalKeys.has(m[1]) && !localKeys.has(m[1])) issues.push(`unknown cite key "${m[1]}" in ${where}`);
+    }
+  };
+  for (const f of ['introduction', 'functions_intro', 'conclusion', 'license_intro']) checkCites(f, doc[f]);
+
+  // Excerpts: file pinned in the manifest, range inside the file, notes inside the range
+  const pinned = loadOpenSSLManifest().files;
+  (doc.sections || []).forEach((sec, si) => {
+    const at = `sections[${si}] (${sec.id})`;
+    if (!sec.id || !sec.heading) issues.push(`${at}: needs id and heading`);
+    checkCites(`${at} text`, sec.text);
+    checkCites(`${at} after`, sec.after);
+    (sec.excerpts || []).forEach((ex, ei) => {
+      const where = `${at} excerpts[${ei}] ${ex.file}`;
+      if (!(ex.file in pinned)) {
+        issues.push(`${where}: not a committed OpenSSL file`);
+        return;
+      }
+      const count = readOpenSSLLines(ex.file).length;
+      const [s, e] = ex.lines || [];
+      if (!Number.isInteger(s) || !Number.isInteger(e) || s < 1 || e > count || s > e) {
+        issues.push(`${where}: lines [${s}, ${e}] invalid (file has ${count} lines)`);
+        return;
+      }
+      (ex.annotations || []).forEach((a, ai) => {
+        const aw = `${where} annotations[${ai}]`;
+        if (!VALID_TYPES.has(a.type)) issues.push(`${aw}: unknown or missing type "${a.type}" (build would drop it)`);
+        if ((a.type === 'margin' || a.type === 'block') && !a.text) issues.push(`${aw}: type "${a.type}" missing text`);
+        const line = a.line ?? a.lines?.[0];
+        const last = a.line ?? a.lines?.[1];
+        if (!Number.isInteger(line) || line < s || last > e) issues.push(`${aw}: line ${line} outside excerpt [${s}, ${e}]`);
+        checkCites(aw, a.text);
+      });
+    });
+  });
+
+  // Function table must name exactly what v0.1.0 uses
+  const used = scanOpenSSLUsage();
+  const listed = new Map();
+  (doc.functions || []).forEach((g, gi) => {
+    checkCites(`functions[${gi}] purpose`, g.purpose);
+    for (const n of g.names || []) {
+      if (listed.has(n)) issues.push(`functions: "${n}" listed twice`);
+      listed.set(n, g.group);
+      if (!used.has(n)) issues.push(`functions: "${n}" (${g.group}) is not used anywhere in v0.1.0`);
+    }
+  });
+  for (const n of used.keys()) {
+    if (!listed.has(n)) issues.push(`functions: v0.1.0 uses "${n}" but the table does not list it`);
+  }
+
+  if (!Array.isArray(doc.glossary) || !doc.glossary.length) {
+    issues.push('glossary: missing Key Terms');
+  } else {
+    doc.glossary.forEach((g, i) => {
+      if (!g || typeof g.term !== 'string' || typeof g.definition !== 'string') issues.push(`glossary[${i}]: needs string term and definition`);
+      else checkCites(`glossary[${i}]`, g.definition);
+    });
+  }
+  return issues;
+}
+
 function main() {
   const sourceProblems = verifyTree();
   if (sourceProblems.length) {
@@ -204,12 +286,25 @@ function main() {
     }
   }
 
+  // OpenSSL appendix
+  let appendixNote = '';
+  if (existsSync(OPENSSL_APPENDIX_PATH)) {
+    const issues = validateOpenSSLAppendix(globalKeys);
+    if (issues.length) {
+      total += issues.length;
+      console.log('✗ appendix/openssl.yaml');
+      for (const issue of issues) console.log(`    - ${issue}`);
+    } else {
+      appendixNote = ', OpenSSL appendix';
+    }
+  }
+
   if (total > 0) {
     console.error(`\nAnnotation validation FAILED: ${total} issue(s) in ${files.length} files`);
     process.exit(1);
   }
   const warnNote = warned ? `, ${warned} warning(s)` : '';
-  console.log(`✓ Annotation validation passed (${files.length} files, ${globalKeys.size} reference keys${warnNote})`);
+  console.log(`✓ Annotation validation passed (${files.length} files${appendixNote}, ${globalKeys.size} reference keys${warnNote})`);
 }
 
 main();

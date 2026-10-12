@@ -1,0 +1,24 @@
+{
+  "description": "OpenSSL 0.9.8h source files quoted in the appendix \"OpenSSL as Bitcoin Used It\", committed verbatim from the official release tarball.",
+  "version": "0.9.8h",
+  "released": "2008-05-28",
+  "tarball": {
+    "url": "https://www.openssl.org/source/old/0.9.x/openssl-0.9.8h.tar.gz",
+    "root": "openssl-0.9.8h",
+    "sha1": "ced4f2da24a202e01ea22bef30ebc8aee274de86",
+    "sha1Source": "https://www.openssl.org/source/old/0.9.x/openssl-0.9.8h.tar.gz.sha1",
+    "sha256": "224e1ca3aeeda8acc72e5c48b34843904b9d585aaadb4d5a15524c25f6c6a1ce"
+  },
+  "algorithm": "sha256",
+  "fileCount": 8,
+  "files": {
+    "LICENSE": "356e4225ed077df25868679579784104b1b7a5752ebacc7304a2d4ec0f19e968",
+    "crypto/asn1/asn1_lib.c": "6091777d4299236bb4f163bde562ecd688f02f396b554ecf52924077fce9f6a7",
+    "crypto/ec/ec_curve.c": "b160eb48ca26d0f463525e22d87ad2913f22bb405f46886a84dedc0b4cbb9ee0",
+    "crypto/ec/ec_key.c": "cac523190fa83a41dbdacbc6a3385a90dfaa1f5250febb799e05dd6e236222f1",
+    "crypto/ecdsa/ecs_ossl.c": "e4e704c890a99498f1d4828eb80cbb8202e9378a0e39fd8dd98a9512d3c8f19f",
+    "crypto/ecdsa/ecs_sign.c": "27797a6446604128e5e9cf4ba318e7b48f2375c6f1abfd5fe9d39a5062bb6084",
+    "crypto/ecdsa/ecs_vrf.c": "86c8d2d80bd2c50efd9ad5379dd0a7cce6f4949d11abbfdd4aa2ec03751025a8",
+    "crypto/rand/rand_win.c": "54650f3cffe86b8b2d1b86926ffabf00f7666ed28c685fd52b0aa3ddd7b7244e"
+  }
+}

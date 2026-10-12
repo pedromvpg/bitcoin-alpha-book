@@ -9,6 +9,7 @@
     "validate": "node scripts/validate-annotations.mjs",
     "check:quotes": "node scripts/check-quotes.mjs",
     "verify:source": "node scripts/source-manifest.mjs",
+    "verify:openssl": "node scripts/openssl-source.mjs",
     "build": "node scripts/validate-annotations.mjs && node scripts/build.js",
     "preview": "node scripts/build-cover.js --preview-donation && node scripts/preview.js",
     "open": "node scripts/build-cover.js --preview-donation && node scripts/preview.js --open",

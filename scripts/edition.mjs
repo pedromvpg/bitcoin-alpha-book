@@ -9,7 +9,7 @@
 import { readFileSync, statSync } from 'fs';
 import { fileURLToPath } from 'url';
 
-export const EDITION = 'v0.3.8';
+export const EDITION = 'v0.3.9';
 
 /**
  * Annotations credit — which models authored / revised the commentary.

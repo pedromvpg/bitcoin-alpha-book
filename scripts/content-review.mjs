@@ -45,6 +45,7 @@ const PROSE_FROM_BUILD = [
   { id: 'computer-concepts', label: 'Computer Concepts', group: 'primer', match: /id="computer-concepts"/ },
   { id: 'cryptography-primer', label: 'Cryptography Basics', group: 'primer', match: /id="cryptography-primer"/ },
   { id: 'cpp-primer', label: 'C++ Primer', group: 'primer', match: /id="cpp-primer"/ },
+  { id: 'bitcoin-primer', label: 'The Bitcoin Protocol', group: 'primer', match: /id="bitcoin-primer"/ },
   {
     id: 'part-source',
     label: 'The Source Code',
@@ -52,6 +53,7 @@ const PROSE_FROM_BUILD = [
     match: /class="[^"]*part-divider[^"]*"[^>]*>[\s\S]{0,200}?part-title">The Source Code/,
   },
   { id: 'what-came-after', label: 'What Came After', group: 'back', match: /id="what-came-after"/ },
+  { id: 'openssl-appendix', label: 'Appendix: OpenSSL', group: 'back', match: /id="openssl-appendix"/ },
   { id: 'index', label: 'Index', group: 'back', match: /id="index"/ },
   { id: 'colophon', label: 'Colophon', group: 'back', match: /id="colophon"/ },
 ];

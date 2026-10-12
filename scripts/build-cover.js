@@ -674,7 +674,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       font-family: 'Basis Grotesque Mono Pro', monospace;
       font-size: ${Math.max(7, Math.min(spinePt - 7, subPt - 3))}pt;
       font-weight: 400;
-      color: #8a8a8a;
+      color: #c4c4c4;
       letter-spacing: 0.32em;
       text-transform: uppercase;
       margin-top: ${spineGap * 1.5}px;
@@ -829,7 +829,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       font-family: 'Basis Grotesque Mono Pro', monospace;
       font-size: 8.5pt;
       font-weight: 500;
-      color: #7d7d7d;
+      color: #c4c4c4;
       letter-spacing: 0.32em;
       text-transform: uppercase;
       line-height: 1.2;

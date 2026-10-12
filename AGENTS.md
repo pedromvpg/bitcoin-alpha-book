@@ -16,8 +16,9 @@ files; primers, front/back matter, and colophon are hardcoded HTML in
 | `npm install` | Install dependencies (Node.js 18+) |
 | `npm run fetch` | Copy the committed v0.1.0 archive into `src/bitcoin-0.01/` (gitignored) and verify it against `src/source-manifest.json` |
 | `npm run verify:source` | Re-hash `src/bitcoin-0.01/src` against the manifest (`--write` regenerates it) |
+| `npm run verify:openssl` | Re-hash the committed OpenSSL 0.9.8h excerpts against `src/openssl-manifest.json` (`-- --tarball <path>` also matches them against the official release tarball) |
 | `npm run fetch:versions` | Download all book-referenced Bitcoin Core source trees into `src/versions/` (gitignored; ~750 MB) |
-| `npm run validate` | Verify source hashes, then validate all annotations (YAML schema, citation keys, line anchors, glossary shape) and `src/reading-paths.yaml` steps. **Runs automatically before `npm run build`.** |
+| `npm run validate` | Verify source hashes, then validate all annotations (YAML schema, citation keys, line anchors, glossary shape), `src/reading-paths.yaml` steps, and the OpenSSL appendix. **Runs automatically before `npm run build`.** |
 | `npm run check:quotes` | Check every quoted Satoshi passage against the Nakamoto Institute corpus in `src/nakamotoinstitute.org/` (skips if absent; runs in `npm run release`) |
 | `node scripts/symbols.mjs --report [Name…]` | Inspect the definition/caller table behind the book's "Called from" cross-references |
 | `npm run build` | Build `output/bitcoin-alpha-book.html` |
@@ -68,15 +69,23 @@ steps are local-only. The cover's donation QR comes from the committed
    its qualified name (`symbol: "CBlock::AcceptBlock"`) or a `file:` +
    `line:`; the build prints the page number. Notes are checked against the
    source like any annotation.
-7. **Book prose** (Introduction, primers, What Came After, colophon) lives in
+7. **OpenSSL appendix** (`src/appendix/openssl.yaml`, rendered after What Came
+   After): `sections[].excerpts[]` quote files under `src/openssl-0.9.8h/`
+   (verbatim from the 0.9.8h tarball, pinned in `src/openssl-manifest.json`)
+   by their real line numbers; annotation lines must fall inside the excerpt.
+   `functions:` must list exactly the OpenSSL identifiers v0.1.0 uses — the
+   validator rescans the source (`scripts/openssl-source.mjs`). To quote a new
+   OpenSSL file, copy it from the tarball, run
+   `node scripts/openssl-source.mjs --write`, then `--tarball <path>`.
+8. **Book prose** (Introduction, primers, What Came After, colophon) lives in
    `scripts/build.js`; back-cover copy lives in `scripts/build-cover.js`.
    Line-count claims use wc-style totals (the v0.1.0 tree is 19,820 lines of
    C++ — "roughly 20,000").
-8. **Edition bumping**: change `EDITION` (and `ANNOTATIONS_CREDIT` when the
+9. **Edition bumping**: change `EDITION` (and `ANNOTATIONS_CREDIT` when the
    author/reviser set changes) in `scripts/edition.mjs` — it propagates to
    title page, colophon, cover, spine, and preview chrome. Then rebuild
    (`npm run build && npm run cover`). Tag shipped releases in git.
-9. **GitHub release assets are edition-stamped**: book PDF uploads as
+10. **GitHub release assets are edition-stamped**: book PDF uploads as
    `bitcoin-alpha-book-<EDITION>.pdf`, cover as `bitcoin-alpha-cover-<EDITION>.pdf`
    (e.g. `bitcoin-alpha-book-v0.3.5.pdf`). Rename via
    `gh api -X PATCH repos/.../releases/assets/<id> -f name=...` if an asset
@@ -89,6 +98,10 @@ steps are local-only. The cover's donation QR comes from the committed
   SHA-256 per file and tree hash (printed in the colophon). Do not use
   `trottier/original-bitcoin` master — it is v0.1.3, and line anchors drift.
   `.gitattributes` keeps the archive's CRLF bytes intact.
+- **OpenSSL excerpts**: `src/openssl-0.9.8h/` holds only the OpenSSL 0.9.8h
+  files the appendix quotes, plus its `LICENSE` (printed in full in the
+  appendix, as the OpenSSL/SSLeay license requires). Committed, byte-exact
+  (`-text` in `.gitattributes`); do not edit or reformat them.
 - **Gitignored source trees**: `src/bitcoin-0.01/` (`npm run fetch`),
   `src/versions/` (`npm run fetch:versions`), `src/nakamotoinstitute.org/`,
   `src/programmingbitcoin/` (research clones). These are regenerable or

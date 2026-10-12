@@ -1,11 +1,11 @@
 {
-  "pageCount": 712,
-  "spine": 1.681744,
-  "canvasW": 16.556744,
+  "pageCount": 750,
+  "spine": 1.7714999999999999,
+  "canvasW": 16.6465,
   "canvasH": 10.875,
-  "printW": 15.931744,
+  "printW": 16.0215,
   "printH": 10.25,
   "bleedOffsetPx": 30,
-  "edition": "v0.3.8",
+  "edition": "v0.3.9",
   "annotationsCredit": "Annotations by Claude Sonnet 4.6 (Revised by Opus 4.6, GPT 5.6 Sol, Grok 4.5, Kimi K3, Opus 5.5)"
 }

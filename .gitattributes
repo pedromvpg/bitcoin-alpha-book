@@ -1,2 +1,4 @@
 # Committed v0.1.0 archive: keep bytes (CRLF) exactly as released — see src/source-manifest.json
 src/bitcoin-0.1.0*/** -text
+# Committed OpenSSL 0.9.8h excerpts: keep bytes exactly as in the release tarball — see src/openssl-manifest.json
+src/openssl-0.9.8h/** -text

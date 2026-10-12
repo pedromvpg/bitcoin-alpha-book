@@ -1,0 +1,349 @@
+# Appendix: OpenSSL as Bitcoin Used It
+#
+# Rendered by scripts/build.js after "What Came After"; validated by
+# scripts/validate-annotations.mjs. Excerpt `file:` paths are relative to
+# src/openssl-0.9.8h/ (verbatim from the 0.9.8h tarball, pinned in
+# src/openssl-manifest.json). Excerpt line numbers are the real line numbers
+# in those files; annotation `line:` values must fall inside their excerpt.
+#
+# `functions:` groups every OpenSSL identifier the v0.1.0 tree uses. The
+# validator rescans the source (scripts/openssl-source.mjs) and fails if a
+# name is missing from this list or listed but unused.
+
+id: openssl-appendix
+title: "OpenSSL as Bitcoin Used It"
+
+introduction: |
+  <p>
+    The Cryptography Basics primer stopped at a boundary: you won't find elliptic-curve
+    math in Bitcoin's source code, because Satoshi delegated it to OpenSSL. This appendix
+    crosses that boundary. It follows the calls in <code>key.h</code>, <code>util.cpp</code>,
+    and <code>bignum.h</code> into the library that actually generated the keys, signed the
+    transactions, and checked the signatures of the first Bitcoin network.
+  </p>
+  <p>
+    The version matters. v0.1.0's <code>readme.txt</code> names OpenSSL v0.9.8h, the
+    release of May 28, 2008,{{cite:openssl-098h-source}} and the Windows download shipped
+    it as a compiled <code>libeay32.dll</code> beside <code>bitcoin.exe</code>. Elliptic-curve
+    signatures were still new to OpenSSL then: ECDSA had arrived three years earlier, in
+    0.9.8.{{cite:openssl-098-news}} The excerpts below come from the official 0.9.8h
+    tarball, byte for byte, and keep their original line numbers.
+  </p>
+  <p>
+    It is a selection, not a reprint. The 0.9.8h release holds about 362,000 lines of C
+    and headers, and its <code>crypto/</code> library alone about 214,000, more than ten
+    times the whole of Bitcoin v0.1.0. What follows is the few hundred lines Bitcoin's
+    security actually rested on: choosing the curve, making a key, signing, verifying,
+    parsing a signature, and seeding the random number generator. The readme's build notes
+    only switch off ciphers Bitcoin never calls (RSA, DES, AES, and the rest); the
+    elliptic-curve, hashing, and random-number code was built as released.
+  </p>
+
+functions_intro: |
+  <p>
+    Every OpenSSL name the v0.1.0 source uses, grouped by job. The page numbers point to
+    the first use in each file. <code>sha.cpp</code> is not here: the miner's SHA-256 is
+    Wei Dai's Crypto++ code, not OpenSSL's.{{cite:crypto-pp-wei-dai}}
+  </p>
+
+functions:
+  - group: "Key objects"
+    purpose: "Create a secp256k1 key, copy it, free it, and generate a fresh key pair."
+    names: [EC_KEY, EC_KEY_new_by_curve_name, NID_secp256k1, EC_KEY_dup, EC_KEY_copy, EC_KEY_free, EC_KEY_generate_key]
+  - group: "Key encoding"
+    purpose: "Private keys to and from DER for <code>wallet.dat</code>; public keys to and from the 65-byte uncompressed point."
+    names: [d2i_ECPrivateKey, i2d_ECPrivateKey, o2i_ECPublicKey, i2o_ECPublicKey]
+  - group: "Signatures"
+    purpose: "Sign a 32-byte hash and return a DER-encoded signature; parse and check one."
+    names: [ECDSA_sign, ECDSA_verify]
+  - group: "Hashing"
+    purpose: "Double SHA-256 for transaction and block hashes, SHA-256 then RIPEMD-160 for addresses, and the Script hash opcodes."
+    names: [SHA256, SHA256_CTX, SHA256_Init, SHA256_Update, SHA256_Final, RIPEMD160]
+  - group: "Big numbers"
+    purpose: "<code>CBigNum</code>: difficulty targets, Base58, and Script arithmetic."
+    names: [BIGNUM, BN_CTX, BN_CTX_new, BN_CTX_free, BN_init, BN_clear_free, BN_copy, BN_set_word, BN_get_word, BN_is_negative, BN_set_negative, BN_is_zero, BN_cmp, BN_add, BN_sub, BN_mul, BN_div, BN_mod, BN_lshift, BN_rshift, BN_value_one, BN_bn2mpi, BN_mpi2bn]
+  - group: "Randomness"
+    purpose: "Seed OpenSSL's pool at startup and from mouse events; draw random bytes."
+    names: [RAND_screen, RAND_add, RAND_bytes]
+  - group: "Threads and memory"
+    purpose: "Give OpenSSL Windows mutexes so the network, miner, and UI threads can share it."
+    names: [CRYPTO_num_locks, CRYPTO_set_locking_callback, CRYPTO_LOCK, OPENSSL_malloc, OPENSSL_free]
+
+sections:
+  - id: curve
+    heading: "From a Name to a Curve"
+    text: |
+      <p>
+        <code>CKey</code>'s constructor makes one call:
+        <code>EC_KEY_new_by_curve_name(NID_secp256k1)</code>. <code>NID_secp256k1</code> is
+        just an integer, OpenSSL's numeric ID for the curve. Everything else comes out of
+        OpenSSL's tables.
+      </p>
+    excerpts:
+      - file: crypto/ec/ec_key.c
+        lines: [69, 103]
+        annotations:
+          - line: 85
+            type: margin
+            text: "New keys default to <em>uncompressed</em> points: a 0x04 byte, then the 32-byte x and the 32-byte y. That default is why every v0.1.0 public key is 65 bytes, the <code>PUBLIC_KEY_SIZE</code> in <code>key.h</code>'s comments. Compressed 33-byte keys came to Bitcoin later; OpenSSL could already produce them."
+          - line: 96
+            type: margin
+            text: "The key holds a pointer to a <em>group</em>, OpenSSL's name for a curve together with its generator and order. The lookup by ID happens here."
+      - file: crypto/ec/ec_curve.c
+        lines: [381, 391]
+        annotations:
+          - line: 383
+            type: margin
+            text: "p, the field prime: 2<sup>256</sup> − 2<sup>32</sup> − 977. All of secp256k1 lives in the integers modulo this number.{{cite:sec2-2000}}"
+          - line: 384
+            type: margin
+            text: "a = 0 and b = 7: the curve y² = x³ + 7."
+          - line: 386
+            type: margin
+            text: "The x and y coordinates of the generator point G. Every Bitcoin public key is G multiplied by a private key."
+          - line: 388
+            type: margin
+            text: "n, the order of G: the number of distinct multiples of G, and the range a private key must fall in. The 1 after it is the cofactor; every point on the curve is a multiple of G."
+          - line: 389
+            type: margin
+            text: "<code>NULL</code>: no seed. NIST's curves were built from seeds run through SHA-1 so their constants are \"verifiably random\". SEC 2 calls secp256k1 a Koblitz curve instead, with constants chosen for an efficiently computable endomorphism rather than at random.{{cite:sec2-2000}} The primer's point about Dual_EC_DRBG is why that mattered to some: there's no hidden seed to wonder about."
+      - file: crypto/ec/ec_curve.c
+        lines: [1040, 1057]
+        annotations:
+          - line: 1047
+            type: margin
+            text: "secp160k1, secp192k1, secp224k1, secp256k1: the four Koblitz curves whose key and signature sizes Satoshi listed at the top of <code>key.h</code>. He compared them all, then picked the largest."
+          - line: 1054
+            type: margin
+            text: "The entry v0.1.0 actually uses."
+      - file: crypto/ec/ec_curve.c
+        lines: [1228, 1252]
+        annotations:
+          - line: 1236
+            type: margin
+            text: "A linear search of the table above. The match goes to <code>ec_group_new_from_data</code>, which turns the hex strings into BIGNUMs, builds the curve, and sets G, n, and the cofactor."
+    after: |
+      <p>
+        Those hex strings are the whole definition of Bitcoin's curve. Satoshi never typed
+        them; they came with the library, from the SEC 2 standard of September 2000.{{cite:sec2-2000}}
+      </p>
+
+  - id: keygen
+    heading: "Making a Key"
+    text: |
+      <p>
+        <code>CKey::MakeNewKey</code> calls <code>EC_KEY_generate_key</code>. That function
+        is short: pick a random number below n, multiply G by it, keep both.
+      </p>
+    excerpts:
+      - file: crypto/ec/ec_key.c
+        lines: [233, 293]
+        annotations:
+          - line: 262
+            type: margin
+            text: "The private key: a uniformly random integer in [0, n), drawn from OpenSSL's random pool by <code>BN_rand_range</code>. The loop throws away zero. Everything Bitcoin's startup code does to seed that pool exists for this line and for the signing nonce below."
+          - line: 275
+            type: margin
+            text: "The public key: priv_key × G. <code>EC_POINT_mul</code> takes a scalar for G and a second point and scalar; here only the first is used. Undoing this multiplication is the discrete-logarithm problem."
+    after: |
+      <p>
+        <code>i2d_ECPrivateKey</code> then serializes the result for <code>wallet.dat</code>.
+        Its DER structure carries the curve parameters along with the 32-byte secret, which
+        is why <code>key.h</code> lists a 279-byte private key.
+      </p>
+
+  - id: signing
+    heading: "Signing"
+    text: |
+      <p>
+        <code>CKey::Sign</code> hands <code>ECDSA_sign</code> the 32-byte transaction hash and
+        a 10,000-byte buffer. Two layers of wrapper later, the real work happens in
+        <code>ecs_ossl.c</code>.
+      </p>
+    excerpts:
+      - file: crypto/ecdsa/ecs_sign.c
+        lines: [75, 95]
+        annotations:
+          - line: 75
+            type: margin
+            text: "The <code>type</code> argument is ignored; v0.1.0 passes 0."
+          - line: 92
+            type: margin
+            text: "The signature (r, s) leaves OpenSSL DER-encoded: a SEQUENCE of two INTEGERs, at most 72 bytes for secp256k1. <code>key.h</code>'s 10,000-byte buffer is far larger than it needs to be."
+      - file: crypto/ecdsa/ecs_ossl.c
+        lines: [135, 193]
+        annotations:
+          - line: 139
+            type: margin
+            text: "k, the per-signature nonce, comes from the same random pool as the private key. If k ever repeats across two signatures, or can be predicted, the private key falls out of simple algebra; that is how the PlayStation 3 signing key was recovered.{{cite:ps3-ecdsa-2010}}"
+          - line: 148
+            type: margin
+            text: "R = k × G."
+          - line: 171
+            type: margin
+            text: "r is R's x-coordinate reduced mod n. A zero r would be useless, so the outer loop starts over."
+          - line: 180
+            type: margin
+            text: "k is replaced by its inverse mod n, the form the signing step needs."
+      - file: crypto/ecdsa/ecs_ossl.c
+        lines: [269, 324]
+        annotations:
+          - line: 269
+            type: margin
+            text: "The hash becomes the integer m. Bitcoin's 256-bit hash exactly fits the 256-bit order, so the length check just above never fires."
+          - line: 295
+            type: margin
+            text: "These three steps compute s = k<sup>−1</sup>(m + r·d) mod n, where d is the private key. This is the ECDSA equation from the primer, in OpenSSL's code."
+          - line: 310
+            type: margin
+            text: "s = 0 is also invalid, so the loop repeats with a fresh k."
+    after: |
+      <p>
+        Nothing here forces s into the lower half of its range. If (r, s) is valid, so is
+        (r, n − s), and anyone relaying the transaction can swap one for the other without
+        the key. That changes the transaction's hash but not its meaning. Bitcoin lived with
+        this malleability for years before the LOW_S rule addressed it.{{cite:bip-146}}
+      </p>
+
+  - id: verifying
+    heading: "Verifying"
+    text: |
+      <p>
+        Every input of every transaction reaches <code>CKey::Verify</code> through
+        <code>OP_CHECKSIG</code>. <code>ECDSA_verify</code> first parses the DER bytes, then
+        checks the math.
+      </p>
+    excerpts:
+      - file: crypto/ecdsa/ecs_vrf.c
+        lines: [83, 96]
+        annotations:
+          - line: 91
+            type: margin
+            text: "The parse succeeds if the bytes can be <em>read</em> as a signature. Nothing checks that they were the one correct DER encoding of it, or that the parser used all <code>sig_len</code> bytes. Many byte strings could carry the same (r, s), and this version accepted them all."
+      - file: crypto/ecdsa/ecs_ossl.c
+        lines: [403, 471]
+        annotations:
+          - line: 403
+            type: margin
+            text: "r and s must both be in [1, n − 1]. That is the only range check; a high s passes."
+          - line: 412
+            type: margin
+            text: "w = s<sup>−1</sup> mod n (kept in <code>u2</code>)."
+          - line: 424
+            type: margin
+            text: "u1 = m·w and u2 = r·w, both mod n."
+          - line: 441
+            type: margin
+            text: "One combined multiplication: u1 × G + u2 × Q, where Q is the public key. This is the costliest line in v0.1.0's validation; libsecp256k1 later did the same verification over five times faster on x86_64.{{cite:core-0-12-release-notes}}"
+          - line: 471
+            type: margin
+            text: "The signature is good if that point's x-coordinate, mod n, equals r. Returns 1; v0.1.0 treats anything else as failure."
+
+  - id: der
+    heading: "Where the Rules Lived"
+    text: |
+      <p>
+        Because v0.1.0 calls <code>ECDSA_verify</code> directly, whatever OpenSSL accepted
+        <em>was</em> Bitcoin's rule for a valid signature. That made OpenSSL's parser part of
+        consensus. The parser was written for certificates, and it read a signature's length
+        fields like this:
+      </p>
+    excerpts:
+      - file: crypto/asn1/asn1_lib.c
+        lines: [154, 191]
+        annotations:
+          - line: 171
+            type: margin
+            text: "A length byte with the high bit set says \"the length follows in the next i bytes.\" DER requires the shortest form; BER, which this parser accepts, does not. A 70-byte signature can legally announce its length in five bytes."
+          - line: 173
+            type: margin
+            text: "The limit is <code>sizeof(long)</code>, which depends on the platform: 4 bytes on Windows and on 32-bit systems, 8 on 64-bit Linux and OS X. Pieter Wuille showed in 2015 that a transaction using a 5-byte length could have split the network along that line.{{cite:wuille-bip66-disclosure-2015}}"
+    after: |
+      <p>
+        While Bitcoin ran only on Windows, as v0.1.0 did, every node had a 4-byte
+        <code>long</code> and the split could not happen.
+        Nobody planned it; the bug sat inside a general-purpose library that had never
+        promised to behave identically everywhere. BIP 66 put it plainly: "OpenSSL is not
+        designed for consensus-critical behaviour (it does not guarantee bug-for-bug
+        compatibility between versions)."{{cite:bip-66}} The warning had already come true. In
+        January 2015 OpenSSL addressed a certificate issue rooted in its acceptance of
+        non-DER signature encodings,{{cite:openssl-secadv-2015-01-08}} and when the new
+        1.0.0p and 1.0.1k releases stopped accepting some of those deviations, some nodes
+        rejected the chain.{{cite:bip-66}} BIP 66 responded by making strict
+        DER a consensus rule, fully enforced from July 2015,{{cite:wuille-bip66-disclosure-2015}} so Bitcoin itself, not its crypto
+        library, defined what a valid signature looked like. Wuille revealed afterward that
+        the change had also quietly closed the <code>sizeof(long)</code> fork.{{cite:wuille-bip66-disclosure-2015}}
+      </p>
+
+  - id: randomness
+    heading: "Seeding the Pool"
+    text: |
+      <p>
+        Both random draws above, the private key and k, come from OpenSSL's pool. The first
+        thing v0.1.0 does, in <code>util.cpp</code>'s <code>CInit</code> constructor before
+        <code>main</code> runs, is call <code>RAND_screen()</code>. On Windows that function
+        does two things:
+      </p>
+    excerpts:
+      - file: crypto/rand/rand_win.c
+        lines: [625, 629]
+        annotations:
+          - line: 627
+            type: margin
+            text: "<code>RAND_poll</code> gathers Windows sources: the CryptoAPI generator (<code>CryptGenRandom</code>), the process, thread, and heap lists, memory status, the foreground window, the cursor position, and the message queue."
+      - file: crypto/rand/rand_win.c
+        lines: [689, 746]
+        annotations:
+          - line: 704
+            type: margin
+            text: "This test is backwards. <code>OPENSSL_isservice()</code> returns 0 for an ordinary desktop program, so <code>!OPENSSL_isservice()</code> is true and the function returns before it reads a single pixel. In 0.9.8h, the screen was scraped only for Windows services, the one kind of program meant to stay off the desktop. OpenSSL fixed it in March 2010 as a \"logical bug in readscreen\".{{cite:openssl-readscreen-fix-2010}}"
+          - line: 742
+            type: margin
+            text: "Even when the loop runs, each screen hash is credited with zero entropy: it is stirred into the pool, but OpenSSL does not count on it."
+    after: |
+      <p>
+        So the screen capture that <code>RAND_screen</code>'s name promises, and that
+        <code>util.cpp</code>'s comment describes, never ran in v0.1.0 on a normal Windows
+        desktop. <code>RAND_poll</code> did, and it includes the operating system's own
+        cryptographic generator. Satoshi also added his own sources: <code>RandAddSeed</code>
+        mixes in the CPU performance counter and a hash of Windows performance data, and the
+        main window feeds every mouse movement into <code>RAND_add</code>. Belt and suspenders
+        turned out to be the right instinct. One of the belts was never fastened.
+      </p>
+
+conclusion: |
+  <p>
+    Using OpenSSL was the right call in 2009. It gave one person a working, widely deployed
+    implementation of secp256k1, along with hashing, big numbers, and
+    a seeded random number generator. But it also put a general-purpose library inside
+    Bitcoin's consensus rules. Script's <code>OP_MUL</code>, <code>OP_DIV</code>, and
+    <code>OP_MOD</code> went straight to <code>BN_mul</code>, <code>BN_div</code>, and
+    <code>BN_mod</code> until those opcodes were disabled in 2010.{{cite:opcode-disable-2010}}
+    Signature validity was whatever <code>d2i_ECDSA_SIG</code> parsed until 2015.{{cite:bip-66}}
+    The same January 2015 advisory that changed signature parsing also fixed a bignum
+    squaring bug reported by Bitcoin developer Pieter Wuille.{{cite:openssl-secadv-2015-01-08}}
+  </p>
+  <p>
+    The project's answer was to stop depending on that code. Bitcoin Core 0.10 moved signing
+    to libsecp256k1, a library written for this one curve,{{cite:core-0-10-release-notes}} and
+    0.12 moved validation too.{{cite:core-0-12-release-notes}} The excerpts in this appendix
+    are the code that was retired.
+  </p>
+
+license_intro: |
+  <p>
+    The OpenSSL excerpts above are reproduced under the OpenSSL and original SSLeay
+    licenses, whose full text follows as it appears in the 0.9.8h release. This product
+    includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit
+    (http://www.openssl.org/).
+  </p>
+
+glossary:
+  - term: "BER"
+    definition: "Basic Encoding Rules: the permissive ASN.1 encoding that allows several byte strings for the same value, such as length fields longer than needed. OpenSSL's parser accepted BER signatures."
+  - term: "Koblitz curve"
+    definition: "In SEC 2, a curve whose parameters were chosen for an efficiently computable endomorphism rather than generated from a random seed; secp256k1 is one."
+  - term: "readscreen"
+    definition: "The OpenSSL 0.9.8 routine meant to hash the screen's contents into the random pool; in 0.9.8h a reversed test made it return early for ordinary desktop programs."
+  - term: "signature malleability"
+    definition: "The ability of a third party to change a signature's bytes, for example by replacing s with n − s or re-encoding it, without invalidating it, which changes the transaction's hash."

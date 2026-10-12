@@ -981,6 +981,11 @@ pre.example {
   max-width: min(100%, 4.4in);
 }
 
+/* Four-step stack diagram: same type scale as its eight-step sibling */
+.concepts .ecc-figure.ecc-figure--stack-small {
+  max-width: min(100%, 2.95in);
+}
+
 .concepts .ecc-figure.ecc-figure--xwide,
 .cryptography-primer .ecc-figure.ecc-figure--xwide {
   max-width: min(100%, 56rem);
@@ -1810,4 +1815,96 @@ sup:has(> a.cite-ref) + sup:has(> a.cite-ref)::before {
 .reading-step-note code {
   font-family: var(--font-code);
   font-size: 7pt;
+}
+
+/* ============================================
+   APPENDIX: OPENSSL (after What Came After)
+   Prose chapter with annotated excerpts of OpenSSL 0.9.8h
+   ============================================ */
+
+.appendix-openssl .appendix-label {
+  display: block;
+  font-family: var(--font-code);
+  font-size: 7pt;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #888888;
+  margin: -0.5em 0 1.5em 0;
+}
+
+.appendix-openssl .openssl-functions td {
+  font-size: 7.5pt;
+  padding: 0.5em 0.5em 0.5em 0;
+  vertical-align: top;
+  line-height: 1.35;
+}
+
+.appendix-openssl .openssl-functions td:first-child {
+  width: 38%;
+}
+
+.appendix-openssl .openssl-functions td:nth-child(2) {
+  width: 40%;
+}
+
+.appendix-openssl .openssl-names {
+  margin-top: 0.3em;
+  font-family: var(--font-code);
+  font-size: 6pt;
+  color: #444444;
+}
+
+.appendix-openssl .openssl-names code,
+.appendix-openssl .openssl-used-in {
+  font-family: var(--font-code);
+  font-size: 6pt;
+  padding: 0;
+}
+
+.appendix-openssl .openssl-used-in {
+  white-space: nowrap;
+}
+
+.appendix-openssl .openssl-functions {
+  break-inside: avoid;
+}
+
+.appendix-openssl .openssl-excerpt {
+  margin: 1.25em 0 1.5em 0;
+}
+
+.appendix-openssl .openssl-excerpt-head {
+  font-family: var(--font-code);
+  font-size: 7pt;
+  color: #666666;
+  border-bottom: 1px solid #cccccc;
+  padding-bottom: 0.3em;
+  margin-bottom: 0.4em;
+}
+
+/* Paged.js drops whitespace-only text nodes, so space the label explicitly */
+.appendix-openssl .openssl-excerpt-head .xref-file,
+.appendix-openssl .openssl-used-in a.xref {
+  margin-left: 0.6em;
+}
+
+/* The license runs several pages; start it on a fresh one */
+.appendix-openssl h2.openssl-license-heading {
+  break-before: page;
+  margin-top: 0;
+}
+
+.appendix-openssl .openssl-excerpt-head code {
+  font-weight: 700;
+  color: #000000;
+  padding: 0;
+}
+
+/* OpenSSL indents with tabs; keep them to four columns at 6pt */
+.appendix-openssl .line-code {
+  tab-size: 4;
+}
+
+.appendix-openssl .openssl-license .line-code {
+  font-size: 5.5pt;
 }

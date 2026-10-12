@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 import yaml from 'js-yaml';
 import Prism from 'prismjs';
 import { getEccPrimerFigures } from './ecc-figures.mjs';
+import { getBitcoinPrimerFigures } from './bitcoin-figures.mjs';
 import { EDITION, ANNOTATIONS_CREDIT } from './edition.mjs';
 import {
   SOURCE_FILE_ORDER as FILE_ORDER,
@@ -19,6 +20,7 @@ import {
 import { renderRcGalleryHtml } from './rc-gallery.mjs';
 import { loadManifest } from './source-manifest.mjs';
 import { buildSymbolTable, callersOf, definitionsByFile, resolveStep } from './symbols.mjs';
+import { loadOpenSSLManifest, readOpenSSLLines, scanOpenSSLUsage } from './openssl-source.mjs';
 
 // Load additional Prism languages
 import 'prismjs/components/prism-c.js';
@@ -34,6 +36,7 @@ const SOURCE_DIR = join(ROOT_DIR, 'src', 'bitcoin-0.01', 'src');
 const ANNOTATIONS_DIR = join(ROOT_DIR, 'src', 'annotations');
 const REFERENCES_PATH = join(ROOT_DIR, 'src', 'references.yaml');
 const READING_PATHS_PATH = join(ROOT_DIR, 'src', 'reading-paths.yaml');
+const OPENSSL_APPENDIX_PATH = join(ROOT_DIR, 'src', 'appendix', 'openssl.yaml');
 const STYLES_DIR = join(ROOT_DIR, 'styles');
 const OUTPUT_DIR = join(ROOT_DIR, 'output');
 const PIRATEHASH_LOGO_SVG = readFileSync(join(ROOT_DIR, 'assets', 'PirateHash_vector_black.svg'), 'utf8')
@@ -196,6 +199,7 @@ function injectPrimerCitations(html) {
     'computer-concepts',
     'cryptography-primer',
     'cpp-primer',
+    'bitcoin-primer',
     'what-came-after',
   ];
 
@@ -659,8 +663,9 @@ function xrefNoteHtml(def) {
  * Uses per-line structure so line numbers stay aligned when code wraps
  * Includes margin notes from annotations
  * @param {CitationContext|null} citationCtx Optional citation context for {{cite:key}} expansion
+ * @param {number} firstLine Source line number of the first line of `code` (excerpts)
  */
-function generateCodeBlockHtml(filename, code, language, annotations, citationCtx = null) {
+function generateCodeBlockHtml(filename, code, language, annotations, citationCtx = null, firstLine = 1) {
   const lines = code.split('\n');
   
   // Create a map of line annotations
@@ -689,7 +694,7 @@ function generateCodeBlockHtml(filename, code, language, annotations, citationCt
   // Generate each line as a row with line number + code + optional margin note
   let linesHtml = '';
   for (let i = 0; i < lines.length; i++) {
-    const lineNum = i + 1;
+    const lineNum = i + firstLine;
     const lineContent = lines[i];
     const highlightedContent = highlightCode(lineContent, language);
     
@@ -755,6 +760,497 @@ function generateBackGlossaryHtml(glossaryTerms) {
 }
 
 /**
+ * "Where It Lives in the Code" table for the Bitcoin Protocol primer: each row
+ * names a definition and links to the page where it begins. Requests line
+ * anchors, so it must run before the chapters are rendered.
+ */
+const PROTOCOL_CODE_MAP = [
+  ['Spending rules and double-spend check', { symbol: 'CTransaction::ConnectInputs' }],
+  ['Script interpreter', { symbol: 'EvalScript' }],
+  ['Standard script templates', { file: 'script.cpp', line: 913, label: 'Solver' }],
+  ['Signing an input', { symbol: 'SignSignature' }],
+  ['Checking an input', { symbol: 'VerifySignature' }],
+  ['Block subsidy and halving', { symbol: 'CBlock::GetBlockValue' }],
+  ['Difficulty retarget', { symbol: 'GetNextWorkRequired' }],
+  ['Block sanity checks', { symbol: 'CBlock::CheckBlock' }],
+  ['Block contextual checks', { symbol: 'CBlock::AcceptBlock' }],
+  ['Choosing the best chain', { symbol: 'CBlock::AddToBlockIndex' }],
+  ['Switching branches', { symbol: 'Reorganize' }],
+  ['Mining loop', { symbol: 'BitcoinMiner' }],
+  ['IRC peer discovery', { symbol: 'ThreadIRCSeed' }],
+  ['Opening outbound connections', { symbol: 'ThreadOpenConnections2' }],
+  ['Message dispatch', { symbol: 'ProcessMessage' }],
+  ['Building a payment', { symbol: 'CreateTransaction' }],
+  ['Sending a payment', { symbol: 'SendMoney' }],
+];
+
+function generateProtocolCodeMapHtml() {
+  return PROTOCOL_CODE_MAP.map(([concept, step]) => {
+    const r = resolveStep(step);
+    if (r.error) {
+      console.warn(`Warning: protocol code map "${concept}": ${r.error}`);
+      return '';
+    }
+    const id = requestLineAnchor(r.file, r.line);
+    const label = step.label || r.symbol || `${r.file}:${r.line}`;
+    return `
+        <tr><td>${escapeHtml(concept)}</td><td><code>${escapeHtml(label)}</code></td><td><span class="xref-item"><span class="xref-file">${escapeHtml(r.file)}:${r.line}</span> <a class="xref" href="#${id}"></a></span></td></tr>`;
+  }).join('');
+}
+
+/**
+ * "The Bitcoin Protocol" primer (end of Part I, after the C++ Primer): the
+ * protocol as v0.1.0 implements it, illustrated by scripts/bitcoin-figures.mjs.
+ */
+function generateBitcoinPrimerHtml(btcFigs, codeMapRows) {
+  return `
+  <!-- BITCOIN PROTOCOL PRIMER -->
+  <section class="chapter concepts" id="bitcoin-primer">
+    <h1 class="chapter-title">The Bitcoin Protocol</h1>
+
+    <p class="lead">
+      A protocol is the set of rules every participant enforces. Bitcoin's rules are not
+      written down anywhere except in the code: v0.1.0 <em>is</em> the specification. This
+      chapter describes those rules before you read them line by line—how value is
+      represented, how a spend is authorized, how blocks are chained and mined, how new
+      coins enter circulation, and how nodes find each other and agree on one history. Every
+      figure is drawn from the v0.1.0 source and names the function that implements it.
+      Much of this has since changed; "What Came After" traces the changes.
+    </p>
+
+    <h2>Coins, Not Accounts</h2>
+    <p>
+      Nowhere in Bitcoin is there a table of balances. The ledger is made of
+      <strong>transaction outputs</strong>: each output carries an amount and a condition
+      that must be met to spend it. A transaction spends earlier outputs by naming them as
+      its <strong>inputs</strong> and proving it meets their conditions, then creates new
+      outputs of its own. The whitepaper puts it in one line: "We define an electronic coin
+      as a chain of digital signatures."{{cite:nakamoto-whitepaper}}
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>A transaction graph:</strong>
+        amounts in BTC. Coinbase transactions create coins from nothing; every other input
+        consumes exactly one earlier output, whole. The outputs nothing has consumed yet
+        (orange) are the spendable coins, the <em>unspent transaction outputs</em>.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Transaction graph: two coinbase transactions feed three later transactions; the outputs no input has consumed are highlighted as unspent">
+        ${btcFigs.utxoGraph}
+      </figure>
+    </div>
+    <p>
+      An output is always spent in full. To pay 20 out of a 50-coin output, Tx 1 above
+      creates two outputs: 20 to the recipient and 30 back to the sender as
+      <strong>change</strong>. What a wallet shows as a balance is simply the sum of the
+      unspent outputs it holds keys for (<code>GetBalance()</code> walks the wallet and
+      skips anything marked spent).
+    </p>
+    <p>
+      Each node keeps, for every transaction in the chain, a <code>CTxIndex</code> whose
+      <code>vSpent</code> vector has one slot per output. A slot is null until a later
+      transaction in the chain spends that output; then it records where that spender sits on disk.
+      This is how double-spending is stopped: <code>ConnectInputs()</code> refuses any
+      input whose slot is already filled ("prev tx already used").
+    </p>
+
+    <h2>Anatomy of a Transaction</h2>
+    <p>
+      In code, a transaction is a <code>CTransaction</code> with four fields, serialized in
+      the order shown. Inputs and outputs are small classes of their own, all in
+      <code>main.h</code>:
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>The transaction classes:</strong>
+        an input names the output it spends by <code>COutPoint</code>: the hash of the
+        earlier transaction and an index into its <code>vout</code>. Nothing records the
+        fee; it is whatever the inputs bring in that the outputs do not pay out.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="CTransaction fields with expanded CTxIn and CTxOut classes and the implicit fee">
+        ${btcFigs.txAnatomy}
+      </figure>
+    </div>
+    <p>
+      Amounts are 64-bit integers in the smallest unit: <code>COIN</code> is 100,000,000
+      and <code>CENT</code> is 1,000,000, so 0.01 BTC is one <code>CENT</code>. (The word
+      "satoshi" for the unit came later.) Fees were mostly optional: a transaction under
+      10,000 bytes is free while the block being built holds fewer than 100 transactions.
+      Otherwise <code>GetMinFee()</code> asks for 0.01 BTC per started kilobyte. Miners
+      collect fees by paying themselves the subsidy plus the fees in the block's first
+      transaction.
+    </p>
+    <p>
+      The two remaining fields sketch a feature that was later abandoned. A transaction
+      whose <code>nLockTime</code> is a block height the chain has not yet passed is not
+      <em>final</em>. While it waits in the memory pool, a version with the same inputs and
+      higher <code>nSequence</code> numbers may replace it (<code>IsNewerThan()</code>).
+      An input with <code>nSequence == UINT_MAX</code> is final. The wallet shows such a
+      transaction as "Open for <var>n</var> blocks".
+    </p>
+
+    <h2>Locking and Unlocking: Script</h2>
+    <p>
+      An output's condition is not a public-key field but a tiny program, the
+      <code>scriptPubKey</code>. The input that later spends it supplies a second program,
+      the <code>scriptSig</code>, which pushes the data the first one needs. The language,
+      Script, is stack-based like Forth. Its only control flow is
+      <code>OP_IF</code>-style branching, with no loops or backward jumps, so every script
+      finishes. Satoshi later said this design allowed a great variety of transaction types
+      beyond simple payments.{{cite:nakamoto-script-types}} In practice v0.1.0 writes and
+      recognizes only two forms. <code>Solver()</code> in <code>script.cpp</code> matches
+      outputs against these templates when the wallet signs or looks for its own coins:
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>The two standard templates:</strong>
+        orange data is fixed when the output is created; blue data is supplied by whoever
+        spends it. <code>OP_PUBKEY</code> and <code>OP_PUBKEYHASH</code> in
+        <code>Solver()</code>'s template list are placeholders that match these slots.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Pay-to-public-key and pay-to-public-key-hash scripts as token rows, locking script above unlocking script">
+        ${btcFigs.scriptTemplates}
+      </figure>
+    </div>
+    <p>
+      <strong>Pay to public key</strong> locks coins directly to a 65-byte public key. v0.1.0
+      uses it for coins it generates (<code>BitcoinMiner</code>), for change
+      (<code>CreateTransaction</code> sends change to a key that funded the payment), and
+      for pay-to-IP transfers. In those, the payee's node answers a
+      <code>checkorder</code> message with a fresh key.
+    </p>
+    <p>
+      <strong>Pay to public key hash</strong> is what a Bitcoin address encodes. The address is a
+      version byte (0) plus the 20-byte <code>Hash160</code> of a public key, which is
+      RIPEMD-160 of SHA-256, all in Base58Check (<code>Hash160ToAddress()</code> in
+      <code>base58.h</code>). When you paste an address into the Send dialog,
+      <code>ui.cpp</code> builds this script around the decoded hash before calling
+      <code>SendMoney()</code>. The spender must then reveal the full public key along with
+      the signature.
+    </p>
+
+    <h2>Running a Script</h2>
+    <p>
+      To check an input, <code>VerifySignature()</code> does not run two programs. It
+      concatenates them into one: the input's <code>scriptSig</code>, then an
+      <code>OP_CODESEPARATOR</code>, then the previous output's <code>scriptPubKey</code>.
+      It hands the result to <code>EvalScript()</code>. The spend is valid if the program
+      finishes with a true value on top of the stack:
+      <code>return (stack.empty() ? false : CastToBool(stack.back()));</code>
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>Pay to public key hash, step by step:</strong>
+        each column is the stack after one token executes, bottom to top; a heavy border
+        marks the item that step produced. <code>OP_EQUALVERIFY</code> aborts the whole
+        script unless the two hashes match; <code>OP_CHECKSIG</code> pops the key and
+        signature and pushes the verdict.</p>
+      <figure class="ecc-figure ecc-figure--xwide" aria-label="Stack snapshots for each of the eight steps of a pay-to-public-key-hash spend">
+        ${btcFigs.scriptStackP2PKH}
+      </figure>
+    </div>
+    <p>
+      The separator is there for the signature. When <code>OP_CHECKSIG</code> runs, it hashes
+      the transaction together with the script from the last <code>OP_CODESEPARATOR</code>
+      onward, so the signature covers the locking script but not the unlocking data (a
+      signature cannot sign itself). The simpler template takes four steps:
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>Pay to public key:</strong>
+        the key comes from the output, the signature from the input.</p>
+      <figure class="ecc-figure ecc-figure--stack-small" aria-label="Stack snapshots for a pay-to-public-key spend">
+        ${btcFigs.scriptStackP2PK}
+      </figure>
+    </div>
+    <p>
+      Running the spender's code and the owner's code as one program was a mistake. In
+      v0.1.0, <code>OP_RETURN</code> simply jumps to the end of the script
+      (<code>pc = pend</code>). A <code>scriptSig</code> of <code>OP_TRUE OP_RETURN</code>
+      therefore ends execution with true on top before the owner's conditions ever run, and
+      it could spend anyone's coins. The flaw went unnoticed until July 2010; v0.3.5 fixed
+      it by running the two scripts separately and disabled several risky opcodes at the
+      same time.{{cite:cve-2010-5141}}{{cite:opcode-disable-2010}}
+    </p>
+
+    <h2>Blocks and the Chain</h2>
+    <p>
+      Transactions are batched into blocks. A <code>CBlock</code> is a list of transactions,
+      <code>vtx</code>, plus a header of six fields that serialize to exactly 80 bytes.
+      A block's identity is the double SHA-256 of that header, and each header
+      carries the hash of the one before it:
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>Linked headers:</strong>
+        <code>hashPrevBlock</code> commits to the entire previous header, and
+        <code>hashMerkleRoot</code> commits to every transaction in this block (see "Merkle
+        Trees" in Cryptography Basics). Altering any old transaction changes its block's
+        hash, which breaks the link from every block after it.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Three block headers linked by hashPrevBlock, with the transactions of the middle block summarized by a merkle root">
+        ${btcFigs.blockChain}
+      </figure>
+    </div>
+    <p>
+      The first transaction in every block is the <strong>coinbase</strong>, the only
+      transaction with no real inputs. Its single input has a null <code>prevout</code>,
+      and its output pays the miner. The first block of all, the genesis block, is
+      written directly into <code>main.cpp</code>. Its coinbase input carries a newspaper
+      headline as proof it was not mined before January 3, 2009: <em>The Times
+      03/Jan/2009 Chancellor on brink of second bailout for banks</em>.{{cite:genesis-block}}
+    </p>
+    <p>
+      A node checks a new block in two passes. <code>CheckBlock()</code> tests what can be
+      checked in isolation: size limits, a timestamp no more than two hours in the future,
+      exactly one coinbase and it comes first, a header hash that meets its own
+      <code>nBits</code> target, and a merkle root that matches the transactions.
+      <code>AcceptBlock()</code> then checks the block against its parent: the timestamp
+      must be later than the median of the previous eleven blocks, and <code>nBits</code>
+      must be exactly what <code>GetNextWorkRequired()</code> demands.
+    </p>
+
+    <h2>Mining</h2>
+    <p>
+      Anyone may propose the next block, but a valid one is expensive to produce: its header
+      hash, read as a 256-bit number, must not exceed the <strong>target</strong> encoded in
+      <code>nBits</code>. SHA-256 cannot be steered, so the only way to find such a header
+      is to try one variation after another. That is the proof of work. In v0.1.0 the
+      search runs in <code>BitcoinMiner()</code>, a background thread that "Generate
+      Coins" switches on:
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>The mining loop:</strong>
+        steps 1–4 build a candidate block; the diamond is the proof-of-work test, hashed
+        with the prebuilt buffers <code>BlockSHA256()</code> uses for speed. A found block
+        goes through <code>ProcessBlock()</code> exactly as if a peer had sent it, and
+        <code>AcceptBlock()</code> relays it if it extends the best chain.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Flowchart of BitcoinMiner: choose tip, build coinbase, collect transactions, fill header, then loop over nonces until the hash meets the target">
+        ${btcFigs.miningLoop}
+      </figure>
+    </div>
+    <p>
+      The 32-bit <code>nNonce</code> runs out quickly, so the miner has a second knob: the
+      <code>bnExtraNonce</code> pushed into the coinbase's <code>scriptSig</code>. Each pass
+      of the outer loop increments it, which changes the coinbase, so the merkle root changes,
+      and the miner gets a fresh nonce space. The coinbase's output is worth
+      <code>GetBlockValue(nFees)</code>, the subsidy plus all fees, and pays a newly
+      generated key. Before any of that, the loop waits until the node has at least
+      one peer: mining alone would only build a private chain.
+    </p>
+
+    <h2>Difficulty</h2>
+    <p>
+      Blocks are meant to arrive every ten minutes (<code>nTargetSpacing</code>). Satoshi
+      called this a balance between fast confirmation and network latency: "The algorithm
+      aims for an average of 6 blocks per hour."{{cite:nakamoto-block-interval}} Total
+      hash power changes, though, so the target must move with it. Every 2,016
+      blocks, two weeks' worth at the intended pace, <code>GetNextWorkRequired()</code>
+      measures how long the last stretch actually took and scales the target by that
+      ratio:
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>The retarget rule:</strong>
+        new target = old target × <code>nActualTimespan</code> ÷ two weeks. The measured span
+        is clamped to between 3.5 and 56 days first, so one adjustment can change
+        difficulty by at most a factor of four in either direction.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Chart of new target over old target versus actual timespan, flat at one quarter below 3.5 days, linear through 1 at 14 days, flat at 4 above 56 days">
+        ${btcFigs.retargetClamp}
+      </figure>
+    </div>
+    <p>
+      A smaller target means fewer acceptable hashes, so it is harder to meet. The code walks back
+      <code>nInterval - 1</code> blocks to find the start of the period. It therefore
+      times 2,015 block intervals and compares them against a two-week budget sized for
+      2,016, a small off-by-one that every later version keeps for compatibility. The
+      target is stored in the header as a compact
+      <code>nBits</code> value: one byte of exponent and three of mantissa. The genesis
+      block's <code>1d00ffff</code> means <code>0x00ffff × 256<sup>(0x1d − 3)</sup></code>.
+      It is also <code>bnProofOfWorkLimit</code>, the easiest target the code ever
+      allows.
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>Epochs and eras:</strong>
+        each dot is one 2,016-block difficulty period, laid along a spiral from genesis in
+        the spirit of the Anatomy of Bitcoin explorer's helix. Shading changes at every
+        halving, roughly every 104 periods.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Spiral of 521 difficulty epochs shaded by subsidy era, with halving boundaries marked">
+        ${btcFigs.epochSpiral}
+      </figure>
+    </div>
+
+    <h2>Money Supply and Halvings</h2>
+    <p>
+      New coins enter circulation only through coinbase transactions, which the whitepaper
+      likens to mining gold: "The steady addition of a constant of amount of new coins is
+      analogous to gold miners expending resources to add gold to
+      circulation."{{cite:nakamoto-whitepaper}} The whole monetary policy is three lines
+      of <code>CBlock::GetBlockValue()</code>:
+    </p>
+    <pre class="example">int64 nSubsidy = 50 * COIN;
+
+// Subsidy is cut in half every 4 years
+nSubsidy >>= (nBestHeight / 210000);
+
+return nSubsidy + nFees;</pre>
+    <p>
+      Shifting right by one bit halves a number. After every 210,000 blocks, about four years at
+      ten minutes each, the shift count goes up by one. The total is a geometric series: 210,000 × 50 ×
+      (1 + ½ + ¼ + …) approaches 21 million. Because the shift truncates to whole units,
+      the real total falls just short, and the reward reaches zero after 33 halvings. The
+      table lists each shift count with the tip heights that produce it:
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>Subsidy and supply:</strong>
+        computed by applying the shift above to every block. Half of all coins are issued
+        in the first era, three quarters by the end of the second.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Step chart of block subsidy halving every 210,000 blocks above a curve of cumulative coins approaching 21 million">
+        ${btcFigs.subsidySupply}
+      </figure>
+    </div>
+    <table class="color-key halving-schedule">
+      <thead>
+        <tr><th>Shift</th><th>Tip height</th><th>Subsidy (BTC)</th><th>Issued by era end</th></tr>
+      </thead>
+      <tbody>${btcFigs.halvingTable}
+      </tbody>
+    </table>
+    <p>
+      Two details in that line deserve a second look. First, it reads
+      <code>nBestHeight</code>, the height of the current tip, not the height of the block
+      being valued. A miner building block 210,001 on a tip at 210,000 is the first to get
+      the reduced reward. By v0.3.10 the function takes the block's own height instead.
+      Second, shifting a 64-bit integer by 64 or more places is undefined in C++. On
+      common hardware the count wraps, and the subsidy would jump back to 50 coins at
+      block 13,440,000, centuries from now. BIP 42 closed that hole in
+      2014.{{cite:bip-42}}
+    </p>
+
+    <h2>The Network</h2>
+    <p>
+      There is no server. Each node listens on TCP port 8333
+      (<code>DEFAULT_PORT</code>) and connects directly to others. The hard part is the
+      first contact: how does a fresh install learn a single address? v0.1.0 borrows a
+      public meeting place, an IRC channel:
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>Bootstrapping through IRC:</strong>
+        <code>ThreadIRCSeed()</code> joins <code>#bitcoin</code> under a nickname that
+        <em>is</em> its address: "u" followed by the Base58Check encoding of its IP and
+        port. Every other nickname in the channel decodes to a peer. The IPs shown are
+        documentation placeholders.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="A new node joins an IRC channel, decodes other nodes' addresses from their nicknames, then connects to them directly on port 8333">
+        ${btcFigs.bootstrapIrc}
+      </figure>
+    </div>
+    <p>
+      IRC was scaffolding. Once connected, a node asks its peers for more addresses
+      (<code>getaddr</code>), advertises its own (<code>addr</code>), and stores everything
+      in <code>addr.dat</code> for next time. As Satoshi later put it: "Bitcoin can get the
+      list of IPs from any bitcoin node. In that sense, every node serves as a directory
+      server."{{cite:nakamoto-irc-temporary}}
+    </p>
+    <p>
+      Three threads run the network. <code>ThreadSocketHandler</code> accepts connections and moves bytes,
+      <code>ThreadOpenConnections2</code> dials out, and <code>ThreadMessageHandler</code>
+      processes what arrives. The dialer stops once the node has 15 connections, inbound
+      and outbound together. It first picks a random /24 network (a "class C") and only then
+      an address inside it, so someone holding a whole block of addresses gets no more
+      attention than a lone node elsewhere. Information then spreads by
+      <strong>gossip</strong>:
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>Flooding by inventory:</strong>
+        a node announces only a hash (<code>inv</code>). A neighbor that lacks the item asks
+        for it (<code>getdata</code>), validates it, and announces it in turn. Duplicate
+        announcements cost a few bytes and are ignored.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Peer graph in concentric rings showing a transaction relayed outward hop by hop from its origin">
+        ${btcFigs.meshGossip}
+      </figure>
+    </div>
+
+    <h2>Messages</h2>
+    <p>
+      Each message on the wire starts with the four magic bytes <code>f9 be b4 d9</code>
+      (<code>pchMessageStart</code>), a 12-byte command name, and a payload length. There
+      is no checksum yet. <code>ProcessMessage()</code> in <code>main.cpp</code> handles
+      twelve commands, and a node must send <code>version</code> before anything else. A
+      new connection unfolds like this:
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>A first conversation:</strong>
+        the version exchange, address swap, and initial block download, followed later by
+        ordinary transaction relay. The left margin names the code that sends or handles
+        each step.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Sequence diagram of messages between a new node and a peer: version, addr, getaddr, getblocks, inv, getdata, block, then inv, getdata, tx">
+        ${btcFigs.messageSequence}
+      </figure>
+    </div>
+    <p>
+      The rest of the command set reflects plans that never took hold.
+      <code>checkorder</code>, <code>submitorder</code>, and <code>reply</code> carry the
+      pay-to-IP protocol. You connect to the payee's address, it hands you a public key,
+      and you pay that key. <code>review</code> belongs to an unfinished marketplace for
+      products and user reviews (<code>market.cpp</code>). Pay-to-IP was later removed,
+      and the marketplace was never finished.
+    </p>
+
+    <h2>Longest Chain Wins</h2>
+    <p>
+      Two miners can find blocks at nearly the same moment, and the network briefly splits.
+      The whitepaper's rule resolves it: "Nodes always consider the longest chain to be
+      the correct one and will keep working on extending it."{{cite:nakamoto-whitepaper}}
+      In v0.1.0 "longest" is literal. <code>AddToBlockIndex()</code> makes a block the new
+      tip if <code>pindexNew-&gt;nHeight &gt; nBestHeight</code>. A tie keeps whichever
+      branch arrived first.
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>A reorganization:</strong>
+        blocks 4 and 5 were the best chain until a competing branch reached height 6.
+        Transactions from the abandoned blocks are not lost: <code>Reorganize()</code>
+        collects them in <code>vResurrect</code> and hands them back to the memory pool
+        to be mined again.</p>
+      <figure class="ecc-figure ecc-figure--wide" aria-label="Fork after block 3: an old branch of blocks 4 and 5 is disconnected and a longer branch of 4', 5', 6' becomes the best chain">
+        ${btcFigs.forkReorg}
+      </figure>
+    </div>
+    <p>
+      Counting blocks rather than work has a flaw: a long branch of easy blocks could beat
+      a shorter branch that took more total work. Later versions compare accumulated
+      work (<code>bnChainWork</code>) instead. A block whose parent is unknown is kept in
+      <code>mapOrphanBlocks</code>, and the node asks the sender for the missing ancestors
+      with <code>getblocks</code>.
+    </p>
+
+    <h2>Life of a Payment</h2>
+    <p>
+      Here is a payment from one end to the other, with the function that does each step.
+      Steps 1–4 happen on the sender's machine inside <code>SendMoney()</code>. The rest
+      happens on the network.
+    </p>
+    <div class="ecc-block">
+      <p class="ecc-caption"><strong>From click to confirmation:</strong>
+        the wallet shows "<var>n</var>/unconfirmed" until a transaction is six blocks deep.
+        Coins a miner generates wait longer: consensus refuses to spend them until they
+        have matured for 100 blocks (<code>COINBASE_MATURITY</code>), and the wallet waits
+        20 more before counting them.</p>
+      <figure class="ecc-figure ecc-figure--xwide" aria-label="Six-step timeline of a payment from CreateTransaction to confirmation, above a ruler showing coinbase maturity at 100 and 120 blocks">
+        ${btcFigs.paymentLifecycle}
+      </figure>
+    </div>
+    <p>
+      A confirmation is simply depth: how many blocks sit on top of the one holding your
+      transaction. Each block added makes reversing the payment more expensive, because an
+      attacker would have to outpace the honest network from that point forward. The
+      whitepaper works out how quickly that chance falls with depth.{{cite:nakamoto-whitepaper}}
+    </p>
+
+    <h2>Where It Lives in the Code</h2>
+    <p>
+      Every mechanism in this chapter is a function you can read. The Reading Paths that
+      follow string them together into guided tours. This table is the index:
+    </p>
+    <table class="color-key protocol-code-map">
+      <thead>
+        <tr><th>Mechanism</th><th>Definition</th><th>Where</th></tr>
+      </thead>
+      <tbody>${codeMapRows}
+      </tbody>
+    </table>
+  </section>
+`;
+}
+
+/**
  * "Reading Paths" chapter (end of Part I) from src/reading-paths.yaml: guided
  * tours whose steps link to source lines by page number. Requests line anchors,
  * so it must run before the chapters are rendered.
@@ -801,6 +1297,111 @@ function generateReadingPathsHtml() {
 }
 
 /**
+ * Appendix "OpenSSL as Bitcoin Used It" from src/appendix/openssl.yaml: prose,
+ * a table of every OpenSSL name v0.1.0 uses (scanned from the source, with page
+ * links to first uses), and annotated excerpts of OpenSSL 0.9.8h
+ * (src/openssl-0.9.8h/, pinned in src/openssl-manifest.json). Requests line
+ * anchors, so it must run before the chapters are rendered.
+ */
+function generateOpenSSLAppendixHtml() {
+  if (!existsSync(OPENSSL_APPENDIX_PATH)) return { html: '', glossary: [] };
+  const doc = yaml.load(readFileSync(OPENSSL_APPENDIX_PATH, 'utf8')) || {};
+  const manifest = loadOpenSSLManifest();
+  const id = doc.id || 'openssl-appendix';
+  const ctx = createCitationContext(id, GLOBAL_REFERENCES, doc);
+  const prose = (text) => (text ? ctx.process(String(text)) : '');
+  // Citations are numbered as processed, so process prose in reading order
+  const introHtml = prose(doc.introduction);
+  const functionsIntroHtml = prose(doc.functions_intro);
+
+  // Function table: groups from the YAML, first use per file from the source scan
+  const usage = scanOpenSSLUsage();
+  const rows = (doc.functions || []).map((g) => {
+    const firstUse = new Map(); // file -> earliest line across the group's names
+    for (const name of g.names || []) {
+      for (const [file, line] of usage.get(name) || []) {
+        if (!firstUse.has(file) || line < firstUse.get(file)) firstUse.set(file, line);
+      }
+    }
+    const usedIn = [...firstUse.keys()].sort().map((file) =>
+      `<span class="xref-item"><span class="xref-file">${escapeHtml(file)}</span> <a class="xref" href="#${requestLineAnchor(file, firstUse.get(file))}"></a></span>`,
+    ).join('<br>');
+    const names = (g.names || []).map((n) => `<code>${escapeHtml(n)}</code>`).join(', ');
+    return `
+        <tr>
+          <td><strong>${escapeHtml(g.group)}</strong><div class="openssl-names">${names}</div></td>
+          <td>${prose(g.purpose)}</td>
+          <td class="openssl-used-in">${usedIn}</td>
+        </tr>`;
+  }).join('');
+  const nameCount = (doc.functions || []).reduce((n, g) => n + (g.names || []).length, 0);
+
+  const excerptHtml = (ex) => {
+    const [start, end] = ex.lines;
+    const code = readOpenSSLLines(ex.file).slice(start - 1, end).join('\n');
+    const label = start === end ? `line ${start}` : `lines ${start}–${end}`;
+    return `
+    <div class="openssl-excerpt">
+      <div class="openssl-excerpt-head"><code>${escapeHtml(ex.file)}</code> <span class="xref-file">${label}</span></div>
+      ${generateCodeBlockHtml(`openssl/${ex.file}`, code, getLanguage(ex.file), ex.annotations || [], ctx, start)}
+    </div>`;
+  };
+
+  const sectionsHtml = (doc.sections || []).map((sec) => `
+    <h2 id="${escapeHtml(`${id}-${sec.id}`)}">${escapeHtml(sec.heading)}</h2>
+    ${prose(sec.text)}
+    ${(sec.excerpts || []).map(excerptHtml).join('')}
+    ${prose(sec.after)}`).join('\n');
+  const conclusionHtml = prose(doc.conclusion);
+
+  const glossary = Array.isArray(doc.glossary) ? doc.glossary : [];
+  const glossaryHtml = glossary.length ? `
+    <div class="annotation-block chapter-glossary" id="keyterms-${id}">
+      <h4>Key Terms</h4>
+      <dl class="glossary-list">
+        ${glossary.map((g) => `<dt>${escapeHtml(String(g.term))}</dt><dd>${prose(g.definition)}</dd>`).join('\n        ')}
+      </dl>
+    </div>` : '';
+
+  const licenseLines = readOpenSSLLines('LICENSE');
+  if (licenseLines[licenseLines.length - 1] === '') licenseLines.pop();
+  const licenseHtml = doc.license_intro ? `
+    <h2 class="openssl-license-heading" id="${id}-license">OpenSSL License</h2>
+    ${prose(doc.license_intro)}
+    <div class="openssl-excerpt openssl-license">
+      <div class="openssl-excerpt-head"><code>LICENSE</code> <span class="xref-file">OpenSSL ${escapeHtml(manifest?.version || '')}</span></div>
+      ${generateCodeBlockHtml('openssl/LICENSE', licenseLines.join('\n'), 'text', [], ctx)}
+    </div>` : '';
+
+  const html = `
+  <section class="chapter concepts appendix-openssl" id="${id}">
+    <h1 class="chapter-title">${escapeHtml(doc.title || 'OpenSSL')}</h1>
+    <span class="appendix-label">Appendix</span>
+    ${introHtml}
+
+    <h2 id="${id}-functions">What v0.1.0 Calls</h2>
+    ${functionsIntroHtml}
+    <table class="color-key openssl-functions">
+      <thead>
+        <tr><th>${nameCount} names</th><th>Used for</th><th>First use</th></tr>
+      </thead>
+      <tbody>${rows}
+      </tbody>
+    </table>
+    ${sectionsHtml}
+
+    <div class="annotation-block chapter-conclusion">
+      <h4>Summary</h4>
+      ${conclusionHtml}
+    </div>
+    ${glossaryHtml}
+    ${ctx.renderFootnotes()}
+    ${licenseHtml}
+  </section>`;
+  return { html, glossary, id, title: doc.title };
+}
+
+/**
  * Colophon paragraph: SHA-256 tree hash of the printed v0.1.0 source
  * (src/source-manifest.json, verified by npm run validate before every build).
  */
@@ -818,12 +1419,30 @@ function sourceVerificationHtml() {
       Per-file hashes and the recipe are in <code>src/source-manifest.json</code> in the
       project repository; <code>node scripts/source-manifest.mjs</code> recomputes them.
     </p>
+${opensslVerificationHtml()}`;
+}
+
+/** Colophon paragraph: provenance of the OpenSSL 0.9.8h excerpts in the appendix. */
+function opensslVerificationHtml() {
+  const m = loadOpenSSLManifest();
+  if (!m || !existsSync(OPENSSL_APPENDIX_PATH)) return '';
+  return `
+    <p>
+      The OpenSSL ${escapeHtml(m.version)} excerpts in the appendix are reproduced from the
+      OpenSSL Project's release tarball, whose published SHA-1 is
+      <code class="source-tree-hash">${escapeHtml(m.tarball.sha1)}</code>. Their per-file
+      hashes are in <code>src/openssl-manifest.json</code>;
+      <code>node scripts/openssl-source.mjs --tarball openssl-${escapeHtml(m.version)}.tar.gz</code>
+      checks them against a downloaded copy.
+    </p>
 `;
 }
 
 function generateBookHtml(files) {
   const eccFigs = getEccPrimerFigures();
+  const bitcoinPrimerHtml = generateBitcoinPrimerHtml(getBitcoinPrimerFigures(), generateProtocolCodeMapHtml()); // requests line anchors — before chapters
   const readingPathsHtml = generateReadingPathsHtml(); // requests line anchors — before chapters
+  const opensslAppendix = generateOpenSSLAppendixHtml(); // likewise
   const printCss = readFileSync(join(STYLES_DIR, 'print.css'), 'utf8');
   const syntaxCss = readFileSync(join(STYLES_DIR, 'syntax.css'), 'utf8');
   const typefaceCss = readFileSync(join(STYLES_DIR, 'typeface.css'), 'utf8');
@@ -872,6 +1491,10 @@ function generateBookHtml(files) {
         <span class="toc-page" data-target="cpp-primer"></span>
       </li>
       <li class="toc-item">
+        <span class="toc-filename">The Bitcoin Protocol</span>
+        <span class="toc-page" data-target="bitcoin-primer"></span>
+      </li>
+      <li class="toc-item">
         <span class="toc-filename">Reading Paths</span>
         <span class="toc-page" data-target="reading-paths"></span>
       </li>
@@ -896,7 +1519,11 @@ function generateBookHtml(files) {
       <li class="toc-item">
         <span class="toc-filename">What Came After</span>
         <span class="toc-page" data-target="what-came-after"></span>
-      </li>
+      </li>${opensslAppendix.html ? `
+      <li class="toc-item">
+        <span class="toc-filename">Appendix: OpenSSL</span>
+        <span class="toc-page" data-target="${opensslAppendix.id}"></span>
+      </li>` : ''}
       <li class="toc-item">
         <span class="toc-filename">Glossary</span>
         <span class="toc-page" data-target="glossary"></span>
@@ -986,6 +1613,13 @@ function generateBookHtml(files) {
 
   }
   
+  for (const g of opensslAppendix.glossary || []) {
+    const key = String(g.term).toLowerCase();
+    if (!glossaryTerms.has(key)) {
+      glossaryTerms.set(key, { term: String(g.term), definition: String(g.definition), chapters: [] });
+    }
+    glossaryTerms.get(key).chapters.push({ filename: 'Appendix: OpenSSL', id: opensslAppendix.id });
+  }
   const backGlossaryHtml = generateBackGlossaryHtml(glossaryTerms);
 
   // Build intro sections content for index searching
@@ -996,11 +1630,12 @@ function generateBookHtml(files) {
     <section id="cryptography-primer">discrete logarithm elliptic curve ECC secp256k1 ECDSA SHA-256 RIPEMD-160 merkle tree proof-of-work generator point OpenSSL digital signature private key public key hash</section>
     <section id="reading-paths">transaction mining block network peer SendMoney CreateTransaction SignSignature EvalScript BitcoinMiner ProcessBlock AcceptBlock StartNode IRC version</section>
     <section id="cpp-primer">CTransaction CBlock CKey uint256 CBigNum vector map CRITICAL_BLOCK BOOST_FOREACH IMPLEMENT_SERIALIZE pointer reference class struct function</section>
+    <section id="bitcoin-primer">UTXO unspent output coinbase change scriptSig scriptPubKey OP_CHECKSIG OP_DUP OP_HASH160 OP_EQUALVERIFY OP_CODESEPARATOR OP_RETURN EvalScript Solver P2PK P2PKH address block header hashPrevBlock merkle nBits nNonce target difficulty retarget GetNextWorkRequired halving subsidy GetBlockValue 21 million mining BitcoinMiner extraNonce IRC peer port 8333 gossip inv getdata getblocks version addr reorganization longest chain Reorganize confirmation COINBASE_MATURITY</section>
     <section id="what-came-after">SegWit Taproot Schnorr libsecp256k1 LevelDB Berkeley DB BIP Lightning descriptor wallet JSON-RPC testnet Bitcoin Core version release changelog P2SH bech32 Miniscript Satoshi Gavin Andresen</section>
   `;
   
   // Combine all content for index searching
-  const allContentForIndex = introSectionsForIndex + chaptersHtml;
+  const allContentForIndex = introSectionsForIndex + chaptersHtml + opensslAppendix.html;
   const termLocations = findIndexTermLocations(allContentForIndex);
   const indexHtml = generateIndexHtml(termLocations);
   
@@ -2210,8 +2845,10 @@ P ⊕ Q = (10, 2)     check: 2² = 4,  10³ + 7 = 1007 ≡ 4 (mod 17) ✓</pre>
     <p>
       The point addition, scalar multiplication, and all the complex curve 
       arithmetic live inside OpenSSL's compiled libraries. This was wise—
-      cryptographic code is notoriously difficult to implement securely, and 
+      cryptographic code is notoriously difficult to implement securely, and
       using a well-audited library avoided potential vulnerabilities.
+      The appendix at the back of the book, <em>OpenSSL as Bitcoin Used It</em>,
+      follows these calls into the library's own source.
     </p>
     
     <h2>Digital Signatures (ECDSA)</h2>
@@ -3015,6 +3652,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 <span class="token class-name">CBlock</span> block<span class="token punctuation">;</span>  <span class="token comment">// created on stack</span>
 <span class="token comment">// deleted automatically when function returns</span></pre>
   </section>
+${bitcoinPrimerHtml}
 ${readingPathsHtml}
   <!-- Blank page before Part II -->
   <section class="blank-page"></section>
@@ -3470,6 +4108,9 @@ ${readingPathsHtml}
       the code keeps evolving—and now you know where to look.
     </p>
   </section>
+
+  <!-- APPENDIX — OpenSSL as Bitcoin used it (src/appendix/openssl.yaml) -->
+  ${opensslAppendix.html}
 
   <!-- GLOSSARY — every chapter's Key Terms, merged -->
   ${backGlossaryHtml}

@@ -290,6 +290,8 @@ function main() {
   if (manifest) {
     copyFileSync(join(ROOT_DIR, 'src', 'source-manifest.json'), join(DIST_DIR, 'source-manifest.json'));
     console.log('   ✓ source-manifest.json');
+    copyFileSync(join(ROOT_DIR, 'src', 'openssl-manifest.json'), join(DIST_DIR, 'openssl-manifest.json'));
+    console.log('   ✓ openssl-manifest.json');
   }
   const releasesDir = join(ROOT_DIR, 'releases');
   const latestSums = existsSync(releasesDir)

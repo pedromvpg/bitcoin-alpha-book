@@ -151,6 +151,21 @@ function loadProse() {
       if (g && g.definition) blobs.push({ where: `${at} glossary "${g.term}"`, text: g.definition, sources: doc.sources });
     });
   }
+  // OpenSSL appendix prose (src/appendix/openssl.yaml)
+  const appendixPath = join(ROOT_DIR, 'src', 'appendix', 'openssl.yaml');
+  if (existsSync(appendixPath)) {
+    const doc = yaml.load(readFileSync(appendixPath, 'utf8')) || {};
+    const at = 'src/appendix/openssl.yaml';
+    const add = (where, text) => { if (text) blobs.push({ where: `${at} ${where}`, text, sources: doc.sources }); };
+    for (const f of ['introduction', 'functions_intro', 'conclusion', 'license_intro']) add(f, doc[f]);
+    (doc.functions || []).forEach((g) => add(`functions "${g.group}"`, g.purpose));
+    (doc.sections || []).forEach((sec) => {
+      add(`${sec.id} text`, sec.text);
+      add(`${sec.id} after`, sec.after);
+      (sec.excerpts || []).forEach((ex) => (ex.annotations || []).forEach((a) => add(`${ex.file}:${a.line}`, a.text)));
+    });
+    (doc.glossary || []).forEach((g) => add(`glossary "${g?.term}"`, g?.definition));
+  }
   // build.js prose: split into paragraphs so a quote only pairs with its own cite
   const buildSrc = readFileSync(join(ROOT_DIR, 'scripts', 'build.js'), 'utf8');
   const lines = buildSrc.split('\n');

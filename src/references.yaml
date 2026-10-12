@@ -326,6 +326,62 @@ openssl-license:
   date: "1998–2009"
   url: "https://www.openssl.org/source/license-openssl-ssleay.txt"
 
+openssl-098h-source:
+  author: "OpenSSL Project"
+  title: "OpenSSL 0.9.8h source release (openssl-0.9.8h.tar.gz)"
+  date: "May 28, 2008"
+  url: "https://www.openssl.org/source/old/0.9.x/openssl-0.9.8h.tar.gz"
+  note: "SHA-1 ced4f2da24a202e01ea22bef30ebc8aee274de86; the version named in v0.1.0's readme.txt. Files quoted in the OpenSSL appendix are pinned in src/openssl-manifest.json"
+
+openssl-098-news:
+  author: "OpenSSL Project"
+  title: "OpenSSL NEWS: Major changes between OpenSSL 0.9.7g and OpenSSL 0.9.8"
+  date: "July 5, 2005"
+  url: "https://www.openssl.org/source/old/0.9.x/openssl-0.9.8h.tar.gz"
+  note: "NEWS file in the release tarball: \"Major work on Elliptic Crypto; ECDH and ECDSA added\""
+
+openssl-readscreen-fix-2010:
+  author: "Andy Polyakov (OpenSSL Project)"
+  title: "rand_win.c: fix logical bug in readscreen"
+  date: "March 22, 2010"
+  url: "https://github.com/openssl/openssl/commit/c3484e0268cfa7b7c6db81e01fc0f837bf375e52"
+  note: "Reverses the service test so the screen is skipped only for Windows services; first released in OpenSSL 0.9.8n"
+
+openssl-secadv-2015-01-08:
+  author: "OpenSSL Project"
+  title: "OpenSSL Security Advisory [08 Jan 2015]"
+  date: "January 8, 2015"
+  url: "https://openssl-library.org/news/secadv/20150108.txt"
+  note: "CVE-2014-3570 (BN_sqr, reported by Pieter Wuille) and CVE-2014-8275 (non-DER signature encodings); fixed in 1.0.1k, 1.0.0p, 0.9.8zd"
+
+sec2-2000:
+  author: "Certicom Research (Standards for Efficient Cryptography Group)"
+  title: "SEC 2: Recommended Elliptic Curve Domain Parameters, Version 1.0"
+  date: "September 20, 2000"
+  url: "https://www.secg.org/SEC2-Ver-1.0.pdf"
+  note: "Defines secp256k1; Koblitz-curve parameters versus verifiably random ones"
+
+bip-66:
+  author: "Pieter Wuille"
+  title: "BIP 66 — Strict DER signatures"
+  date: "2015"
+  url: "https://github.com/bitcoin/bips/blob/master/bip-0066.mediawiki"
+  note: "\"OpenSSL is not designed for consensus-critical behaviour\"; activated by version-3 blocks in July 2015"
+
+wuille-bip66-disclosure-2015:
+  author: "Pieter Wuille"
+  title: "Disclosure: consensus bug indirectly solved by BIP66 (bitcoin-dev)"
+  date: "July 28, 2015"
+  url: "https://gnusha.org/url/https://lists.linuxfoundation.org/pipermail/bitcoin-dev/2015-July/009697.html"
+  note: "OpenSSL's BER length parsing depended on the size of a C long, so 32-bit/Windows and 64-bit Linux/OS X nodes could disagree"
+
+bip-146:
+  author: "Johnson Lau, Pieter Wuille"
+  title: "BIP 146 — Dealing with signature encoding malleability"
+  date: "2016"
+  url: "https://github.com/bitcoin/bips/blob/master/bip-0146.mediawiki"
+  note: "LOW_S: negating S modulo the curve order leaves an ECDSA signature valid"
+
 bdb-license:
   author: "Oracle Corporation"
   title: "Berkeley DB License"

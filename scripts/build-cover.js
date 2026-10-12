@@ -838,10 +838,10 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       white-space: nowrap;
     }
 
-    /* Footer: credit above publisher logo (stacked from bottom of trim) */
+    /* Footer: copyright and credit above publisher logo (stacked from bottom of trim) */
     .front-footer {
       position: absolute;
-      bottom: ${px(BLEED + 0.5)}px;
+      bottom: ${px(BLEED + 0.4)}px;
       left: ${px(TRIM_W + BLEED + spine)}px;
       width: ${px(TRIM_W + BLEED)}px;
       display: flex;
@@ -852,14 +852,29 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       z-index: 2;
     }
 
+    /* Mirrors the title page: sans-serif copyright, mono byline in mixed case */
+    .cover-copyright,
     .annotations-credit {
-      font-family: 'Inter', sans-serif;
-      font-size: 5.5pt;
       font-weight: 500;
-      color: #c6c6c6;
-      letter-spacing: 0.04em;
-      margin: ${px(0.85)}px 0 0 0;
-      line-height: 1.35;
+      color: #7d7d7d;
+      letter-spacing: 0.5px;
+      margin: 0;
+      line-height: 1.5;
+      white-space: nowrap;
+    }
+
+    .cover-copyright {
+      font-family: 'Inter', sans-serif;
+      font-size: 6.5pt;
+    }
+
+    .annotations-credit {
+      font-family: 'Basis Grotesque Mono Pro', monospace;
+      font-size: 5.5pt;
+    }
+
+    .cover-copyright {
+      margin-top: ${px(0.85)}px;
     }
 
     /* ── Crop marks (SVG overlay, full canvas) ────────────────────── */
@@ -971,6 +986,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       ${buildCoverTocHtml(part2SourceToc)}
     </div>
     <div class="front-footer" id="cover-front-footer" data-cover-panel="front">
+      <p class="cover-copyright">Copyright (c) 2009 Satoshi Nakamoto</p>
       <p class="annotations-credit">${ANNOTATIONS_CREDIT}</p>
       <div class="front-logo-wrap" role="presentation">
         ${logoDataUri ? `<img class="front-logo-img" src="${logoDataUri}" width="768" height="157" alt="PirateHash">` : ''}

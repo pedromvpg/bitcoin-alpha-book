@@ -231,7 +231,9 @@ async function generatePDF() {
 
       .title-page .annotations-credit {
         font-family: 'Basis Grotesque Mono Pro', monospace;
-        font-size: 10pt;
+        font-size: 6.5pt;
+        line-height: 1.5;
+        text-wrap: balance;
         color: #666666;
         letter-spacing: 0.5px;
         margin: 0;
@@ -242,7 +244,7 @@ async function generatePDF() {
         font-size: 8pt;
         color: #666666;
         letter-spacing: 0.5px;
-        margin: 0;
+        margin: 0 0 0.35em 0;
       }
       
       .dedication-page {

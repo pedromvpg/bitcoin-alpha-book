@@ -28,11 +28,12 @@ jobs:
       - name: Validate annotations
         run: npm run validate
 
-      - name: Index tests
-        run: npm test
-
       - name: Build book HTML
         run: npm run build
+
+      # Reads the built HTML, so it must run after the build
+      - name: Index tests
+        run: npm test
 
       - name: Upload built book
         uses: actions/upload-artifact@v4

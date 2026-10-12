@@ -1628,7 +1628,7 @@ function generateBookHtml(files) {
     <section id="prehistory">SHA-256 RIPEMD-160 merkle tree proof-of-work hashcash difficulty Hal Finney RPOW Adam Back Wei Dai b-money Nick Szabo Bit Gold David Chaum DigiCash whitepaper cypherpunk digital signature</section>
     <section id="computer-concepts">binary hexadecimal memory pointer data hash SHA-256 ECDSA public key private key</section>
     <section id="cryptography-primer">discrete logarithm elliptic curve ECC secp256k1 ECDSA SHA-256 RIPEMD-160 merkle tree proof-of-work generator point OpenSSL digital signature private key public key hash</section>
-    <section id="reading-paths">transaction mining block network peer SendMoney CreateTransaction SignSignature EvalScript BitcoinMiner ProcessBlock AcceptBlock StartNode IRC version</section>
+    <section id="reading-paths">transaction mining block network peer SendMoney CreateTransaction SignSignature EvalScript BitcoinMiner ProcessBlock AcceptBlock StartNode IRC version key signature randomness RAND_screen RandAddSeed MakeNewKey EC_KEY_generate_key Hash160 address SignatureHash CheckSig ECDSA_sign ECDSA_verify nonce OpenSSL</section>
     <section id="cpp-primer">CTransaction CBlock CKey uint256 CBigNum vector map CRITICAL_BLOCK BOOST_FOREACH IMPLEMENT_SERIALIZE pointer reference class struct function</section>
     <section id="bitcoin-primer">UTXO unspent output coinbase change scriptSig scriptPubKey OP_CHECKSIG OP_DUP OP_HASH160 OP_EQUALVERIFY OP_CODESEPARATOR OP_RETURN EvalScript Solver P2PK P2PKH address block header hashPrevBlock merkle nBits nNonce target difficulty retarget GetNextWorkRequired halving subsidy GetBlockValue 21 million mining BitcoinMiner extraNonce IRC peer port 8333 gossip inv getdata getblocks version addr reorganization longest chain Reorganize confirmation COINBASE_MATURITY</section>
     <section id="what-came-after">SegWit Taproot Schnorr libsecp256k1 LevelDB Berkeley DB BIP Lightning descriptor wallet JSON-RPC testnet Bitcoin Core version release changelog P2SH bech32 Miniscript Satoshi Gavin Andresen</section>
@@ -2399,8 +2399,6 @@ Check it yourself: SHA1 of this exact header begins 00000a4a…
     </p>
   </section>
 
-  <section class="blank-page"></section>
-
   <!-- COMPUTER CONCEPTS -->
   <section class="chapter concepts" id="computer-concepts">
     <h1 class="chapter-title">Computer Concepts</h1>
@@ -2579,8 +2577,6 @@ SHA256("bitcoin") =  (just lowercase 'b')
     </ul>
   </section>
   
-  <section class="blank-page"></section>
-
   <!-- CRYPTOGRAPHY CONCEPTS -->
   <section class="chapter concepts" id="cryptography-primer">
     <h1 class="chapter-title">Cryptography Basics</h1>
@@ -3056,10 +3052,6 @@ Miner tries (hash = double SHA-256 of the block header):
       No trusted authority is needed—mathematics provides the guarantees.
     </p>
   </section>
-
-  <section class="blank-page"></section>
-
-  <section class="blank-page"></section>
 
   <!-- C++ PRIMER -->
   <section class="chapter concepts" id="cpp-primer">

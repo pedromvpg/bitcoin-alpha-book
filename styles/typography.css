@@ -90,6 +90,9 @@
   --font-size-2xl: 20pt;
   --font-size-3xl: 28pt;
   --font-size-4xl: 42pt;
+  /* Running prose (Introduction, primers, chapter intros, What Came After)
+     matches the 8pt annotation text so the book reads at one size. */
+  --font-size-prose: 8pt;
   
   /* Line heights */
   --line-height-tight: 1.2;
@@ -203,7 +206,7 @@ p {
 
 /* Lead paragraph (first in section) */
 p.lead {
-  font-size: var(--font-size-md);
+  font-size: var(--font-size-prose);
   line-height: var(--line-height-normal);
   text-align: left;
 }
@@ -721,8 +724,8 @@ dd {
 }
 
 .introduction p {
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-relaxed);
+  font-size: var(--font-size-prose);
+  line-height: var(--line-height-normal);
   margin-bottom: 0.75em;
 }
 
@@ -732,7 +735,8 @@ dd {
 
 .introduction li {
   margin-bottom: 0.4em;
-  line-height: var(--line-height-relaxed);
+  font-size: var(--font-size-prose);
+  line-height: var(--line-height-normal);
 }
 
 .introduction code {
@@ -901,8 +905,8 @@ dd {
 }
 
 .concepts p {
-  font-size: var(--font-size-base);
-  line-height: var(--line-height-relaxed);
+  font-size: var(--font-size-prose);
+  line-height: var(--line-height-normal);
   margin-bottom: 0.75em;
 }
 
@@ -912,7 +916,8 @@ dd {
 
 .concepts li {
   margin-bottom: 0.4em;
-  line-height: var(--line-height-relaxed);
+  font-size: var(--font-size-prose);
+  line-height: var(--line-height-normal);
 }
 
 .concepts code {
@@ -1312,8 +1317,8 @@ pre.example .token.constant { color: #005cc5; }
 }
 
 .chapter-intro .description {
-  font-size: var(--font-size-md);
-  line-height: var(--line-height-relaxed);
+  font-size: var(--font-size-prose);
+  line-height: var(--line-height-normal);
   color: var(--color-text);
 }
 
@@ -1719,7 +1724,7 @@ sup:has(> a.cite-ref) + sup:has(> a.cite-ref)::before {
 
 #what-came-after li {
   margin-bottom: 0.5em;
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-prose);
   line-height: 1.5;
 }
 

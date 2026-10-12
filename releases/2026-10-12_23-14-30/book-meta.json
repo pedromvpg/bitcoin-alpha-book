@@ -1,0 +1,139 @@
+{
+  "pageCount": 730,
+  "part2SourceToc": [
+    {
+      "label": "rc/ (Resources)",
+      "page": "75"
+    },
+    {
+      "label": "base58.h",
+      "page": "79"
+    },
+    {
+      "label": "bignum.h",
+      "page": "89"
+    },
+    {
+      "label": "db.cpp",
+      "page": "103"
+    },
+    {
+      "label": "db.h",
+      "page": "123"
+    },
+    {
+      "label": "headers.h",
+      "page": "137"
+    },
+    {
+      "label": "irc.cpp",
+      "page": "147"
+    },
+    {
+      "label": "irc.h",
+      "page": "161"
+    },
+    {
+      "label": "key.h",
+      "page": "167"
+    },
+    {
+      "label": "license.txt",
+      "page": "177"
+    },
+    {
+      "label": "main.cpp",
+      "page": "183"
+    },
+    {
+      "label": "main.h",
+      "page": "239"
+    },
+    {
+      "label": "makefile",
+      "page": "269"
+    },
+    {
+      "label": "makefile.vc",
+      "page": "277"
+    },
+    {
+      "label": "market.cpp",
+      "page": "285"
+    },
+    {
+      "label": "market.h",
+      "page": "297"
+    },
+    {
+      "label": "net.cpp",
+      "page": "307"
+    },
+    {
+      "label": "net.h",
+      "page": "333"
+    },
+    {
+      "label": "readme.txt",
+      "page": "355"
+    },
+    {
+      "label": "script.cpp",
+      "page": "365"
+    },
+    {
+      "label": "script.h",
+      "page": "391"
+    },
+    {
+      "label": "serialize.h",
+      "page": "407"
+    },
+    {
+      "label": "sha.cpp",
+      "page": "431"
+    },
+    {
+      "label": "sha.h",
+      "page": "449"
+    },
+    {
+      "label": "ui.cpp",
+      "page": "459"
+    },
+    {
+      "label": "ui.h",
+      "page": "507"
+    },
+    {
+      "label": "ui.rc",
+      "page": "519"
+    },
+    {
+      "label": "uibase.cpp",
+      "page": "525"
+    },
+    {
+      "label": "uibase.h",
+      "page": "557"
+    },
+    {
+      "label": "uint256.h",
+      "page": "573"
+    },
+    {
+      "label": "uiproject.fbp",
+      "page": "593"
+    },
+    {
+      "label": "util.cpp",
+      "page": "657"
+    },
+    {
+      "label": "util.h",
+      "page": "671"
+    }
+  ],
+  "edition": "v0.3.9",
+  "annotationsCredit": "Annotations by Claude Sonnet 4.6 (Revised by Opus 4.6, GPT 5.6 Sol, Grok 4.5, Kimi K3, Opus 5.5)"
+}

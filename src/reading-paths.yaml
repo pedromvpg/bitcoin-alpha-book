@@ -2,9 +2,13 @@
 #
 # Rendered as the "Reading Paths" chapter at the end of Part I (scripts/build.js).
 # Each step points at a definition (`symbol:` — the qualified name exactly as
-# defined, e.g. "CBlock::AcceptBlock" or "SendMoney") or at a specific line
-# (`file:` + `line:`). The build prints the page number of that line; the
-# validator (npm run validate) fails if a step cannot be resolved.
+# defined, e.g. "CBlock::AcceptBlock" or "SendMoney"), at a specific line
+# (`file:` + `line:`), or at a line of OpenSSL 0.9.8h (`openssl:` + `line:`,
+# path relative to src/openssl-0.9.8h/; the line must fall inside an excerpt
+# printed in the OpenSSL appendix). File and OpenSSL steps may add `label:`,
+# the function the line belongs to; it must appear on that line or on the
+# nearest column-0 signature above it. The build prints the page number of
+# that line; the validator (npm run validate) fails if a step cannot be resolved.
 #
 # Notes are plain-HTML prose in the book's voice; facts must match the source.
 
@@ -93,3 +97,94 @@ paths:
       - file: "main.cpp"
         line: 1705
         note: "The <code>version</code> handler: negotiates the protocol version and, from a full node, requests blocks with <code>getblocks</code>. Synchronization begins."
+
+  - id: keys
+    title: "From Randomness to an Address"
+    intro: |
+      Follow a key pair from the entropy gathered before <code>main</code> runs to
+      the address the wallet shows as <em>Your Address</em>. Several steps cross into
+      OpenSSL; their pages are in the appendix.
+    steps:
+      - file: "util.cpp"
+        line: 29
+        label: "CInit::CInit"
+        note: "A global object's constructor, so it runs before <code>main</code>. Gives OpenSSL one Windows mutex per lock it asks for, then seeds the random pool with <code>RAND_screen</code> and <code>RandAddSeed(true)</code>."
+      - openssl: "crypto/rand/rand_win.c"
+        line: 625
+        label: "RAND_screen"
+        note: "Inside OpenSSL. <code>RAND_poll</code> gathers Windows sources, the CryptoAPI generator among them; <code>readscreen</code> is meant to hash the screen but, through a reversed test, returns early for an ordinary desktop program."
+      - symbol: "RandAddSeed"
+        note: "Satoshi's own sources: the CPU performance counter on every call and, at startup or at most every five minutes after, a SHA-256 hash of the Windows performance data."
+      - symbol: "CMainFrame::OnMouseEvents"
+        note: "Mouse events in the main window add the performance counter and the pointer's x and y coordinates to the pool."
+      - symbol: "LoadWallet"
+        note: "On first run the wallet has no default key, so one is made, stored, and labeled \"Your Address\" in the address book."
+      - file: "key.h"
+        line: 49
+        label: "CKey::CKey"
+        note: "Every <code>CKey</code> begins as an empty OpenSSL key on secp256k1: <code>EC_KEY_new_by_curve_name(NID_secp256k1)</code>."
+      - openssl: "crypto/ec/ec_curve.c"
+        line: 381
+        label: "_EC_SECG_PRIME_256K1"
+        note: "The curve that ID names, as OpenSSL stores it: the field prime p, a = 0, b = 7, the generator G, and its order n, in hex from SEC 2."
+      - file: "key.h"
+        line: 75
+        label: "CKey::MakeNewKey"
+        note: "One call: <code>EC_KEY_generate_key</code>."
+      - openssl: "crypto/ec/ec_key.c"
+        line: 262
+        label: "EC_KEY_generate_key"
+        note: "The private key is a random integer from 1 to n − 1, drawn from the pool seeded above. The public key is that number times G."
+      - symbol: "AddKey"
+        note: "Stores the pair in <code>mapKeys</code>, the private key DER-encoded by <code>i2d_ECPrivateKey</code>, indexes the public key by its <code>Hash160</code>, and writes both to <code>wallet.dat</code>."
+      - symbol: "Hash160"
+        note: "SHA-256, then RIPEMD-160, both from OpenSSL: the 20-byte hash an address encodes."
+      - symbol: "Hash160ToAddress"
+        note: "Prepends the version byte 0 and Base58-encodes the result with a four-byte checksum. <code>PubKeyToAddress</code> is this function applied to <code>Hash160</code> of the public key."
+
+  - id: signatures
+    title: "A Signature, Made and Checked"
+    intro: |
+      Follow one input's signature from the sender's wallet, through OpenSSL's ECDSA
+      code, to the check every node runs before accepting the transaction.
+    steps:
+      - symbol: "SignSignature"
+        note: "Called by <code>CreateTransaction</code> for each input. Hashes the transaction, has <code>Solver</code> produce the <code>scriptSig</code>, then test-runs it with <code>EvalScript</code>."
+      - symbol: "SignatureHash"
+        note: "Copies the transaction, blanks every input's <code>scriptSig</code>, puts the previous output's script in the one being signed, appends the hash type, and double-SHA-256es the result. These 32 bytes are what gets signed."
+      - file: "script.cpp"
+        line: 975
+        label: "Solver"
+        note: "Matches the previous output against the two standard templates, finds the private key in <code>mapKeys</code>, signs, and appends the hash-type byte; for a pay-to-address output it pushes the public key too."
+      - file: "key.h"
+        line: 121
+        label: "CKey::Sign"
+        note: "Hands the hash and key to <code>ECDSA_sign</code> with a 10,000-byte buffer for a DER-encoded signature of at most 72 bytes."
+      - openssl: "crypto/ecdsa/ecs_ossl.c"
+        line: 139
+        label: "ecdsa_sign_setup"
+        note: "Draws the nonce k from the random pool, computes R = k × G, takes r from R's x-coordinate, and inverts k. A repeated or predictable k gives away the private key."
+      - openssl: "crypto/ecdsa/ecs_ossl.c"
+        line: 295
+        label: "ecdsa_do_sign"
+        note: "s = k<sup>−1</sup>(m + r·d) mod n. Nothing here keeps s in the lower half of its range, the root of the malleability the appendix describes."
+      - symbol: "VerifySignature"
+        note: "On the receiving node, <code>ConnectInputs</code> calls this for every input: the <code>scriptSig</code> and the previous output's <code>scriptPubKey</code>, run as one script."
+      - file: "script.cpp"
+        line: 692
+        label: "OP_CHECKSIG"
+        note: "Pops the signature and public key, removes the signature from the script being hashed, since a signature cannot sign itself, and calls <code>CheckSig</code>."
+      - symbol: "CheckSig"
+        note: "Parses the public key with <code>o2i_ECPublicKey</code>, strips the hash-type byte from the signature, recomputes <code>SignatureHash</code>, and asks the key to verify."
+      - file: "key.h"
+        line: 133
+        label: "CKey::Verify"
+        note: "Only a return value of 1 passes. <code>ECDSA_verify</code>'s −1 for an error and 0 for a bad signature both fail."
+      - openssl: "crypto/ecdsa/ecs_vrf.c"
+        line: 91
+        label: "ECDSA_verify"
+        note: "Parses the DER bytes with <code>d2i_ECDSA_SIG</code>. Whatever this permissive parser accepted was, until BIP 66, a valid Bitcoin signature."
+      - openssl: "crypto/ecdsa/ecs_ossl.c"
+        line: 441
+        label: "ecdsa_do_verify"
+        note: "Checks that r and s lie in [1, n − 1], computes u1 × G + u2 × Q, and accepts if that point's x-coordinate mod n equals r."

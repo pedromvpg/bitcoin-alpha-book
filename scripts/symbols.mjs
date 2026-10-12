@@ -22,9 +22,12 @@
 import { readdirSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import yaml from 'js-yaml';
+import { readOpenSSLLines } from './openssl-source.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SOURCE_DIR = join(__dirname, '..', 'src', 'bitcoin-0.01', 'src');
+const OPENSSL_APPENDIX_PATH = join(__dirname, '..', 'src', 'appendix', 'openssl.yaml');
 
 const KEYWORDS = new Set([
   'if', 'for', 'while', 'switch', 'return', 'sizeof', 'catch', 'foreach',
@@ -241,8 +244,14 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
 }
 
 /**
- * Resolve a reading-path step ({symbol} or {file, line}) to {file, line}.
- * `symbol` must equal a definition's qualified name ("CBlock::AcceptBlock").
+ * Resolve a reading-path step to {file, line}. Three forms:
+ *   {symbol}              a definition's qualified name ("CBlock::AcceptBlock")
+ *   {file, line}          a line of the v0.1.0 source
+ *   {openssl, line}       a line of OpenSSL 0.9.8h ("crypto/ecdsa/ecs_ossl.c");
+ *                         it must fall inside an excerpt printed in the appendix,
+ *                         and resolves to the appendix's "openssl/<path>" anchor
+ * File and OpenSSL steps may carry a `label:` (the function the line belongs
+ * to); it must appear on that line or on the nearest column-0 signature above.
  * Returns {error} when it cannot be resolved.
  */
 export function resolveStep(step) {
@@ -253,15 +262,40 @@ export function resolveStep(step) {
     }
     return { file: matches[0].file, line: matches[0].line, symbol: step.symbol };
   }
-  if (step.file && Number.isInteger(step.line)) {
-    let count = 0;
+  if ((step.file || step.openssl) && Number.isInteger(step.line)) {
+    const name = step.openssl || step.file;
+    let lines;
     try {
-      count = readFileSync(join(SOURCE_DIR, step.file), 'latin1').split('\n').length;
+      lines = step.openssl ? readOpenSSLLines(step.openssl) : readFileSync(join(SOURCE_DIR, step.file), 'latin1').split('\n');
     } catch {
-      return { error: `file "${step.file}" not found` };
+      return { error: `file "${name}" not found` };
     }
-    if (step.line < 1 || step.line > count) return { error: `line ${step.line} out of range in ${step.file}` };
-    return { file: step.file, line: step.line };
+    if (step.line < 1 || step.line > lines.length) return { error: `line ${step.line} out of range in ${name}` };
+    if (step.openssl && !opensslExcerpts().some((ex) => ex.file === step.openssl && step.line >= ex.lines[0] && step.line <= ex.lines[1])) {
+      return { error: `OpenSSL ${name}:${step.line} is not inside an appendix excerpt` };
+    }
+    if (step.label && !labelMatches(step.label, lines, step.line)) {
+      return { error: `label "${step.label}" not found at ${name}:${step.line} or its enclosing signature` };
+    }
+    return { file: step.openssl ? `openssl/${step.openssl}` : step.file, line: step.line, symbol: step.label };
   }
-  return { error: 'step needs symbol: or file: + line:' };
+  return { error: 'step needs symbol:, file: + line:, or openssl: + line:' };
+}
+
+function labelMatches(label, lines, line) {
+  const name = label.split('::').pop().replace(/\(.*$/, '');
+  if (lines[line - 1].includes(name)) return true;
+  for (let i = line - 2; i >= 0; i--) {
+    if (/^[A-Za-z_][^;]*\(/.test(lines[i])) return lines[i].includes(name);
+  }
+  return false;
+}
+
+let opensslExcerptCache = null;
+function opensslExcerpts() {
+  if (!opensslExcerptCache) {
+    const doc = yaml.load(readFileSync(OPENSSL_APPENDIX_PATH, 'utf8')) || {};
+    opensslExcerptCache = (doc.sections || []).flatMap((sec) => sec.excerpts || []);
+  }
+  return opensslExcerptCache;
 }

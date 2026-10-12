@@ -1,137 +1,137 @@
 {
-  "pageCount": 750,
+  "pageCount": 730,
   "part2SourceToc": [
     {
       "label": "rc/ (Resources)",
-      "page": "87"
+      "page": "75"
     },
     {
       "label": "base58.h",
-      "page": "91"
+      "page": "79"
     },
     {
       "label": "bignum.h",
-      "page": "101"
+      "page": "89"
     },
     {
       "label": "db.cpp",
-      "page": "115"
+      "page": "103"
     },
     {
       "label": "db.h",
-      "page": "137"
+      "page": "123"
     },
     {
       "label": "headers.h",
-      "page": "151"
+      "page": "137"
     },
     {
       "label": "irc.cpp",
-      "page": "161"
+      "page": "147"
     },
     {
       "label": "irc.h",
-      "page": "175"
+      "page": "161"
     },
     {
       "label": "key.h",
-      "page": "181"
+      "page": "167"
     },
     {
       "label": "license.txt",
-      "page": "191"
+      "page": "177"
     },
     {
       "label": "main.cpp",
-      "page": "199"
+      "page": "183"
     },
     {
       "label": "main.h",
-      "page": "255"
+      "page": "239"
     },
     {
       "label": "makefile",
-      "page": "285"
+      "page": "269"
     },
     {
       "label": "makefile.vc",
-      "page": "293"
+      "page": "277"
     },
     {
       "label": "market.cpp",
-      "page": "301"
+      "page": "285"
     },
     {
       "label": "market.h",
-      "page": "313"
+      "page": "297"
     },
     {
       "label": "net.cpp",
-      "page": "323"
+      "page": "307"
     },
     {
       "label": "net.h",
-      "page": "349"
+      "page": "333"
     },
     {
       "label": "readme.txt",
-      "page": "371"
+      "page": "355"
     },
     {
       "label": "script.cpp",
-      "page": "381"
+      "page": "365"
     },
     {
       "label": "script.h",
-      "page": "407"
+      "page": "391"
     },
     {
       "label": "serialize.h",
-      "page": "423"
+      "page": "407"
     },
     {
       "label": "sha.cpp",
-      "page": "447"
+      "page": "431"
     },
     {
       "label": "sha.h",
-      "page": "465"
+      "page": "449"
     },
     {
       "label": "ui.cpp",
-      "page": "475"
+      "page": "459"
     },
     {
       "label": "ui.h",
-      "page": "523"
+      "page": "507"
     },
     {
       "label": "ui.rc",
-      "page": "535"
+      "page": "519"
     },
     {
       "label": "uibase.cpp",
-      "page": "541"
+      "page": "525"
     },
     {
       "label": "uibase.h",
-      "page": "573"
+      "page": "557"
     },
     {
       "label": "uint256.h",
-      "page": "589"
+      "page": "573"
     },
     {
       "label": "uiproject.fbp",
-      "page": "609"
+      "page": "593"
     },
     {
       "label": "util.cpp",
-      "page": "673"
+      "page": "657"
     },
     {
       "label": "util.h",
-      "page": "687"
+      "page": "671"
     }
   ],
   "edition": "v0.3.9",

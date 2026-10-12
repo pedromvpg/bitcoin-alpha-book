@@ -162,6 +162,12 @@ async function generatePDF() {
         @bottom-left { content: none; } @bottom-right { content: none; } @bottom-center { content: none; }
       }
 
+      /* Blank pages Paged.js inserts to satisfy break-before: left/right */
+      @page :blank {
+        @top-left { content: none; } @top-right { content: none; } @top-center { content: none; }
+        @bottom-left { content: none; } @bottom-right { content: none; } @bottom-center { content: none; }
+      }
+
       @page acknowledgments-page {
         @top-left { content: none; } @top-right { content: none; } @top-center { content: none; }
         @bottom-left { content: none; } @bottom-right { content: none; } @bottom-center { content: none; }
@@ -367,8 +373,8 @@ async function generatePDF() {
       }
       
       .introduction p {
-        font-size: 10pt;
-        line-height: 1.65;
+        font-size: 8pt;
+        line-height: 1.5;
         margin-bottom: 0.75em;
         text-align: left;
       }
@@ -379,7 +385,8 @@ async function generatePDF() {
       
       .introduction li {
         margin-bottom: 0.4em;
-        line-height: 1.65;
+        font-size: 8pt;
+        line-height: 1.5;
       }
       
       .introduction code {
@@ -416,8 +423,8 @@ async function generatePDF() {
       }
       
       .concepts p {
-        font-size: 10pt;
-        line-height: 1.65;
+        font-size: 8pt;
+        line-height: 1.5;
         margin-bottom: 0.75em;
         text-align: left;
       }
@@ -428,7 +435,8 @@ async function generatePDF() {
       
       .concepts li {
         margin-bottom: 0.4em;
-        line-height: 1.65;
+        font-size: 8pt;
+        line-height: 1.5;
       }
       
       .concepts code {

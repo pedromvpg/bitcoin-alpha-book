@@ -114,7 +114,7 @@ async function generatePDF() {
         margin: 0.85in 0.625in 0.75in 0.875in;
 
         @top-right {
-          content: 'BITCOIN v0.01 ALPHA — ANNOTATED';
+          content: 'BITCOIN v0.1.0 — ANNOTATED';
           font-family: 'Basis Grotesque Mono Pro', monospace;
           font-size: 7pt;
           color: #666;
@@ -743,9 +743,23 @@ async function generatePDF() {
       }
     });
     
-    return { total: indexRefs.length, filled };
+    // Cross-references (Called from / reading paths): page number only
+    const xrefs = document.querySelectorAll('a.xref');
+    let xrefFilled = 0;
+    xrefs.forEach(ref => {
+      const targetId = (ref.getAttribute('href') || '').replace('#', '');
+      const pageNum = sectionPageMap[targetId];
+      if (!pageNum) return;
+      const pageId = pageIdMap[pageNum];
+      if (pageId) ref.setAttribute('href', '#' + pageId);
+      ref.textContent = pageNum;
+      xrefFilled++;
+    });
+
+    return { total: indexRefs.length, filled, xrefTotal: xrefs.length, xrefFilled };
   });
   console.log(`   ✓ Filled ${indexFilled.filled}/${indexFilled.total} index page numbers`);
+  console.log(`   ✓ Filled ${indexFilled.xrefFilled}/${indexFilled.xrefTotal} cross-reference page numbers`);
 
   // Remove Paged.js preview UI elements before PDF generation
   await page.evaluate(() => {

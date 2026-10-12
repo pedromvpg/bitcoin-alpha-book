@@ -19,8 +19,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # The v0.01 source is gitignored; fetch it (primary: bitcointalk zip,
-      # fallback: GitHub mirror — see scripts/fetch-source.js)
+      # The v0.1.0 source is copied from the committed Nakamoto Institute
+      # archive and verified against src/source-manifest.json (no network)
       - name: Fetch Bitcoin v0.01 source
         run: npm run fetch
 

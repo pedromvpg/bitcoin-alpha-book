@@ -70,7 +70,7 @@ annotations:
 
   - line: 70
     type: margin
-    text: "Data push dispatch: opcodes 0x01–0x4b push that many bytes. OP_PUSHDATA1 uses the next byte as a length, OP_PUSHDATA2 uses two bytes, OP_PUSHDATA4 uses four. These cover everything from a 1-byte integer to pushes of arbitrary size — v0.01 sets no maximum (a 5,000-byte cap arrived in mid-2010, cut to 520 bytes in August 2010).{{cite:commit-4bd188c}} The vast majority of real scripts are mostly push operations followed by a few crypto opcodes."
+    text: "Data push dispatch: opcodes 0x01–0x4b push that many bytes. OP_PUSHDATA1 uses the next byte as a length, OP_PUSHDATA2 uses two bytes, OP_PUSHDATA4 uses four. These cover everything from a 1-byte integer to pushes of arbitrary size — v0.1.0 sets no maximum (a 5,000-byte cap arrived in mid-2010, cut to 520 bytes in August 2010).{{cite:commit-4bd188c}} The vast majority of real scripts are mostly push operations followed by a few crypto opcodes."
 
   - line: 78
     type: margin
@@ -94,7 +94,7 @@ annotations:
 
   - line: 377
     type: margin
-    text: "<code>OP_CAT</code> — concatenates the top two stack elements. This opcode was present in v0.01 but disabled in August 2010 along with the other splice, bitwise, and multiply/shift opcodes.{{cite:commit-4bd188c}}{{cite:opcode-disable-2010}} The danger is easy to see: repeated <code>OP_DUP OP_CAT</code> doubles an element each time, so a few dozen opcodes could request gigabytes of memory."
+    text: "<code>OP_CAT</code> — concatenates the top two stack elements. This opcode was present in v0.1.0 but disabled in August 2010 along with the other splice, bitwise, and multiply/shift opcodes.{{cite:commit-4bd188c}}{{cite:opcode-disable-2010}} The danger is easy to see: repeated <code>OP_DUP OP_CAT</code> doubles an element each time, so a few dozen opcodes could request gigabytes of memory."
 
   - line: 444
     type: margin
@@ -166,7 +166,7 @@ annotations:
 
   - line: 913
     type: margin
-    text: "<code>Solver</code> (pattern matcher) — identifies the type of a scriptPubKey by comparing against known templates. Two templates recognized in v0.01: P2PK (direct pubkey + CHECKSIG) and P2PKH (DUP HASH160 pubkeyhash EQUALVERIFY CHECKSIG). Returns the extracted placeholder values (public key or hash)."
+    text: "<code>Solver</code> (pattern matcher) — identifies the type of a scriptPubKey by comparing against known templates. Two templates recognized in v0.1.0: P2PK (direct pubkey + CHECKSIG) and P2PKH (DUP HASH160 pubkeyhash EQUALVERIFY CHECKSIG). Returns the extracted placeholder values (public key or hash)."
 
   - line: 975
     type: margin
@@ -186,7 +186,7 @@ annotations:
 
   - line: 1126
     type: margin
-    text: "This concatenation is v0.01's deepest bug. Because scriptSig and scriptPubKey run as one program, anything the spender's half does can short-circuit the owner's lock: a scriptSig of <code>OP_1 OP_RETURN</code> jumps to the end (line 172), never reaching the scriptPubKey, and leaves true on the stack. Anyone could have spent anyone's coins. Satoshi made OP_RETURN fail in v0.3.5 (July 2010),{{cite:cve-2010-5141}} and later versions evaluate the two scripts separately."
+    text: "This concatenation is v0.1.0's deepest bug. Because scriptSig and scriptPubKey run as one program, anything the spender's half does can short-circuit the owner's lock: a scriptSig of <code>OP_1 OP_RETURN</code> jumps to the end (line 172), never reaching the scriptPubKey, and leaves true on the stack. Anyone could have spent anyone's coins. Satoshi made OP_RETURN fail in v0.3.5 (July 2010),{{cite:cve-2010-5141}} and later versions evaluate the two scripts separately."
 
 conclusion: |
   <p>

@@ -100,6 +100,13 @@
   color: #000000;
 }
 
+/* Line notes inside code: indent to the code column so they read apart from
+   the line numbers. .line-num width + padding-right (3em + 1.5em) at the 6pt
+   code size = 27pt; absolute because the note text is 8pt. */
+.code-content .annotation-content {
+  padding-left: 27pt;
+}
+
 /* Inline code in annotations - matches syntax highlighting */
 .annotation-content code {
   font-family: var(--font-code);
@@ -335,6 +342,11 @@ code.inline {
   font-size: 7.5pt;
 }
 
+/* Code column: (2.8em + 1.2em) at 5pt = 20pt */
+.chapter-compact .code-content .annotation-content {
+  padding-left: 20pt;
+}
+
 .chapter-dense .code-container {
   font-size: 4.5pt;
   line-height: 1.3;
@@ -360,3 +372,62 @@ code.inline {
   column-span: all;
 }
 
+/* Code column: (2.5em + 0.8em) at the 4pt line-num size = 13.2pt */
+.chapter-dense .code-content .annotation-content {
+  padding-left: 13.2pt;
+}
+
+
+/* ============================================
+   CROSS-REFERENCES ("Called from" — scripts/symbols.mjs)
+   One compact line above a definition, indented to the code column like
+   line notes; page numbers are filled after pagination (a.xref).
+   ============================================ */
+
+.xref-note {
+  padding: 0.2em 0.5em 0.15em 27pt;
+  font-family: var(--font-code);
+  font-size: 6pt;
+  line-height: 1.45;
+  color: #666666;
+  break-inside: avoid;
+  break-after: avoid;
+}
+
+.xref-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-right: 0.3em;
+}
+
+.xref-item {
+  white-space: nowrap;
+}
+
+.xref-note code {
+  font-family: var(--font-code);
+  font-size: 6pt;
+  color: #333333;
+}
+
+.xref-file {
+  color: #8a8a8a;
+}
+
+a.xref {
+  color: inherit;
+  text-decoration: none;
+}
+
+a.xref:empty::after {
+  content: "p.";
+}
+
+a.xref:not(:empty)::before {
+  content: "p.\202F";
+}
+
+.xref-more {
+  margin-left: 0.3em;
+  font-style: italic;
+}

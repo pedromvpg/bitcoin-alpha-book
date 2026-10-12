@@ -7,7 +7,7 @@ introduction: |
   <p>
     Before there was the orange "₿" symbol recognized worldwide, there was this—
     Satoshi's original Bitcoin logo, buried in a Windows resource directory. These
-    icons and bitmaps shipped with v0.1, appearing in the Windows GUI that most
+    icons and bitmaps shipped with v0.1.0, appearing in the Windows GUI that most
     early users experienced. The design is notably different from the stylized "B"
     that would later become synonymous with Bitcoin.
   </p>
@@ -30,8 +30,8 @@ introduction: |
     logo: the tilted "B" with two vertical strokes, in white on a flat orange
     circle.{{cite:bitcoin-logo-2010}} It built on Satoshi's own February 2010 refresh, which had traded
     the "BC" initials for the stroked "B" while keeping the gold coin. Satoshi had
-    welcomed such contributions: "I'm not good with graphics... that looks
-    great."{{cite:nakamoto-logo-approval}} The community adopted bitboy's design, but these
+    welcomed such contributions: "I'm happy if someone with artistic skill wants to
+    contribute alternatives."{{cite:nakamoto-logo-approval}} The community adopted bitboy's design, but these
     original icons remain as artifacts of Bitcoin's earliest visual identity—
     assembled by its pseudonymous creator before the world knew what Bitcoin would become.
   </p>
@@ -45,3 +45,15 @@ conclusion: |
     academic theory. The gold "BC" coin—Bitcoin's first logo—remains an artifact
     of the project's bootstrapped origins.
   </p>
+
+glossary:
+  - term: ".ico file"
+    definition: "A Windows icon container holding several renderings of one picture; bitcoin.ico packs 16, 32, and 48-pixel versions at two color depths so Windows can choose the best fit."
+  - term: ".bmp file"
+    definition: "The uncompressed Windows bitmap format; each toolbar picture here is an 8-bit color image 16 or 20 pixels square, paired with a matching one-bit mask file."
+  - term: "transparency mask"
+    definition: "A one-bit companion bitmap whose white pixels mark the visible shape and black pixels the see-through background, so an icon sits cleanly on any toolbar or title-bar color."
+  - term: "wxMask"
+    definition: "The wxWidgets class that attaches a mask bitmap to an image; ui.cpp builds one at load time for each toolbar button and for the Send Coins and Address Book window icons."
+  - term: "alpha channel"
+    definition: "A per-pixel opacity value stored inside the image itself; a comment in ui.cpp notes that wxWidgets 2.8.9 added bitmap alpha support, making separate mask files unnecessary."

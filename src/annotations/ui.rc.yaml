@@ -55,11 +55,11 @@ annotations:
 
   - line: 6
     type: margin
-    text: "<code>send16</code> and <code>send16mask</code> -- the 16x16 pixel send icon and its transparency mask. The 16px icon served as the Send Coins dialog's window icon rather than on the toolbar — paired, as it happens, with the no-shadow mask below, leaving plain <code>send16mask</code> unused in v0.01. In early Windows bitmap rendering, transparency was achieved with a separate one-bit mask bitmap. In these files, which wxWidgets loads as a <code>wxMask</code>, the black pixels (the background around the icon) mark the transparent area and the white pixels the opaque shape. This two-bitmap transparency technique predates the PNG alpha channel and was standard practice for Windows toolbar icons in the late 1990s and early 2000s."
+    text: "<code>send16</code> and <code>send16mask</code> -- the 16x16 pixel send icon and its transparency mask. The 16px icon served as the Send Coins dialog's window icon rather than on the toolbar — paired, as it happens, with the no-shadow mask below, leaving plain <code>send16mask</code> unused in v0.1.0. In early Windows bitmap rendering, transparency was achieved with a separate one-bit mask bitmap. In these files, which wxWidgets loads as a <code>wxMask</code>, the black pixels (the background around the icon) mark the transparent area and the white pixels the opaque shape. This two-bitmap transparency technique predates the PNG alpha channel and was standard practice for Windows toolbar icons in the late 1990s and early 2000s."
 
   - line: 8
     type: margin
-    text: "<code>send16masknoshadow</code> -- a variant of the send button mask without a drop shadow effect, and the one v0.01 actually uses: the Send Coins dialog builds its window icon from <code>send16</code> plus this mask (ui.cpp line 1275). A title-bar icon has no room for a shadow. Having multiple mask variants for a single 16-pixel icon reveals the level of attention paid to visual details even in this earliest release."
+    text: "<code>send16masknoshadow</code> -- a variant of the send button mask without a drop shadow effect, and the one v0.1.0 actually uses: the Send Coins dialog builds its window icon from <code>send16</code> plus this mask (ui.cpp line 1275). A title-bar icon has no room for a shadow. Having multiple mask variants for a single 16-pixel icon reveals the level of attention paid to visual details even in this earliest release."
 
   - line: 9
     type: margin
@@ -71,7 +71,7 @@ annotations:
 
   - line: 13
     type: margin
-    text: "<code>addressbook20</code> and <code>addressbook20mask</code> -- the larger address book icon pair. With the send and address-book icons at two sizes each, plus their masks, plus the application and check icons, this small resource file references 11 image files total. Every one is compiled into the executable, giving Bitcoin v0.01 a self-contained, professional-looking Windows application with no external dependencies besides the OpenSSL and MinGW runtime DLLs."
+    text: "<code>addressbook20</code> and <code>addressbook20mask</code> -- the larger address book icon pair. With the send and address-book icons at two sizes each, plus their masks, plus the application and check icons, this small resource file references 11 image files total. Every one is compiled into the executable, giving Bitcoin v0.1.0 a self-contained, professional-looking Windows application with no external dependencies besides the OpenSSL and MinGW runtime DLLs."
 
 conclusion: |
   <p>
@@ -91,3 +91,15 @@ conclusion: |
     fourteen lines. Every wallet app, exchange interface, and cryptocurrency logo
     that followed is a descendant of Satoshi's decision to ship an icon.
   </p>
+
+glossary:
+  - term: "resource script"
+    definition: "A plain-text .rc file listing the icons, bitmaps, and other assets a Windows program needs, each under a symbolic name the code can ask for at run time."
+  - term: "resource compiler"
+    definition: "The build tool that turns a resource script into binary data linked into the executable: windres in the MinGW makefile, Microsoft's rc in makefile.vc."
+  - term: "ICON and BITMAP"
+    definition: "The two resource types declared in ui.rc: ICON for Windows icons such as the application coin and the check mark, BITMAP for the toolbar pictures and their masks."
+  - term: "symbolic resource name"
+    definition: "The identifier opening each line, such as send20 or check, which the code passes to wxBitmap with wxBITMAP_TYPE_RESOURCE, or to the wxICON macro, to fetch the embedded image."
+  - term: "wx.rc"
+    definition: "The standard wxWidgets resource script, pulled in on line 3, that supplies the cursors and stock images the toolkit itself expects to find inside every Windows program."

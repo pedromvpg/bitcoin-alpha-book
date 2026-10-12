@@ -49,7 +49,7 @@ annotations:
 
   - line: 27
     type: margin
-    text: "<code>vNodes</code> — the live peer roster. Every TCP connection to another Bitcoin node is represented here as a CNode*. The socket handler, message handler, and connection opener all share this list via cs_vNodes. In v0.01 the connection opener stops seeking new peers once vNodes reaches 15."
+    text: "<code>vNodes</code> — the live peer roster. Every TCP connection to another Bitcoin node is represented here as a CNode*. The socket handler, message handler, and connection opener all share this list via cs_vNodes. In v0.1.0 the connection opener stops seeking new peers once vNodes reaches 15."
 
   - line: 29
     type: margin
@@ -85,7 +85,7 @@ annotations:
 
   - line: 209
     type: margin
-    text: "Pub/sub system — Bitcoin v0.01 included a publish-subscribe layer for relaying marketplace messages (products and orders). Nodes could subscribe to channels (MSG_TABLE, MSG_PRODUCT) and receive broadcasts from any subscriber. This was the embryo of an online marketplace — and only half of it was built: v0.01 sends <code>subscribe</code> and <code>publish</code> messages, but <code>ProcessMessage</code> in main.cpp has no handler for them, so a receiving node logs 'Ignored unknown message' and drops them. The marketplace code (market.cpp) was gone by v0.3.0.{{cite:bitcoin-core-history}}"
+    text: "Pub/sub system — Bitcoin v0.1.0 included a publish-subscribe layer for relaying marketplace messages (products and orders). Nodes could subscribe to channels (MSG_TABLE, MSG_PRODUCT) and receive broadcasts from any subscriber. This was the embryo of an online marketplace — and only half of it was built: v0.1.0 sends <code>subscribe</code> and <code>publish</code> messages, but <code>ProcessMessage</code> in main.cpp has no handler for them, so a receiving node logs 'Ignored unknown message' and drops them. The marketplace code (market.cpp) was gone by v0.3.0.{{cite:bitcoin-core-history}}"
 
   - line: 227
     type: margin
@@ -169,7 +169,7 @@ annotations:
 
   - line: 968
     type: margin
-    text: "<code>ThreadIRCSeed</code> — connects to IRC to bootstrap peer discovery. Early nodes joined <code>#bitcoin</code> (v0.01 uses <code>chat.freenode.net</code>) and encoded their IP in the nickname. Satoshi's elegant hack: reuse a global chat directory before the network could self-sustain. Hal Finney's attached <code>debug.log</code> from January 10, 2009 is a snapshot of that path working — and of how tiny the network still was.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer}}"
+    text: "<code>ThreadIRCSeed</code> — connects to IRC to bootstrap peer discovery. Early nodes joined <code>#bitcoin</code> (v0.1.0 uses <code>chat.freenode.net</code>) and encoded their IP in the nickname. Satoshi's elegant hack: reuse a global chat directory before the network could self-sustain. Hal Finney's attached <code>debug.log</code> from January 10, 2009 is a snapshot of that path working — and of how tiny the network still was.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer}}"
 
   - line: 974
     type: margin
@@ -204,3 +204,21 @@ conclusion: |
     truth. This is the property that makes Bitcoin censorship-resistant: there is
     no privileged node to coerce.
   </p>
+
+glossary:
+  - term: "vNodes"
+    definition: "The global vector of live peer connections, guarded by cs_vNodes and shared by the socket-handling, connection-opening, and message-handling threads."
+  - term: "mapAddresses"
+    definition: "The in-memory table of known peer addresses, keyed by serialized IP and port, loaded from addr.dat at startup and consulted whenever the node chooses whom to dial next."
+  - term: "class C"
+    definition: "A block of IPv4 addresses sharing their first three bytes (a /24); ThreadOpenConnections picks a random class C before picking an IP inside it, blunting address flooding from a single block."
+  - term: "SOCKS4 proxy"
+    definition: "An optional relay configured in addrProxy; when set, ConnectSocket dials the proxy and sends a SOCKS4 CONNECT request instead of reaching routable peers directly."
+  - term: "ThreadSocketHandler"
+    definition: "The network I/O thread that uses select() to accept inbound connections, read incoming bytes into each node's vRecv buffer, flush its vSend buffer, and delete disconnected nodes."
+  - term: "ThreadOpenConnections"
+    definition: "The thread that, while fewer than 15 peers are connected, dials a known address, advertises the node's own address if routable, and sends getaddr to learn more."
+  - term: "ThreadMessageHandler"
+    definition: "The below-normal-priority thread that, roughly every 100 milliseconds, runs ProcessMessages and SendMessages for each connected node."
+  - term: "reference count"
+    definition: "The per-node count raised by AddRef and lowered by Release, plus an optional timed hold in nReleaseTime, that keeps a disconnected node in memory until no thread still uses it."

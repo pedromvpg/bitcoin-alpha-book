@@ -5,7 +5,7 @@ title: "The Face of Bitcoin"
 
 introduction: |
   <p>
-    At 3,228 lines, ui.cpp is the largest file in Bitcoin v0.01. It implements
+    At 3,228 lines, ui.cpp is the largest file in Bitcoin v0.1.0. It implements
     the entire graphical user interface using wxWidgets — a cross-platform GUI
     toolkit that lets the same C++ code run on Windows, macOS, and Linux.{{cite:wxwidgets-license}}
     This is where the abstract machinery of cryptography, networking, and
@@ -28,7 +28,7 @@ introduction: |
     to safely dispatch UI updates from worker threads.
   </p>
   <p>
-    The file also contains Bitcoin v0.01's most ambitious unfinished feature:
+    The file also contains Bitcoin v0.1.0's most ambitious unfinished feature:
     an IP-to-IP payment protocol where the sender connects directly to the
     recipient's node, requests a fresh public key, and delivers a signed
     transaction over the peer-to-peer network. This "online" payment mode
@@ -152,11 +152,11 @@ annotations:
 
   - line: 1141
     type: margin
-    text: "<code>mapValue[\"message\"]</code> — Bitcoin v0.01 supported attaching free-text messages to transactions. For IP-to-IP payments, sender and recipient contact details were also stored in mapValue[\"from\"] and mapValue[\"to\"]. These fields never go into the block chain or get relayed across the network, but they are not purely local either: for an IP payment, the whole wallet transaction — message included — is sent directly to the recipient's node in the \"submitorder\" message, and their wallet stores it."
+    text: "<code>mapValue[\"message\"]</code> — Bitcoin v0.1.0 supported attaching free-text messages to transactions. For IP-to-IP payments, sender and recipient contact details were also stored in mapValue[\"from\"] and mapValue[\"to\"]. These fields never go into the block chain or get relayed across the network, but they are not purely local either: for an IP payment, the whole wallet transaction — message included — is sent directly to the recipient's node in the \"submitorder\" message, and their wallet stores it."
 
   - line: 1201
     type: margin
-    text: "<code>COptionsDialog</code> — minimal settings dialog. In v0.01, the only user-configurable option is the transaction fee. ParseMoney() handles decimal input (\"0.01\" = 1,000,000 satoshis). The fee is persisted to wallet.dat under the key \"nTransactionFee\"."
+    text: "<code>COptionsDialog</code> — minimal settings dialog. In v0.1.0, the only user-configurable option is the transaction fee. ParseMoney() handles decimal input (\"0.01\" = 1,000,000 satoshis). The fee is persisted to wallet.dat under the key \"nTransactionFee\"."
 
   - line: 1241
     type: margin
@@ -188,7 +188,7 @@ annotations:
 
   - line: 1596
     type: margin
-    text: "<code>PushRequest(\"checkorder\")</code> — sends the order to the recipient for approval. The protocol leaves room for a refusal, but v0.01's handler never refuses: it carries only the comment '/// we have a chance to check the order here' and always replies with a scriptPubKey. That script is pay-to-public-key (<code>&lt;pubkey&gt; OP_CHECKSIG</code>), not a pay-to-address script, and the key is reused per sender IP ('Keep giving the same key to the same ip until they use it'); a new key is generated only after a payment from that IP arrives."
+    text: "<code>PushRequest(\"checkorder\")</code> — sends the order to the recipient for approval. The protocol leaves room for a refusal, but v0.1.0's handler never refuses: it carries only the comment '/// we have a chance to check the order here' and always replies with a scriptPubKey. That script is pay-to-public-key (<code>&lt;pubkey&gt; OP_CHECKSIG</code>), not a pay-to-address script, and the key is reused per sender IP ('Keep giving the same key to the same ip until they use it'); a new key is generated only after a payment from that IP arrives."
 
   - line: 1640
     type: margin
@@ -216,7 +216,7 @@ annotations:
 
 conclusion: |
   <p>
-    The UI reveals what Bitcoin v0.01 was designed to be: not just a protocol,
+    The UI reveals what Bitcoin v0.1.0 was designed to be: not just a protocol,
     but a complete payment application. The address book, the From/Message
     fields, the IP-to-IP handshake — these were features for a world where
     Bitcoin would be used for everyday commerce between online merchants
@@ -235,3 +235,21 @@ conclusion: |
     since, from Electrum to hardware wallets, follows the template Satoshi
     established in this file.
   </p>
+
+glossary:
+  - term: "CMyApp"
+    definition: "The wxApp subclass that serves as the program's entry point; IMPLEMENT_APP generates the real main function, and OnInit2 loads the wallet, opens the window, and starts the node."
+  - term: "cross-thread call"
+    definition: "Posting a wxCommandEvent to the main window's queue with AddPendingEvent, so that the UI thread rather than a worker thread performs the actual screen update."
+  - term: "setCallbackAvailable"
+    definition: "The set of dialog pointers still open, checked before a network reply is posted, so a response that arrives after its dialog has closed is quietly dropped."
+  - term: "wxYield"
+    definition: "A wxWidgets call that briefly processes pending events from inside a long loop, keeping the window responsive while ui.cpp reloads a large wallet's transactions."
+  - term: "idle-time refresh"
+    definition: "The pattern in which RefreshListCtrl only sets a flag and wakes the idle loop, leaving OnIdle to rebuild the transaction list when the interface has nothing else to do."
+  - term: "pay-to-IP-address"
+    definition: "v0.1.0's online payment mode, in which the sender connects to the recipient's node, obtains a public key with checkorder, and delivers the signed transaction with submitorder."
+  - term: "mapAddressBook"
+    definition: "The map from Bitcoin address strings to contact names that labels rows in the transaction list; it is saved in wallet.dat as \"name\" records."
+  - term: "single-instance check"
+    definition: "The startup guard built on wxSingleInstanceChecker that keeps a second copy of Bitcoin from running and brings the existing window forward instead, protecting the database files."

@@ -524,10 +524,11 @@ dd {
 
 .title-page .annotations-credit {
   font-family: var(--font-code);
-  font-size: 10pt;
+  font-size: 8pt;
+  line-height: 1.5;
   color: #666666;
   letter-spacing: 0.5px;
-  margin: 0;
+  margin: 0 0 0.35em 0;
 }
 
 .title-page .copyright {
@@ -536,6 +537,13 @@ dd {
   color: #666666;
   letter-spacing: 0.5px;
   margin: 0;
+}
+
+.title-page .publisher-logo {
+  display: block;
+  width: 0.75in;
+  height: auto;
+  margin: 0.22in auto 0;
 }
 
 /* ============================================
@@ -1259,11 +1267,17 @@ pre.example .token.constant { color: #005cc5; }
    CHAPTER (source file sections)
    ============================================ */
 
-/* Each source file chapter starts on a recto (right) page.
-   Paged.js auto-inserts a blank verso before it if needed,
-   giving every chapter the correct blank-left / intro-right opening spread. */
+/* Each source file chapter starts on a recto (right) page, always facing a
+   blank verso: build.js emits a .chapter-verso spacer before every chapter,
+   pushed onto the next left page. If the previous chapter ended on a verso,
+   Paged.js inserts a blank recto first, so the opening spread never shows
+   the previous chapter's last page on the left. */
 .chapter {
   break-before: right;
+}
+
+.chapter-verso {
+  break-before: left;
 }
 
 /* ============================================
@@ -1410,21 +1424,28 @@ sup:has(> a.cite-ref) + sup:has(> a.cite-ref)::before {
 }
 
 .footnote {
-  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35em;
   margin: 0 0 0.5em;
-  /* Number sits in a fixed column; every line of the note shares one left edge. */
-  padding-left: 2.4em;
   line-height: var(--line-height-relaxed);
-  text-indent: 0;
 }
 
 .footnote::before {
+  /* Flex column: marker flush with the Sources title / Summary text edge;
+     body wraps in .footnote-text. 1.6em fits two-digit markers ("25.").
+     Number comes from the <li value>, not a CSS counter: Paged.js owns a
+     counter named "footnote" and unsets counter-reset on split lists,
+     which made continuation pages read "0." */
   content: attr(value) ".";
-  position: absolute;
-  left: 0;
-  width: 1.9em;
-  text-align: right;
+  flex: 0 0 1.6em;
+  text-align: left;
   font-variant-numeric: tabular-nums;
+}
+
+.footnote-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .footnote a.footnote-url {
@@ -1693,4 +1714,83 @@ sup:has(> a.cite-ref) + sup:has(> a.cite-ref)::before {
 #what-came-after li strong {
   font-family: var(--font-code);
   font-size: 9pt;
+}
+
+/* ============================================
+   GLOSSARY (back matter — merged chapter Key Terms)
+   ============================================ */
+
+.glossary-section h1.chapter-title {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1em;
+}
+
+.glossary-lead {
+  font-size: var(--font-size-sm);
+  color: #555;
+  margin-bottom: 1.5em;
+}
+
+.glossary-back {
+  column-count: 2;
+  column-gap: 2.5em;
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.glossary-entry {
+  break-inside: avoid;
+  margin-bottom: 0.9em;
+}
+
+.glossary-back dd {
+  margin-bottom: 0;
+}
+
+.glossary-refs {
+  font-family: var(--font-code);
+  font-size: 6pt;
+  color: #666;
+  white-space: nowrap;
+}
+
+/* ============================================
+   READING PATHS (end of Part I)
+   ============================================ */
+
+.reading-steps {
+  list-style: decimal;
+  padding-left: 1.6em;
+  margin: 0.5em 0 1.75em 0;
+}
+
+.reading-step {
+  break-inside: avoid;
+  margin-bottom: 0.65em;
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.reading-step::marker {
+  font-family: var(--font-code);
+  font-size: 7pt;
+  color: #666;
+}
+
+.reading-step-head {
+  font-family: var(--font-code);
+  font-size: 7pt;
+  color: #666;
+}
+
+.reading-step-head code {
+  font-family: var(--font-code);
+  font-weight: 700;
+  color: #000;
+}
+
+.reading-step-note code {
+  font-family: var(--font-code);
+  font-size: 7pt;
 }

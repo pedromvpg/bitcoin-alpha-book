@@ -12,7 +12,7 @@ introduction: |
   </p>
   <p>
     Bitcoin nodes join an IRC channel (<code>#bitcoin</code> on
-    <code>chat.freenode.net</code> in this v0.01 tree; later builds also used
+    <code>chat.freenode.net</code> in this v0.1.0 tree; later builds also used
     LFNet) where their nicknames encode their IP addresses. By parsing the
     channel's user list, a new node discovers other participants. It's bootstrap
     via a communication medium that already had robust peer discovery: Internet
@@ -39,11 +39,11 @@ annotations:
 
   - line: 6
     type: margin
-    text: "<code class=\"function\">ThreadIRCSeed()</code>—the IRC bootstrap thread, runs continuously in background. Connects to <code>chat.freenode.net</code> port 6667, joins <code>#bitcoin</code>, sets a nickname encoding our IP address. Sends a WHO request to get the user list, decodes other users' nicknames to extract their IP addresses, and feeds those addresses into the peer discovery system. If the connection drops, the thread exits—there is no automatic reconnect in v0.01."
+    text: "<code class=\"function\">ThreadIRCSeed()</code>—the IRC bootstrap thread, runs continuously in background. Connects to <code>chat.freenode.net</code> port 6667, joins <code>#bitcoin</code>, sets a nickname encoding our IP address. Sends a WHO request to get the user list, decodes other users' nicknames to extract their IP addresses, and feeds those addresses into the peer discovery system. If the connection drops, the thread exits—there is no automatic reconnect in v0.1.0."
 
   - line: 7
     type: margin
-    text: "<code class=\"variable\">fRestartIRCSeed</code>—restart flag for the IRC thread. Nothing in v0.01 ever sets it—the hook exists for future use. When set, the thread's inner receive loop exits and the outer loop reconnects. The bootstrap must be resilient—without peer discovery, a node is isolated and useless."
+    text: "<code class=\"variable\">fRestartIRCSeed</code>—restart flag for the IRC thread. Nothing in v0.1.0 ever sets it—the hook exists for future use. When set, the thread's inner receive loop exits and the outer loop reconnects. The bootstrap must be resilient—without peer discovery, a node is isolated and useless."
 
 conclusion: |
   <p>
@@ -68,3 +68,17 @@ conclusion: |
     running quickly without custom infrastructure. Satoshi knew it was
     temporary, and he was right.{{cite:nakamoto-irc-temporary}}
   </p>
+
+glossary:
+  - term: "IRC"
+    definition: "Internet Relay Chat, the line-based text chat protocol whose public servers v0.1.0 borrows as a meeting point where Bitcoin nodes announce their addresses and find one another."
+  - term: "bootstrap problem"
+    definition: "The puzzle every new peer-to-peer node faces on first launch: it must connect to existing peers, yet it knows no peer addresses until some peer tells it."
+  - term: "ThreadIRCSeed"
+    definition: "The background thread StartNode launches to connect to chat.freenode.net on port 6667, join #bitcoin, advertise this node in its nickname, and harvest peer addresses from other nicknames."
+  - term: "#bitcoin"
+    definition: "The IRC channel every v0.1.0 node joins at startup; its member list doubles as a live directory of nodes, since each reachable node's nickname encodes its IP address and port."
+  - term: "RecvLine"
+    definition: "The helper that reads one line from a socket a byte at a time, stopping at the carriage return; exported here so net.cpp can reuse it for the HTTP reply in GetMyExternalIP."
+  - term: "fRestartIRCSeed"
+    definition: "A global flag that, when set, makes ThreadIRCSeed drop its IRC connection and reconnect from the top; nothing in v0.1.0 ever sets it to true."

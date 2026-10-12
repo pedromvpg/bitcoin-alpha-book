@@ -68,15 +68,15 @@ annotations:
 
   - line: 142
     type: margin
-    text: "<code class=\"variable\">fRestartIRCSeed</code> — a global boolean flag used to signal the IRC thread to reconnect. When set to true, the inner <code>while</code> loop at line 182 exits and the outer <code>loop</code> restarts the entire IRC connection sequence — though nothing in v0.01 ever sets it; the mechanism exists for future use."
+    text: "<code class=\"variable\">fRestartIRCSeed</code> — a global boolean flag used to signal the IRC thread to reconnect. When set to true, the inner <code>while</code> loop at line 182 exits and the outer <code>loop</code> restarts the entire IRC connection sequence — though nothing in v0.1.0 ever sets it; the mechanism exists for future use."
 
   - line: 144
     type: margin
-    text: "<code class=\"function\">ThreadIRCSeed()</code> — the main IRC bootstrap thread, running in a continuous outer loop. This is the entire peer discovery engine for Bitcoin v0.01. The function connects to <code>chat.freenode.net</code> on port 6667, authenticates with an encoded nickname, joins <code>#bitcoin</code>, requests the user list, and then monitors for new joins — all in a single 95-line function."
+    text: "<code class=\"function\">ThreadIRCSeed()</code> — the main IRC bootstrap thread, running in a continuous outer loop. This is the entire peer discovery engine for Bitcoin v0.1.0. The function connects to <code>chat.freenode.net</code> on port 6667, authenticates with an encoded nickname, joins <code>#bitcoin</code>, requests the user list, and then monitors for new joins — all in a single 95-line function."
 
   - line: 148
     type: margin
-    text: "<code class=\"function\">gethostbyname(\"chat.freenode.net\")</code> — DNS resolution of the IRC server. In the v0.01 source code this reads <code>chat.freenode.net</code>, though later versions (from v0.3.0 in July 2010) added <code>irc.lfnet.org</code>.{{cite:bitcoin-core-history}} Port 6667 is the standard IRC port — typically allowed through firewalls because IRC was widely used in 2009. Satoshi chose a well-known public IRC network rather than running a private server, so no server under his control was needed — though, as he later acknowledged, the IRC server itself was 'a single point of failure.'{{cite:nakamoto-irc-temporary}}"
+    text: "<code class=\"function\">gethostbyname(\"chat.freenode.net\")</code> — DNS resolution of the IRC server. In the v0.1.0 source code this reads <code>chat.freenode.net</code>, though later versions (from v0.3.0 in July 2010) added <code>irc.lfnet.org</code>.{{cite:bitcoin-core-history}} Port 6667 is the standard IRC port — typically allowed through firewalls because IRC was widely used in 2009. Satoshi chose a well-known public IRC network rather than running a private server, so no server under his control was needed — though, as he later acknowledged, the IRC server itself was 'a single point of failure.'{{cite:nakamoto-irc-temporary}}"
 
   - line: 152
     type: margin
@@ -116,7 +116,7 @@ annotations:
 
   - line: 236
     type: margin
-    text: "<code>fRestartIRCSeed = false</code> — resets the restart flag before closing the socket and looping back to the top of <code class=\"function\">ThreadIRCSeed()</code>. The outer <code>loop</code> keyword (Satoshi's macro for <code>for(;;)</code>) would reconnect only if something set <code class=\"variable\">fRestartIRCSeed</code> — and nothing in v0.01 does. A dropped connection, socket error, or failed handshake takes one of the <code>return</code> paths above instead, ending the thread; the node then relies on addr messages and its saved addresses."
+    text: "<code>fRestartIRCSeed = false</code> — resets the restart flag before closing the socket and looping back to the top of <code class=\"function\">ThreadIRCSeed()</code>. The outer <code>loop</code> keyword (Satoshi's macro for <code>for(;;)</code>) would reconnect only if something set <code class=\"variable\">fRestartIRCSeed</code> — and nothing in v0.1.0 does. A dropped connection, socket error, or failed handshake takes one of the <code>return</code> paths above instead, ending the thread; the node then relies on addr messages and its saved addresses."
 
   - line: 250
     type: margin
@@ -162,3 +162,19 @@ conclusion: |
     contradicting the folklore that he was the second node after Satoshi at
     launch.{{cite:finney-crash-debuglog-2009}}{{cite:waltz-1stbitcoinminer-transcriptions}}
   </p>
+
+glossary:
+  - term: "ircaddr"
+    definition: "The packed 6-byte struct, a 4-byte IPv4 address followed by a 2-byte port, whose Base58Check encoding becomes a node's IRC nickname."
+  - term: "encoded nickname"
+    definition: "A nickname made of the letter u followed by the Base58Check encoding of an ircaddr, about 15 characters in all, from which any channel member can recover a node's IP address and port."
+  - term: "x nickname"
+    definition: "The random name, x followed by a number below one billion, that a node uses when its own address is not routable, so it can listen in the channel without advertising an unreachable address."
+  - term: "PING/PONG"
+    definition: "The IRC keepalive exchange: the server sends PING and expects PONG in reply, which RecvLineIRC produces by overwriting the I in the received line with an O and echoing it back."
+  - term: "WHO"
+    definition: "The IRC command requesting a channel's member list; each answer arrives as numeric reply 352 (RPL_WHOREPLY), whose eighth word, index 7, carries a member's nickname."
+  - term: "JOIN"
+    definition: "The IRC command for entering a channel; the server also relays each newcomer's JOIN to existing members, so a running node learns of newly started peers in real time."
+  - term: "RPL_MYINFO"
+    definition: "IRC numeric reply 004, the last of the server's welcome messages; ThreadIRCSeed waits for it after sending NICK and USER before joining #bitcoin."

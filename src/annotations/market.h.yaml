@@ -111,7 +111,23 @@ conclusion: |
     That Satoshi abandoned this feature speaks to his engineering discipline.
     Rather than shipping a half-working marketplace that could undermine trust in
     the core payment system, he cut it loose and focused on the consensus layer.
-    The marketplace classes remain in v0.01 as compiled-but-unused code -- a
+    The marketplace classes remain in v0.1.0 as compiled-but-unused code -- a
     fascinating glimpse of the larger system Satoshi imagined but chose not to
     build.{{cite:nakamoto-institute-code}}
   </p>
+
+glossary:
+  - term: "CUser"
+    definition: "A participant in the marketplace's reputation graph, stored in reviews.dat under a user hash, holding received, pending, and forwarded atoms plus links to the users it has reviewed."
+  - term: "CReview"
+    definition: "A signed marketplace review: the recipient's hash, free-form key-value fields, the reviewer's public key, and an ECDSA signature over everything except the signature itself."
+  - term: "CProduct"
+    definition: "A signed marketplace listing carrying the seller's network address, summary fields, optional details and order form, a sequence number, and the seller's public key and signature."
+  - term: "reputation atom"
+    definition: "A small unsigned number serving as one unit of reputation; atoms flow from reviewer to reviewed, and a user's score is simply how many distinct atoms have reached them."
+  - term: "nFlowthroughRate"
+    definition: "The constant 2 governing atom forwarding: once a user has collected this many new atoms, or has never forwarded one, a randomly chosen new atom flows on to the users they reviewed."
+  - term: "user hash"
+    definition: "A marketplace participant's identity, computed by GetUserHash as the double-SHA256 hash of their public key, so reputation attaches to a key rather than to a name."
+  - term: "mapProducts"
+    definition: "The global, mutex-guarded in-memory catalog of product listings keyed by product hash; its sibling mapMyProducts holds the user's own listings."

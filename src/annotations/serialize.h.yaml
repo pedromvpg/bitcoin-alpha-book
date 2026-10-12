@@ -8,7 +8,7 @@ introduction: |
     For Bitcoin nodes to communicate, they need a common language for encoding
     data. This file defines Bitcoin's serialization system—the binary format
     for transactions, blocks, and network messages. At 39KB, it's one of the
-    largest files in v0.1, reflecting the complexity of making C++ objects
+    largest files in v0.1.0, reflecting the complexity of making C++ objects
     into portable byte streams.
   </p>
   <p>
@@ -42,7 +42,7 @@ annotations:
 
   - line: 34
     type: margin
-    text: "Serialization context flags. <code class=\"constant\">SER_NETWORK</code> means data going over the wire—includes all fields. <code class=\"constant\">SER_DISK</code> means local storage—may include extra metadata. <code class=\"constant\">SER_GETHASH</code> means computing a hash—a block's transaction list is excluded, so the block hash covers only the header. The modifier <code class=\"constant\">SER_SKIPSIG</code> was meant to omit signatures—in v0.01 only the market code sets it, and nothing reads it; <code class=\"constant\">SER_BLOCKHEADERONLY</code> serializes just the 80-byte header without transactions."
+    text: "Serialization context flags. <code class=\"constant\">SER_NETWORK</code> means data going over the wire—includes all fields. <code class=\"constant\">SER_DISK</code> means local storage—may include extra metadata. <code class=\"constant\">SER_GETHASH</code> means computing a hash—a block's transaction list is excluded, so the block hash covers only the header. The modifier <code class=\"constant\">SER_SKIPSIG</code> was meant to omit signatures—in v0.1.0 only the market code sets it, and nothing reads it; <code class=\"constant\">SER_BLOCKHEADERONLY</code> serializes just the 80-byte header without transactions."
 
   - line: 46
     type: margin
@@ -58,7 +58,7 @@ annotations:
 
   - line: 91
     type: margin
-    text: "Raw data macros: <code class=\"macro\">WRITEDATA</code> and <code class=\"macro\">READDATA</code>. These directly read/write bytes without interpretation. Used for primitive types where the in-memory representation matches the serialized format. The <code>(char*)&(obj)</code> cast gets a byte pointer; <code>sizeof(obj)</code> determines how many bytes. No endianness conversion. Because the bytes are copied raw, the x86 little-endian layout effectively became the protocol; a big-endian build of v0.01 would have spoken a different, incompatible dialect."
+    text: "Raw data macros: <code class=\"macro\">WRITEDATA</code> and <code class=\"macro\">READDATA</code>. These directly read/write bytes without interpretation. Used for primitive types where the in-memory representation matches the serialized format. The <code>(char*)&(obj)</code> cast gets a byte pointer; <code>sizeof(obj)</code> determines how many bytes. No endianness conversion. Because the bytes are copied raw, the x86 little-endian layout effectively became the protocol; a big-endian build of v0.1.0 would have spoken a different, incompatible dialect."
 
   - line: 94
     type: margin

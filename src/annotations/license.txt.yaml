@@ -97,3 +97,15 @@ conclusion: |
     (btcd in Go, bcoin in JavaScript, libbitcoin in C++) exist precisely because the protocol
     is unencumbered. Satoshi open-sourced not just the code, but the idea.
   </p>
+
+glossary:
+  - term: "MIT License"
+    definition: "A short permissive open-source license, also called the X11 license, that lets anyone use, modify, and sell the software if the notice is kept."
+  - term: "permissive license"
+    definition: "An open-source license that imposes almost no conditions on reuse, allowing derived works to be distributed under any terms, including closed-source ones."
+  - term: "copyleft"
+    definition: "A licensing approach, used by the GPL, that requires derived works to be distributed under the same open terms; the MIT License deliberately has none."
+  - term: "sublicense"
+    definition: "The right to pass the software on to others under terms of one's own choosing, which the MIT License grants explicitly alongside copying and selling."
+  - term: "warranty disclaimer"
+    definition: "The capitalized clause stating the software is provided \"AS IS\" and that its authors bear no liability for any damage arising from its use."

@@ -40,7 +40,7 @@ nakamoto-dai-email:
 
 nakamoto-institute-code:
   author: "Satoshi Nakamoto Institute"
-  title: "Bitcoin v0.01 Alpha Source Code Archive"
+  title: "Bitcoin v0.1.0 Source Code Archive"
   date: "2009"
   url: "https://satoshi.nakamotoinstitute.org/code/"
 
@@ -53,9 +53,9 @@ rubin-satoshis-version:
 
 readme-v001:
   author: "Satoshi Nakamoto"
-  title: "readme.txt (Bitcoin v0.01 ALPHA)"
+  title: "readme.txt (BitCoin v0.01 ALPHA)"
   date: "January 2009"
-  note: "Primary source — distributed with Bitcoin v0.01"
+  note: "Primary source — distributed with Bitcoin v0.1.0"
 
 genesis-block:
   author: "Satoshi Nakamoto"
@@ -157,10 +157,10 @@ nakamoto-p2pfoundation-v01:
 
 nakamoto-logo-approval:
   author: "Satoshi Nakamoto"
-  title: "BitcoinTalk — Re: New icon/logo for Bitcoin software"
-  date: "February 24, 2010"
-  url: "https://bitcointalk.org/index.php?topic=44.msg268#msg268"
-  note: "February 2010 icon thread: Satoshi posted the gold-coin refresh and welcomed community alternatives"
+  title: "BitcoinTalk — Re: New icon/logo"
+  date: "November 13, 2010"
+  url: "https://bitcointalk.org/index.php?topic=64.msg21766#msg21766"
+  note: "In the February 2010 icon thread, Satoshi invited artists to contribute alternative logos"
 
 bitcoin-logo-2010:
   author: "bitboy (BitcoinTalk user)"
@@ -276,7 +276,7 @@ bitslog-patoshi:
   title: "The Return of the Deniers and the Revenge of Patoshi"
   date: "April 16, 2019"
   url: "https://bitslog.com/2019/04/16/the-return-of-the-deniers-and-the-revenge-of-patoshi/"
-  note: "Three v0.1 ExtraNonce privacy flaws; nonce-LSB range R; zero Patoshi→Patoshi timestamp inversions in first 50k blocks — argues one miner (~22k / ~1.1M BTC)"
+  note: "Three v0.1.0 ExtraNonce privacy flaws; nonce-LSB range R; zero Patoshi→Patoshi timestamp inversions in first 50k blocks — argues one miner (~22k / ~1.1M BTC)"
 
 fips-180-2:
   author: "NIST"
@@ -343,7 +343,7 @@ mit-license:
   title: "MIT License"
   date: "1988"
   url: "https://opensource.org/licenses/MIT"
-  note: "License chosen for Bitcoin v0.01 (license.txt)"
+  note: "License chosen for Bitcoin v0.1.0 (license.txt)"
 
 qt-lgpl-2009:
   author: "Qt Company / Nokia"

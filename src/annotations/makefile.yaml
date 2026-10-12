@@ -5,7 +5,7 @@ title: "Assembly Required (MinGW)"
 
 introduction: |
   <p>
-    This is the makefile for building Bitcoin v0.01 with MinGW GCC on Windows. In 83 lines,
+    This is the makefile for building Bitcoin v0.1.0 with MinGW GCC on Windows. In 83 lines,
     it defines the entire build process: compiler flags, include paths, library dependencies,
     compilation rules for each source file, and the final link step that produces
     <code>bitcoin.exe</code>. Reading a makefile is reading the architect's blueprint — it
@@ -41,7 +41,7 @@ introduction: |
 annotations:
   - line: 1
     type: margin
-    text: "The standard copyright and license header. Every file in Bitcoin v0.01 carries this three-line attribution to Satoshi Nakamoto under the MIT/X11 license.{{cite:mit-license}}"
+    text: "The standard copyright and license header. Every file in Bitcoin v0.1.0 carries this three-line attribution to Satoshi Nakamoto under the MIT/X11 license.{{cite:mit-license}}"
 
   - line: 6
     type: margin
@@ -102,7 +102,7 @@ annotations:
 conclusion: |
   <p>
     This makefile compiles ten C++ source files and one resource file into a single
-    Windows executable — the entirety of Bitcoin v0.01. The build has no configure step,
+    Windows executable — the entirety of Bitcoin v0.1.0. The build has no configure step,
     no autotools, no CMake. Dependencies are assumed to be installed at hardcoded paths.
     The developer runs <code>make</code> and either gets a binary or an error. This simplicity
     reflects a solo developer's workflow — Satoshi was the only person building this code,
@@ -123,3 +123,17 @@ conclusion: |
     roughly the same logical components — consensus, networking, storage, scripting, and
     a user interface — that Satoshi laid out in these 83 lines.
   </p>
+
+glossary:
+  - term: "MinGW"
+    definition: "Minimalist GNU for Windows, a port of the GCC compiler and tools that builds native Windows programs; the README names version 3.4.5."
+  - term: "GNU Make"
+    definition: "The build tool that reads this makefile, compares file timestamps against each rule's dependencies, and reruns only the commands whose outputs are out of date."
+  - term: "headers.h.gch"
+    definition: "GCC's precompiled-header file, built from headers.h by its own makefile rule and picked up automatically whenever a source file includes headers.h."
+  - term: "optimization level"
+    definition: "A compiler setting trading build speed and debuggability for faster code; this makefile uses -O0 (none) everywhere except sha.cpp, which gets -O3."
+  - term: "__WXDEBUG__"
+    definition: "A preprocessor symbol defined only in debug builds that turns on wxWidgets' debug checks and, through util.h, Bitcoin's debug.log file."
+  - term: "windres"
+    definition: "The GNU resource compiler that turns the ui.rc resource script and its icons and bitmaps into an object file linked into bitcoin.exe."

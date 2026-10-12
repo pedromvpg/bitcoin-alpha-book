@@ -60,7 +60,7 @@
   margin: 0.85in 0.625in 0.75in 0.875in;
   
   @top-right {
-    content: 'BITCOIN v0.01 ALPHA';
+    content: 'BITCOIN v0.1.0';
     font-family: var(--font-code);
     font-size: 7pt;
     color: #666;
@@ -108,6 +108,16 @@
 
 /* Blank page - no headers or footers */
 @page blank-page {
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @top-center { content: none; }
+  @bottom-center { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+/* Blank pages Paged.js inserts to satisfy break-before: left/right */
+@page :blank {
   @top-left { content: none; }
   @top-right { content: none; }
   @top-center { content: none; }
@@ -227,6 +237,12 @@ p, .code-line {
 .footnotes {
   break-before: avoid;
   break-inside: auto;
+}
+
+/* Paged.js strips padding-top from the continuation half of a split element
+   ([data-split-from]); restore the gap under the repeated rule. */
+.footnotes[data-split-from] {
+  padding-top: 2em !important;
 }
 
 .footnotes-title {

@@ -5,7 +5,7 @@ title: "Satoshi's Instructions"
 
 introduction: |
   <p>
-    This is the original README file distributed with Bitcoin v0.01 ALPHA — a primary
+    This is the original README file distributed with Bitcoin v0.1.0 — a primary
     historical document from the birth of cryptocurrency. Written by Satoshi Nakamoto
     himself, it is part build instructions, part architectural overview, and part window
     into the mind of Bitcoin's creator.{{cite:readme-v001}} Every sentence reveals something
@@ -35,7 +35,7 @@ introduction: |
     been largely relaxed).{{cite:itar-ear-crypto}}
   </p>
   <p>
-    The build instructions also reveal that Bitcoin v0.01 was a <em>Windows desktop
+    The build instructions also reveal that Bitcoin v0.1.0 was a <em>Windows desktop
     application</em> with a graphical interface. The supported compilers — MinGW GCC 3.4.5
     and Microsoft Visual C++ 6.0 SP6 — were both Windows toolchains. The dependency paths
     all use Windows-style backslash notation. There is no mention of Linux, macOS, or any
@@ -46,7 +46,7 @@ introduction: |
 annotations:
   - line: 1
     type: margin
-    text: "'BitCoin v0.01 ALPHA' — note the camel-case spelling with a capital C. Satoshi originally wrote the name as two words ('Bit Coin') or camel-case ('BitCoin') before settling on the now-standard 'Bitcoin' with a lowercase 'c'. The 'v0.01' version number and 'ALPHA' designation signal that Satoshi considered this a very early release — not even a beta. He was being cautious about the software's maturity while still making it available for others to examine and test."
+    text: "'BitCoin v0.01 ALPHA' — note the camel-case spelling with a capital C. Satoshi originally wrote the name as two words ('Bit Coin') or camel-case ('BitCoin') before settling on the now-standard 'Bitcoin' with a lowercase 'c'. The 'v0.01' version number (the release is catalogued today as v0.1.0) and 'ALPHA' designation signal that Satoshi considered this a very early release — not even a beta. He was being cautious about the software's maturity while still making it available for others to examine and test."
 
   - line: 3
     type: margin
@@ -115,7 +115,7 @@ conclusion: |
   </p>
   <p>
     The document also serves as an architectural map. The four dependencies — wxWidgets,
-    OpenSSL, Berkeley DB, and Boost — define the four pillars of Bitcoin v0.01: a graphical
+    OpenSSL, Berkeley DB, and Boost — define the four pillars of Bitcoin v0.1.0: a graphical
     user interface, cryptographic primitives, persistent storage, and C++ utility support.
     Every one of these dependencies would eventually be replaced (Qt, libsecp256k1, LevelDB,
     C++11/17 standard library),{{cite:qt-lgpl-2009}}{{cite:bitcoin-core-history}} but the four-pillar architecture — presentation, cryptography,
@@ -129,3 +129,17 @@ conclusion: |
     foundational to the trustless ethos of the entire system. You don't have to trust
     Satoshi. You can read the code and build it yourself.
   </p>
+
+glossary:
+  - term: "Berkeley DB"
+    definition: "An embedded key-value database library, linked directly into the program, that Bitcoin v0.1.0 uses for its block and transaction index, wallet, and peer addresses; raw blocks go in flat files."
+  - term: "libeay32"
+    definition: "The Windows build of OpenSSL's general cryptography library, the only part of OpenSSL that Bitcoin needs; the SSL protocol library is never used."
+  - term: "no-everything build"
+    definition: "Satoshi's name for an OpenSSL build configured with options like no-rsa and no-aes, leaving out the encryption routines Bitcoin never calls."
+  - term: "advertising clause"
+    definition: "A license term inherited from the original BSD license that obliges credit to the OpenSSL Project and Eric Young, which is why the README names them."
+  - term: "LGPL"
+    definition: "The GNU Lesser General Public License, a weaker form of copyleft that permits linking a library into programs under other licenses; wxWidgets used version 2.1."
+  - term: "MSYS"
+    definition: "A minimal Unix-style shell environment for Windows that accompanies MinGW, used here to run Berkeley DB's configure script and make."

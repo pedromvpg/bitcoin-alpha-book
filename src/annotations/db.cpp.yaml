@@ -105,7 +105,7 @@ annotations:
 
   - line: 108
     type: margin
-    text: "On first creation, write the software version. v0.01 writes it but never reads it back (<code>ReadVersion</code> has no callers)—a hook left for future versions to detect files written by older software."
+    text: "On first creation, write the software version. v0.1.0 writes it but never reads it back (<code>ReadVersion</code> has no callers)—a hook left for future versions to detect files written by older software."
 
   # ── CDB::Close ───────────────────────────────────────────────────────────────
   - line: 114
@@ -132,7 +132,7 @@ annotations:
 
   - line: 180
     type: margin
-    text: "<code class=\"function\">UpdateTxIndex</code> — persists spent-output state. Connecting an input writes the spender's disk position into <code class=\"variable\">vSpent</code>; disconnecting a block clears it. v0.01 does not delete a tx when one output is spent — it updates per-output markers."
+    text: "<code class=\"function\">UpdateTxIndex</code> — persists spent-output state. Connecting an input writes the spender's disk position into <code class=\"variable\">vSpent</code>; disconnecting a block clears it. v0.1.0 does not delete a tx when one output is spent — it updates per-output markers."
 
   - line: 186
     type: margin
@@ -246,3 +246,21 @@ conclusion: |
     Core 30 (2025) finally removed it, leaving only a built-in reader so old
     wallets can still be migrated.{{cite:bitcoin-core-history}}{{cite:core-30-release-notes}}
   </p>
+
+glossary:
+  - term: "database environment"
+    definition: "The single global DbEnv, opened lazily by the first CDB constructor in the application directory, that every database file shares for locking, logging, caching, and transactions."
+  - term: "write-ahead log"
+    definition: "Berkeley DB's record of every change, kept in the database subdirectory and written before the data files are updated, so interrupted work can be replayed or rolled back after a crash."
+  - term: "DB_RECOVER"
+    definition: "The flag passed when opening the database environment that makes Berkeley DB run recovery from its log first, restoring the files to a consistent state after an unclean shutdown."
+  - term: "checkpoint"
+    definition: "A txn_checkpoint call that flushes logged changes into the data files; v0.1.0 checkpoints whenever a database closes and in DBFlush, which also resets the log sequence numbers of idle files."
+  - term: "lock limit"
+    definition: "The ceiling of 10,000 Berkeley DB locks and lock objects set with set_lk_max_locks and set_lk_max_objects at startup, a tuning value later implicated in the chain split described in BIP 50."
+  - term: "CTxIndex"
+    definition: "The record CTxDB stores under each confirmed transaction's hash: the transaction's position on disk plus one vSpent entry per output, noting where that output was later spent."
+  - term: "record type tag"
+    definition: "The short string, such as \"tx\", \"blockindex\", \"name\", or \"key\", that begins every database key, grouping records by kind so cursors can range-scan them and LoadWallet can dispatch on them."
+  - term: "hashBestChain"
+    definition: "The blkindex.dat record holding the hash of the current best-chain tip, rewritten as the chain advances and read by LoadBlockIndex at startup to restore pindexBest and nBestHeight."

@@ -83,7 +83,7 @@ annotations:
 
   - line: 101
     type: margin
-    text: "o2i_ECPublicKey — 'o2i' is 'octet string to internal'. Public keys in Bitcoin v0.01 use the uncompressed point format: a leading 0x04 byte followed by the 32-byte x-coordinate and 32-byte y-coordinate of the point P = privKey × G on the secp256k1 curve. Compressed keys (33 bytes, 0x02 or 0x03 prefix) were not yet standard — they arrived with Bitcoin Core 0.6 in 2012."
+    text: "o2i_ECPublicKey — 'o2i' is 'octet string to internal'. Public keys in Bitcoin v0.1.0 use the uncompressed point format: a leading 0x04 byte followed by the 32-byte x-coordinate and 32-byte y-coordinate of the point P = privKey × G on the secp256k1 curve. Compressed keys (33 bytes, 0x02 or 0x03 prefix) were not yet standard — they arrived with Bitcoin Core 0.6 in 2012."
 
   - line: 109
     type: margin
@@ -137,7 +137,7 @@ conclusion: |
     signatures leaks the private key algebraically. Deterministic ECDSA removes
     this dependency by deriving <em>k</em> from the private key and message hash,
     making signatures reproducible and eliminating the catastrophic nonce-reuse
-    failure mode entirely. This was added to Bitcoin Core years after v0.01—one
+    failure mode entirely. This was added to Bitcoin Core years after v0.1.0—one
     of the few genuine security improvements to the cryptographic layer.{{cite:bitcoin-core-history}}
   </p>
 

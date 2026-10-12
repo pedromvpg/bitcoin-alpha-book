@@ -118,3 +118,17 @@ conclusion: |
     hot path, link against system and third-party libraries, produce a single executable —
     remains unchanged from what Satoshi defined in these 77 lines.
   </p>
+
+glossary:
+  - term: "MSVC"
+    definition: "Microsoft Visual C++, the compiler and linker suite targeted by this makefile; the README names version 6.0 with Service Pack 6."
+  - term: "NMAKE"
+    definition: "Microsoft's make utility, which reads makefile.vc and uses its own syntax, such as !IF and !ENDIF directives, instead of GNU Make's ifeq and endif."
+  - term: "/YX"
+    definition: "An MSVC option that creates and reuses a precompiled header automatically; paired here with /Fp, which stores it as obj/headers.pch."
+  - term: "program database"
+    definition: "The .pdb file MSVC writes when building with /Zi or linking with /DEBUG, holding the symbols a debugger needs to map machine code back to source."
+  - term: "rc"
+    definition: "Microsoft's Resource Compiler, which turns ui.rc and its icon and bitmap files into a compiled .res file that the linker embeds in bitcoin.exe."
+  - term: "static library"
+    definition: "A library whose code is copied into the executable at link time rather than loaded from a DLL; the trailing s in libdb47s.lib marks Berkeley DB's."

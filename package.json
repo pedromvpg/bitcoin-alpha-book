@@ -1,12 +1,14 @@
 {
   "name": "bitcoin-alpha-book",
   "version": "1.0.0",
-  "description": "Bitcoin v0.01 Alpha — annotated edition (line-by-line commentary, not source-only)",
+  "description": "Bitcoin v0.1.0 — annotated edition (line-by-line commentary, not source-only)",
   "type": "module",
   "scripts": {
     "fetch": "node scripts/fetch-source.js",
     "fetch:versions": "node scripts/fetch-versions.js",
     "validate": "node scripts/validate-annotations.mjs",
+    "check:quotes": "node scripts/check-quotes.mjs",
+    "verify:source": "node scripts/source-manifest.mjs",
     "build": "node scripts/validate-annotations.mjs && node scripts/build.js",
     "preview": "node scripts/build-cover.js --preview-donation && node scripts/preview.js",
     "open": "node scripts/build-cover.js --preview-donation && node scripts/preview.js --open",

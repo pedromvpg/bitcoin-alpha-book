@@ -105,11 +105,11 @@ annotations:
 
   - line: 159
     type: margin
-    text: "String conversion utilities. <code class=\"function\">i64tostr()</code>, <code class=\"function\">itostr()</code>, <code class=\"function\">atoi64()</code>, <code class=\"function\">atoi()</code> -- Satoshi wrapped every standard conversion function to handle platform differences. The <code class=\"function\">atoi64()</code> implementations use <code>_atoi64</code> on MSVC and <code>strtoll</code> on GCC. <code class=\"function\">roundint()</code> (line 192) rounds a double to the nearest integer using the 'add 0.5 and truncate' technique. Nothing in v0.01 actually calls it -- amounts are parsed as integers by <code class=\"function\">ParseMoney()</code>, never as floating point."
+    text: "String conversion utilities. <code class=\"function\">i64tostr()</code>, <code class=\"function\">itostr()</code>, <code class=\"function\">atoi64()</code>, <code class=\"function\">atoi()</code> -- Satoshi wrapped every standard conversion function to handle platform differences. The <code class=\"function\">atoi64()</code> implementations use <code>_atoi64</code> on MSVC and <code>strtoll</code> on GCC. <code class=\"function\">roundint()</code> (line 192) rounds a double to the nearest integer using the 'add 0.5 and truncate' technique. Nothing in v0.1.0 actually calls it -- amounts are parsed as integers by <code class=\"function\">ParseMoney()</code>, never as floating point."
 
   - line: 197
     type: margin
-    text: "<code class=\"function\">HexStr()</code> and <code class=\"function\">HexNumStr()</code> -- hexadecimal formatting templates. <code class=\"function\">HexStr()</code> outputs bytes left-to-right with optional spaces (used for debug logging of raw data). <code class=\"function\">HexNumStr()</code> outputs bytes in reverse order (big-endian display of little-endian integers) with an optional <code>0x</code> prefix. In v0.01 its only caller is <code>script.h</code>, which uses it to print data pushed onto a script; block hashes and transaction IDs get their hex from <code class=\"type\">uint256</code>'s own <code>GetHex()</code>. The distinction matters: a uint256 stored as <code>01 00 ... 00</code> in memory displays as <code>0x00...0001</code>."
+    text: "<code class=\"function\">HexStr()</code> and <code class=\"function\">HexNumStr()</code> -- hexadecimal formatting templates. <code class=\"function\">HexStr()</code> outputs bytes left-to-right with optional spaces (used for debug logging of raw data). <code class=\"function\">HexNumStr()</code> outputs bytes in reverse order (big-endian display of little-endian integers) with an optional <code>0x</code> prefix. In v0.1.0 its only caller is <code>script.h</code>, which uses it to print data pushed onto a script; block hashes and transaction IDs get their hex from <code class=\"type\">uint256</code>'s own <code>GetHex()</code>. The distinction matters: a uint256 stored as <code>01 00 ... 00</code> in memory displays as <code>0x00...0001</code>."
 
   - line: 232
     type: margin
@@ -163,3 +163,21 @@ conclusion: |
     power. The implementations here -- thin wrappers around OpenSSL -- are among the
     most consequential hundred lines of code ever written.
   </p>
+
+glossary:
+  - term: "int64"
+    definition: "Satoshi's portable 64-bit signed integer type, mapped to __int64 on MSVC and Borland and to long long on GCC, used for amounts and timestamps."
+  - term: "foreach"
+    definition: "A one-word alias for Boost's BOOST_FOREACH macro, letting the code loop over any STL container without spelling out iterator types."
+  - term: "CCriticalSection"
+    definition: "A thin wrapper around the Windows CRITICAL_SECTION mutex that initializes and deletes it automatically and records the file and line of the current holder."
+  - term: "CRITICAL_BLOCK"
+    definition: "A macro that locks a critical section for the duration of the following block and releases it on exit, even when an exception is thrown."
+  - term: "TRY_CRITICAL_BLOCK"
+    definition: "The non-blocking variant of CRITICAL_BLOCK: it runs the following block only if the lock can be taken immediately, and otherwise skips it."
+  - term: "OutputDebugStringF"
+    definition: "The logging function that every printf call is redirected to on Windows; in debug builds it appends to debug.log and the Windows debugger output."
+  - term: "IMPLEMENT_RANDOMIZE_STACK"
+    definition: "A macro that makes a thread function call itself a random number of times, up to 50, so its working stack frame lands at an unpredictable depth."
+  - term: "SerializeHash"
+    definition: "A helper that serializes any object into a byte stream and returns the double-SHA256 of those bytes, the standard way objects are given their hash."

@@ -15,12 +15,14 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { EDITION, ANNOTATIONS_CREDIT } from './edition.mjs';
+import { loadManifest } from './source-manifest.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -49,7 +51,7 @@ function readPageCount() {
   }
 }
 
-function buildLandingHtml({ pageCount, hasCover, hasSheet }) {
+function buildLandingHtml({ pageCount, hasCover, hasSheet, treeHash, hasSums }) {
   const pagesStat = pageCount
     ? `<div class="stat"><span class="stat-num">${pageCount}</span><span class="stat-label">Pages</span></div>`
     : '';
@@ -72,8 +74,8 @@ function buildLandingHtml({ pageCount, hasCover, hasSheet }) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bitcoin v0.01 Alpha — Annotated Edition</title>
-  <meta name="description" content="The complete annotated source code of Bitcoin v0.01 Alpha (Satoshi Nakamoto, January 2009) — a print-ready book, readable online.">
+  <title>Bitcoin v0.1.0 — Annotated Edition</title>
+  <meta name="description" content="The complete annotated source code of Bitcoin v0.1.0 (Satoshi Nakamoto, January 2009) — a print-ready book, readable online.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -183,7 +185,7 @@ function buildLandingHtml({ pageCount, hasCover, hasSheet }) {
     <div class="hero-ghost" aria-hidden="true">01</div>
     <div class="hero-body">
       <div class="hero-eyebrow">Annotated Edition</div>
-      <h1>BITCOIN<span class="version">v0.01 ALPHA</span></h1>
+      <h1>BITCOIN<span class="version">v0.1.0</span></h1>
       <p class="hero-desc">The original Bitcoin source code — 32 files, roughly 20,000 lines of C++ — released by Satoshi Nakamoto in January 2009. Annotated line by line for developers, historians, and the Bitcoin-curious.</p>
       <p class="hero-meta">
         <span class="edition">Annotated edition — ${escapeHtml(EDITION)}</span>
@@ -220,20 +222,26 @@ function buildLandingHtml({ pageCount, hasCover, hasSheet }) {
       <a class="card" href="${REPO_URL}">
         <span class="card-k">Build</span>
         <span class="card-t">Fully reproducible</span>
-        <span class="card-d">Chapters are generated from YAML annotation files over the fetched v0.01 tree. <span style="font-family:var(--mono)">npm run build</span> regenerates everything on this site.</span>
+        <span class="card-d">Chapters are generated from YAML annotation files over the fetched v0.1.0 tree. <span style="font-family:var(--mono)">npm run build</span> regenerates everything on this site.</span>
       </a>
+      ${treeHash ? `<a class="card" href="/source-manifest.json">
+        <span class="card-k">Verify</span>
+        <span class="card-t">Byte-for-byte source</span>
+        <span class="card-d">Every printed file is hashed against the January 2009 release. SHA-256 tree hash: <span style="font-family:var(--mono);word-break:break-all">${escapeHtml(treeHash)}</span>${hasSums ? ' — release PDF checksums in <span style="font-family:var(--mono)">SHA256SUMS</span>.' : '.'}</span>
+      </a>` : ''}
     </div>
   </section>
 
   ${sheet ? `<section><div class="section-eyebrow">Overview</div>${sheet}</section>` : ''}
 
   <footer>
-    <span>Bitcoin Alpha Book — ${escapeHtml(EDITION)}</span>
+    <span>Bitcoin v0.1.0 — Annotated Edition — ${escapeHtml(EDITION)}</span>
     <span class="links">
       <a href="/book">Book</a>
       ${hasCover ? '<a href="/cover">Cover</a>' : ''}
       <a href="${REPO_URL}">GitHub</a>
       <a href="${REPO_URL}/releases">Releases</a>
+      ${hasSums ? '<a href="/SHA256SUMS">SHA256SUMS</a>' : ''}
     </span>
   </footer>
 </body>
@@ -277,11 +285,28 @@ function main() {
     console.warn('   ⚠ contact-sheet.png missing — landing page renders without it');
   }
 
+  // Source manifest (committed) + latest release checksums (committed under releases/)
+  const manifest = loadManifest();
+  if (manifest) {
+    copyFileSync(join(ROOT_DIR, 'src', 'source-manifest.json'), join(DIST_DIR, 'source-manifest.json'));
+    console.log('   ✓ source-manifest.json');
+  }
+  const releasesDir = join(ROOT_DIR, 'releases');
+  const latestSums = existsSync(releasesDir)
+    ? readdirSync(releasesDir).sort().reverse()
+        .map((d) => join(releasesDir, d, 'SHA256SUMS'))
+        .find((p) => existsSync(p))
+    : null;
+  if (latestSums) {
+    copyFileSync(latestSums, join(DIST_DIR, 'SHA256SUMS'));
+    console.log('   ✓ SHA256SUMS (latest release)');
+  }
+
   // Landing page
   const pageCount = readPageCount();
   writeFileSync(
     join(DIST_DIR, 'index.html'),
-    buildLandingHtml({ pageCount, hasCover, hasSheet }),
+    buildLandingHtml({ pageCount, hasCover, hasSheet, treeHash: manifest?.treeHash, hasSums: Boolean(latestSums) }),
     'utf8',
   );
   console.log('   ✓ index.html (landing)');

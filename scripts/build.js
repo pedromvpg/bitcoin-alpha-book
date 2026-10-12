@@ -1,7 +1,7 @@
 /**
  * Bitcoin Alpha Book Builder
  * 
- * Assembles the Bitcoin v0.01 source code into a print-ready PDF book
+ * Assembles the Bitcoin v0.1.0 source code into a print-ready PDF book
  * with syntax highlighting and annotations.
  */
 
@@ -17,6 +17,8 @@ import {
   chapterIdFromFilename,
 } from './source-file-order.mjs';
 import { renderRcGalleryHtml } from './rc-gallery.mjs';
+import { loadManifest } from './source-manifest.mjs';
+import { buildSymbolTable, callersOf, definitionsByFile, resolveStep } from './symbols.mjs';
 
 // Load additional Prism languages
 import 'prismjs/components/prism-c.js';
@@ -31,8 +33,12 @@ const ROOT_DIR = join(__dirname, '..');
 const SOURCE_DIR = join(ROOT_DIR, 'src', 'bitcoin-0.01', 'src');
 const ANNOTATIONS_DIR = join(ROOT_DIR, 'src', 'annotations');
 const REFERENCES_PATH = join(ROOT_DIR, 'src', 'references.yaml');
+const READING_PATHS_PATH = join(ROOT_DIR, 'src', 'reading-paths.yaml');
 const STYLES_DIR = join(ROOT_DIR, 'styles');
 const OUTPUT_DIR = join(ROOT_DIR, 'output');
+const PIRATEHASH_LOGO_SVG = readFileSync(join(ROOT_DIR, 'assets', 'PirateHash_vector_black.svg'), 'utf8')
+  .replace('<svg ', '<svg class="publisher-logo" role="img" aria-label="PirateHash" ')
+  .replace(/ width="\d+" height="\d+"/, '');
 
 // =============================================================================
 // CITATIONS / FOOTNOTES
@@ -153,7 +159,7 @@ class CitationContext {
       const fnId = `${this.chapterId}-fn-${number}`;
       return `
       <li id="${fnId}" class="footnote" value="${number}">
-        ${formatFootnote(ref)}
+        <span class="footnote-text">${formatFootnote(ref)}</span>
       </li>`;
     }).join('');
 
@@ -454,10 +460,18 @@ function generateIndexHtml(termLocations) {
         ? `<code class="index-code">${escapeHtml(entry.term)}</code>`
         : escapeHtml(entry.term);
       
-      // Generate page references - each is a link that will show its page number
-      const pageRefs = entry.sections.map(sectionId => 
-        `<a class="index-page-ref" href="#${sectionId}"></a>`
-      ).join('');
+      // Generate page references - each is a link that will show its page number.
+      // A code term defined once in v0.1.0 points at its definition line in the
+      // defining chapter (exact page) instead of that chapter's first page.
+      const symbols = buildSymbolTable();
+      const def = entry.config.isCode
+        ? symbols.unique.get(entry.term) || symbols.classes.get(entry.term)
+        : null;
+      const defSection = def ? chapterIdFromFilename(def.file) : null;
+      const pageRefs = entry.sections.map(sectionId => {
+        const target = sectionId === defSection ? lineAnchorId(def.file, def.line) : sectionId;
+        return `<a class="index-page-ref" href="#${target}"></a>`;
+      }).join('');
       
       indexHtml += `
           <li class="index-entry">${termDisplay}, ${pageRefs}</li>`;
@@ -588,6 +602,59 @@ function processCodeWithAnnotations(code, language, annotations = []) {
 }
 
 /**
+ * Line anchors + "Called from" cross-references (scripts/symbols.mjs).
+ * Only lines that something links to get an id, keeping the HTML small.
+ */
+const XREF_MAX_CALLERS = 6;
+const XREF_SEP = '<span class="xref-sep"> · </span>'; // explicit: Paged.js drops whitespace-only nodes
+const extraLineAnchors = new Map(); // filename -> Set<line> (reading paths, index)
+let xrefAnchorCache = null;
+
+function lineAnchorId(filename, line) {
+  return `L-${chapterIdFromFilename(filename)}-${line}`;
+}
+
+/** Ask for an anchor on a source line; returns its id. Call before chapters render. */
+function requestLineAnchor(filename, line) {
+  if (!extraLineAnchors.has(filename)) extraLineAnchors.set(filename, new Set());
+  extraLineAnchors.get(filename).add(line);
+  return lineAnchorId(filename, line);
+}
+
+function xrefAnchors() {
+  if (xrefAnchorCache) return xrefAnchorCache;
+  const map = new Map();
+  const add = (file, line) => {
+    if (!map.has(file)) map.set(file, new Set());
+    map.get(file).add(line);
+  };
+  for (const [file, defs] of definitionsByFile()) {
+    for (const [line, def] of defs) {
+      add(file, line);
+      for (const c of callersOf(def.name).slice(0, XREF_MAX_CALLERS)) add(c.file, c.line);
+    }
+  }
+  for (const d of buildSymbolTable().unique.values()) add(d.file, d.line);
+  for (const c of buildSymbolTable().classes.values()) add(c.file, c.line);
+  xrefAnchorCache = map;
+  return map;
+}
+
+/** "Called from" note placed above a definition's signature line. */
+function xrefNoteHtml(def) {
+  const callers = callersOf(def.name);
+  const shown = callers.slice(0, XREF_MAX_CALLERS).map((c) => {
+    const who = c.caller || c.file;
+    const where = c.file === def.file ? '' : ` <span class="xref-file">${escapeHtml(c.file)}</span>`;
+    return `<span class="xref-item"><code>${escapeHtml(who)}</code>${where} <a class="xref" href="#${lineAnchorId(c.file, c.line)}"></a></span>`;
+  });
+  const more = callers.length > XREF_MAX_CALLERS
+    ? `${XREF_SEP}<span class="xref-more">and ${callers.length - XREF_MAX_CALLERS} more</span>`
+    : '';
+  return `<div class="xref-note"><span class="xref-label">Called from </span>${shown.join(XREF_SEP)}${more}</div>`;
+}
+
+/**
  * Generate HTML for a single code block
  * Uses per-line structure so line numbers stay aligned when code wraps
  * Includes margin notes from annotations
@@ -613,6 +680,12 @@ function generateCodeBlockHtml(filename, code, language, annotations, citationCt
     }
   }
   
+  const anchorLines = new Set([
+    ...(xrefAnchors().get(filename) || []),
+    ...(extraLineAnchors.get(filename) || []),
+  ]);
+  const xrefDefs = definitionsByFile().get(filename) || new Map();
+
   // Generate each line as a row with line number + code + optional margin note
   let linesHtml = '';
   for (let i = 0; i < lines.length; i++) {
@@ -637,7 +710,11 @@ function generateCodeBlockHtml(filename, code, language, annotations, citationCt
       linesHtml += `<div class="annotation-block"><div class="annotation-content">${text}</div></div>`;
     }
 
-    linesHtml += `<div class="${lineClass}"><span class="line-num">${String(lineNum).padStart(4, ' ')}</span><span class="line-code">${highlightedContent}</span></div>`;
+    const xrefDef = xrefDefs.get(lineNum);
+    if (xrefDef) linesHtml += xrefNoteHtml(xrefDef);
+
+    const idAttr = anchorLines.has(lineNum) ? ` id="${lineAnchorId(filename, lineNum)}"` : '';
+    linesHtml += `<div class="${lineClass}"${idAttr}><span class="line-num">${String(lineNum).padStart(4, ' ')}</span><span class="line-code">${highlightedContent}</span></div>`;
   }
   
   const html = `
@@ -651,10 +728,100 @@ function generateCodeBlockHtml(filename, code, language, annotations, citationCt
 }
 
 /**
- * Generate the complete book HTML
+ * Back-matter Glossary: all chapter Key Terms merged by term (first definition
+ * in file order wins), each pointing back to the chapters that define it.
  */
+function generateBackGlossaryHtml(glossaryTerms) {
+  if (!glossaryTerms.size) return '';
+  // Alphabetize by the first letter, so "_WIN32_WINNT" files under W and "#bitcoin" under B
+  const sortKey = (t) => t.toLowerCase().replace(/^[^a-z0-9]+/, '');
+  const entries = [...glossaryTerms.values()].sort((a, b) => sortKey(a.term).localeCompare(sortKey(b.term)));
+  const items = entries.map((e) => {
+    const definition = e.definition.replace(/\{\{cite:[^}]+\}\}/g, '');
+    const refs = e.chapters
+      .map((c) => `<span class="xref-item"><span class="xref-file">${escapeHtml(c.filename)}</span> <a class="xref" href="#keyterms-${c.id}"></a></span>`)
+      .join(XREF_SEP);
+    return `<div class="glossary-entry"><dt>${escapeHtml(e.term)}</dt><dd>${definition} <span class="glossary-refs">${refs}</span></dd></div>`;
+  });
+  return `
+  <section class="chapter glossary-section" id="glossary">
+    <span class="section-title">Glossary</span>
+    <h1 class="chapter-title">GLOSSARY</h1>
+    <p class="glossary-lead">The Key Terms from every chapter, merged. Page numbers point to the chapter where each term is defined.</p>
+    <dl class="glossary-list glossary-back">
+      ${items.join('\n      ')}
+    </dl>
+  </section>`;
+}
+
+/**
+ * "Reading Paths" chapter (end of Part I) from src/reading-paths.yaml: guided
+ * tours whose steps link to source lines by page number. Requests line anchors,
+ * so it must run before the chapters are rendered.
+ */
+function generateReadingPathsHtml() {
+  if (!existsSync(READING_PATHS_PATH)) return '';
+  const doc = yaml.load(readFileSync(READING_PATHS_PATH, 'utf8')) || {};
+  const paths = doc.paths || [];
+  if (!paths.length) return '';
+  const pathsHtml = paths.map((path) => {
+    const steps = (path.steps || []).map((step) => {
+      const r = resolveStep(step);
+      if (r.error) {
+        console.warn(`Warning: reading path ${path.id}: ${r.error}`);
+        return '';
+      }
+      const id = requestLineAnchor(r.file, r.line);
+      const label = r.symbol || `${r.file}:${r.line}`;
+      return `
+        <li class="reading-step">
+          <div class="reading-step-head"><code>${escapeHtml(label)}</code> <span class="xref-file">${escapeHtml(r.file)}:${r.line}</span> <a class="xref" href="#${id}"></a></div>
+          <div class="reading-step-note">${step.note}</div>
+        </li>`;
+    }).join('');
+    return `
+    <h2 id="reading-path-${escapeHtml(path.id)}">${escapeHtml(path.title)}</h2>
+    ${path.intro ? `<p>${path.intro.trim()}</p>` : ''}
+    <ol class="reading-steps">${steps}
+    </ol>`;
+  }).join('\n');
+  return `
+  <section class="chapter concepts reading-paths" id="reading-paths">
+    <h1 class="chapter-title">Reading Paths</h1>
+    <p class="lead">
+      The chapters that follow present the source file by file, in alphabetical order, which
+      is how the code is organized but not how it runs. These tours follow the execution
+      instead: each step names a function, where it lives, and the page where it begins.
+      Read a path straight through for the big picture, or keep a finger here and jump.
+    </p>
+    ${pathsHtml}
+  </section>`;
+}
+
+/**
+ * Colophon paragraph: SHA-256 tree hash of the printed v0.1.0 source
+ * (src/source-manifest.json, verified by npm run validate before every build).
+ */
+function sourceVerificationHtml() {
+  const manifest = loadManifest();
+  if (!manifest) return '';
+  const groups = manifest.treeHash.match(/.{16}/g).join(' ');
+  return `
+    <p>
+      <strong>Source verification.</strong>
+      The ${manifest.fileCount} files of the source tree reproduced here (${manifest.lineCount.toLocaleString('en-US')}
+      lines of C++) were checked byte for byte against the Nakamoto Institute archive of the
+      January 2009 release before this edition was typeset. Their combined SHA-256 tree hash is
+      <code class="source-tree-hash">${groups}</code>.
+      Per-file hashes and the recipe are in <code>src/source-manifest.json</code> in the
+      project repository; <code>node scripts/source-manifest.mjs</code> recomputes them.
+    </p>
+`;
+}
+
 function generateBookHtml(files) {
   const eccFigs = getEccPrimerFigures();
+  const readingPathsHtml = generateReadingPathsHtml(); // requests line anchors — before chapters
   const printCss = readFileSync(join(STYLES_DIR, 'print.css'), 'utf8');
   const syntaxCss = readFileSync(join(STYLES_DIR, 'syntax.css'), 'utf8');
   const typefaceCss = readFileSync(join(STYLES_DIR, 'typeface.css'), 'utf8');
@@ -702,6 +869,10 @@ function generateBookHtml(files) {
         <span class="toc-filename">C++ Primer</span>
         <span class="toc-page" data-target="cpp-primer"></span>
       </li>
+      <li class="toc-item">
+        <span class="toc-filename">Reading Paths</span>
+        <span class="toc-page" data-target="reading-paths"></span>
+      </li>
       <li class="toc-part-header">The Source Code</li>
       <li class="toc-item">
         <span class="toc-filename">rc/ (Resources)</span>
@@ -725,6 +896,10 @@ function generateBookHtml(files) {
         <span class="toc-page" data-target="what-came-after"></span>
       </li>
       <li class="toc-item">
+        <span class="toc-filename">Glossary</span>
+        <span class="toc-page" data-target="glossary"></span>
+      </li>
+      <li class="toc-item">
         <span class="toc-filename">Index</span>
         <span class="toc-page" data-target="index"></span>
       </li>
@@ -735,6 +910,7 @@ function generateBookHtml(files) {
 
   // Generate chapters
   let chaptersHtml = '';
+  const glossaryTerms = new Map(); // lower-cased term -> {term, definition, chapters: [{filename, id}]}
   for (const file of files) {
     const annotation = file.annotation || {};
     const ctx = createCitationContext(file.id, GLOBAL_REFERENCES, annotation);
@@ -742,8 +918,15 @@ function generateBookHtml(files) {
     const conclusion = annotation.conclusion ? ctx.process(annotation.conclusion) : '';
     // Optional chapter glossary (Key Terms list, rendered after the summary)
     const glossary = Array.isArray(annotation.glossary) ? annotation.glossary : [];
+    for (const g of glossary) {
+      const key = String(g.term).toLowerCase();
+      if (!glossaryTerms.has(key)) {
+        glossaryTerms.set(key, { term: String(g.term), definition: String(g.definition), chapters: [] });
+      }
+      glossaryTerms.get(key).chapters.push({ filename: file.filename, id: file.id });
+    }
     const glossaryHtml = glossary.length ? `
-      <div class="annotation-block chapter-glossary">
+      <div class="annotation-block chapter-glossary" id="keyterms-${file.id}">
         <h4>Key Terms</h4>
         <dl class="glossary-list">
           ${glossary.map((g) => `<dt>${escapeHtml(String(g.term))}</dt><dd>${ctx.process(String(g.definition))}</dd>`).join('\n          ')}
@@ -759,13 +942,8 @@ function generateBookHtml(files) {
     );
     const footnotesHtml = ctx.renderFootnotes();
 
-    // Blank pages before chapters
-    if (['main.cpp', 'net.cpp', 'market.h', 'readme.txt', 'ui.cpp', 'base58.h',
-         'key.h', 'headers.h', 'irc.h', 'irc.cpp', 'script.h',
-         'ui.rc', 'uibase.cpp', 'uibase.h', 'uint256.h', 'uiproject.fbp',
-         'util.cpp', 'util.h'].includes(file.filename)) {
-      chaptersHtml += `\n    <section class="blank-page"></section>`;
-    }
+    // Blank verso before every chapter → blank-left / intro-right opening spread
+    chaptersHtml += `\n    <section class="blank-page chapter-verso"></section>`;
 
     // Add special class for dense/compact files
     const compactFiles = ['uibase.cpp', 'uibase.h', 'ui.cpp', 'ui.h'];
@@ -776,7 +954,7 @@ function generateBookHtml(files) {
     chaptersHtml += `
     <section class="chapter${extraClass}" id="${file.id}">
       <span class="section-title">${escapeHtml(file.filename)}</span>
-      <span class="chapter-title">Bitcoin v0.01 Alpha</span>
+      <span class="chapter-title">Bitcoin v0.1.0</span>
       
       <header class="chapter-header">
         <h1 class="chapter-title">${escapeHtml(file.filename)}</h1>
@@ -804,21 +982,17 @@ function generateBookHtml(files) {
       ${footnotesHtml}
     </section>`;
 
-    // Blank pages after chapters
-    if (['market.h', 'net.h', 'readme.txt', 'base58.h',
-         'key.h', 'headers.h', 'irc.cpp', 'license.txt', 'script.h',
-         'ui.rc', 'uibase.cpp', 'uint256.h', 'uiproject.fbp',
-         'util.cpp', 'util.h'].includes(file.filename)) {
-      chaptersHtml += `\n    <section class="blank-page"></section>`;
-    }
   }
   
+  const backGlossaryHtml = generateBackGlossaryHtml(glossaryTerms);
+
   // Build intro sections content for index searching
   const introSectionsForIndex = `
     <section id="introduction">introduction bitcoin digital money cryptography Satoshi Nakamoto transactions blocks proof-of-work P2P network consensus main.cpp script.cpp net.cpp key.h sha.cpp double-spending verification node</section>
     <section id="prehistory">SHA-256 RIPEMD-160 merkle tree proof-of-work hashcash difficulty Hal Finney RPOW Adam Back Wei Dai b-money Nick Szabo Bit Gold David Chaum DigiCash whitepaper cypherpunk digital signature</section>
     <section id="computer-concepts">binary hexadecimal memory pointer data hash SHA-256 ECDSA public key private key</section>
     <section id="cryptography-primer">discrete logarithm elliptic curve ECC secp256k1 ECDSA SHA-256 RIPEMD-160 merkle tree proof-of-work generator point OpenSSL digital signature private key public key hash</section>
+    <section id="reading-paths">transaction mining block network peer SendMoney CreateTransaction SignSignature EvalScript BitcoinMiner ProcessBlock AcceptBlock StartNode IRC version</section>
     <section id="cpp-primer">CTransaction CBlock CKey uint256 CBigNum vector map CRITICAL_BLOCK BOOST_FOREACH IMPLEMENT_SERIALIZE pointer reference class struct function</section>
     <section id="what-came-after">SegWit Taproot Schnorr libsecp256k1 LevelDB Berkeley DB BIP Lightning descriptor wallet JSON-RPC testnet Bitcoin Core version release changelog P2SH bech32 Miniscript Satoshi Gavin Andresen</section>
   `;
@@ -835,7 +1009,7 @@ function generateBookHtml(files) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bitcoin v0.01 Alpha — Annotated Edition</title>
+  <title>Bitcoin v0.1.0 — Annotated Edition</title>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -878,6 +1052,50 @@ ${typographyCss}
       super(chunker, polisher, caller);
     }
 
+    // Paged.js 0.4 measures overflow per letter with floored rects, so a line
+    // that exactly fills the column can lose its last letter to the next page
+    // ("succeede‑" / "d as prophecy."). Never split inside a word: move the
+    // break back to the word start so the whole word carries over unhyphenated.
+    onPageLayout(wrapper, breakToken, layout) {
+      var proto = layout && Object.getPrototypeOf(layout);
+      if (!proto || proto.__wordSafeTextBreak) return;
+      var textBreak = proto.textBreak;
+      proto.textBreak = function (node) {
+        var offset = textBreak.apply(this, arguments);
+        var text = node.textContent;
+        if (typeof offset === 'number' && offset > 0 &&
+            /[\\w\\u00AD]/.test(text[offset - 1]) && /\\w/.test(text[offset] || '')) {
+          var start = offset;
+          while (start > 0 && /[\\w\\u00AD]/.test(text[start - 1])) start--;
+          if (start > 0) offset = start;
+        }
+        return offset;
+      };
+      proto.__wordSafeTextBreak = true;
+    }
+
+    // A section heading that lands at the very top of a continuation page
+    // keeps its margin-top, pushing it below the facing page's first line.
+    // Drop the margin so both pages of a spread start on the same top edge.
+    // Done at render time (not after layout) so the freed space is refilled.
+    renderNode(clone) {
+      if (!clone || clone.nodeType !== 1 || !/^H[2-4]$/.test(clone.tagName)) return;
+      var content = clone.closest('.pagedjs_page_content');
+      var continued = false;
+      for (var el = clone; el && el !== content; el = el.parentElement) {
+        if (el !== clone && el.hasAttribute('data-split-from')) continued = true;
+        for (var prev = el.previousSibling; prev; prev = prev.previousSibling) {
+          if (prev.nodeType === 3 && !prev.textContent.trim()) continue;
+          if (prev.nodeType === 1 && !prev.textContent.trim() &&
+              !prev.querySelector('img, svg, canvas') &&
+              !/^(IMG|SVG|CANVAS|HR)$/i.test(prev.tagName)) continue;
+          if (prev.nodeType === 8) continue;
+          return;
+        }
+      }
+      if (continued) clone.style.marginTop = '0';
+    }
+
     afterRendered(pages) {
       // Fill in TOC page numbers
       var tocPages = document.querySelectorAll('.toc-page[data-target]');
@@ -918,6 +1136,14 @@ ${typographyCss}
         }
       });
 
+      // Fill in cross-reference page numbers (Called from / reading paths)
+      document.querySelectorAll('a.xref').forEach(function(ref) {
+        var targetEl = document.getElementById((ref.getAttribute('href') || '').replace('#', ''));
+        var page = targetEl && targetEl.closest('.pagedjs_page');
+        if (!page) return;
+        if (page.id) ref.setAttribute('href', '#' + page.id);
+        ref.textContent = page.getAttribute('data-page-number');
+      });
     }
   }
 
@@ -931,12 +1157,13 @@ ${typographyCss}
   <section class="title-page" id="front-matter">
     <div class="title-content">
       <h1 class="book-title">BITCOIN</h1>
-      <p class="book-subtitle">v0.01 ALPHA</p>
+      <p class="book-subtitle">v0.1.0</p>
       <p class="book-edition-banner">Annotated edition — ${EDITION}</p>
     </div>
     <div class="footer-content">
       <p class="annotations-credit">${ANNOTATIONS_CREDIT}</p>
       <p class="copyright">Copyright (c) 2009 Satoshi Nakamoto</p>
+      ${PIRATEHASH_LOGO_SVG}
     </div>
   </section>
 
@@ -961,7 +1188,7 @@ ${typographyCss}
       <li>
         <strong>Original Bitcoin Source Code</strong><br>
         <span class="source-url">satoshi.nakamotoinstitute.org/code</span><br>
-        <span class="source-desc">Archive of Bitcoin v0.01 source code, preserved by the Satoshi Nakamoto Institute</span>
+        <span class="source-desc">Archive of Bitcoin v0.1.0 source code, preserved by the Satoshi Nakamoto Institute</span>
       </li>
       <li>
         <strong>Bitcoin Whitepaper</strong><br>
@@ -1060,7 +1287,7 @@ ${typographyCss}
     </p>
 
     <p>
-      This book contains the complete source code of Bitcoin version 0.01 Alpha, the
+      This book contains the complete source code of Bitcoin version 0.1.0, the
       first public release.{{cite:nakamoto-institute-code}}{{cite:readme-v001}} Roughly 20,000 lines of C++ that solved a problem widely
       considered unsolvable: how to prevent double-spending in a digital currency
       without a central authority. The code has been running continuously since
@@ -1185,12 +1412,12 @@ ${typographyCss}
           arithmetic, hash functions, elliptic curves, digital signatures.</li>
       <li><strong>C++ Primer</strong> explains the programming language, file
           structure, and idioms you will encounter.</li>
-      <li><strong>The Source Code</strong> presents every file from Bitcoin v0.01
-          Alpha, annotated line by line with explanations of what the code does,
+      <li><strong>The Source Code</strong> presents every file from Bitcoin v0.1.0,
+          annotated line by line with explanations of what the code does,
           why Satoshi designed it that way, and what happened to it afterward.</li>
     </ul>
     <p>
-      Version 0.01 is remarkably complete. The fundamental architecture—the UTXO
+      Version 0.1.0 is remarkably complete. The fundamental architecture—the UTXO
       model, proof-of-work consensus, peer-to-peer gossip, the 21-million-coin
       halving schedule, and the basic shape of the scripting system—remains
       recognizable after seventeen years and
@@ -1292,7 +1519,7 @@ Check it yourself: SHA1 of this exact header begins 00000a4a…
       adapted the concept: instead of proving work to send email, miners prove
       work to add blocks. The difficulty is adjusted so the network collectively
       finds one valid proof every 10 minutes on average. Every 2,016 blocks—about two
-      weeks at ten minutes each—v0.01 measures how long they actually took and raises
+      weeks at ten minutes each—v0.1.0 measures how long they actually took and raises
       or lowers the target to match (<code>nTargetSpacing = 10 * 60</code> in
       <code>main.cpp</code>).
     </p>
@@ -1316,7 +1543,7 @@ Check it yourself: SHA1 of this exact header begins 00000a4a…
       system."{{cite:nakamoto-dai-email}}
     </p>
     <p>
-      Fittingly, Wei Dai's own code ships inside Bitcoin v0.01: the SHA-256 routine
+      Fittingly, Wei Dai's own code ships inside Bitcoin v0.1.0: the SHA-256 routine
       in <code>sha.cpp</code>, which Bitcoin's miner runs over and over in its search
       for a valid block, comes from his Crypto++ library.
     </p>
@@ -2154,7 +2381,7 @@ Bitcoin Address (e.g., 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa)</pre>
       Mining is a cryptographic lottery.{{cite:back-hashcash}} Miners must find a number (nonce) 
       such that the block's hash starts with many zeros:
     </p>
-    <pre class="example">Target (v0.01 minimum difficulty): hash must be less than
+    <pre class="example">Target (v0.1.0 minimum difficulty): hash must be less than
         00000000ffff0000000000000000000000000000000000000000000000000000
 
 Miner tries (hash = double SHA-256 of the block header):
@@ -2169,7 +2396,7 @@ Miner tries (hash = double SHA-256 of the block header):
       Because SHA-256 is unpredictable, the only way to find a valid nonce
       is trial and error. The difficulty adjusts so that the network finds
       a block approximately every 10 minutes, regardless of total computing power.
-      In v0.01 this is <code>nTargetSpacing = 10 * 60</code> seconds, and the target
+      In v0.1.0 this is <code>nTargetSpacing = 10 * 60</code> seconds, and the target
       is recalculated every two weeks' worth of blocks (14 days ÷ 10 minutes =
       2,016 blocks), not continuously.
     </p>
@@ -2210,7 +2437,7 @@ Miner tries (hash = double SHA-256 of the block header):
 
     <h2>File and Directory Structure</h2>
     <p>
-      Bitcoin v0.01 follows traditional C++ project conventions. Understanding
+      Bitcoin v0.1.0 follows traditional C++ project conventions. Understanding
       the file organization helps you navigate the codebase and understand how
       the pieces fit together.
     </p>
@@ -2271,7 +2498,7 @@ uint256 <span class="token class-name">CBlock</span><span class="token punctuati
     </p>
 
     <div style="break-before: page;"></div>
-    <h3>Bitcoin v0.01 File Organization</h3>
+    <h3>Bitcoin v0.1.0 File Organization</h3>
     <table class="color-key">
       <thead>
         <tr><th>File</th><th>Purpose</th></tr>
@@ -2407,7 +2634,7 @@ uint256 <span class="token class-name">CBlock</span><span class="token punctuati
       specifies which files to compile, what compiler flags to use, and what
       libraries to link:
     </p>
-    <pre class="example"># Abridged from the v0.01 makefile
+    <pre class="example"># Abridged from the v0.1.0 makefile
 
 # Precompile the shared header once
 headers.h.gch: headers.h $(HEADERS) net.h irc.h market.h uibase.h ui.h
@@ -2423,9 +2650,9 @@ bitcoin.exe: headers.h.gch $(OBJS)
 
 # $(LIBS) includes -l db_cxx (Berkeley DB), -l eay32 (OpenSSL), wxWidgets ...</pre>
     <p>
-      Bitcoin v0.01 includes two makefiles: <code>makefile</code> for MinGW GCC
+      Bitcoin v0.1.0 includes two makefiles: <code>makefile</code> for MinGW GCC
       and <code>makefile.vc</code> for Microsoft's Visual C++. Both target
-      Windows—the only platform v0.01 supported.{{cite:nakamoto-windows-only}}
+      Windows—the only platform v0.1.0 supported.{{cite:nakamoto-windows-only}}
     </p>
 
     <h3>Resource and Project Files</h3>
@@ -2633,7 +2860,7 @@ tx<span class="token punctuation">.</span>nVersion <span class="token operator">
 <span class="token keyword">uint256</span> hash <span class="token operator">=</span> tx<span class="token punctuation">.</span><span class="token function">GetHash</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span></pre>
     <p>
       <strong>Structs</strong> are like classes but default to public access.
-      Bitcoin v0.01 almost always uses <code>class</code> with an explicit
+      Bitcoin v0.1.0 almost always uses <code>class</code> with an explicit
       <code>public:</code> section; <code>struct</code> appears only a handful of times.
     </p>
     
@@ -2681,7 +2908,7 @@ v<span class="token punctuation">.</span><span class="token function">push_back<
     <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%d\\n"</span><span class="token punctuation">,</span> v<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token punctuation">}</span>
 
-<span class="token comment">// Range-based (C++11 — not in v0.01, which predates it</span>
+<span class="token comment">// Range-based (C++11 — not in v0.1.0, which predates it</span>
 <span class="token comment">// and uses the foreach macro instead):</span>
 <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">int</span> n <span class="token punctuation">:</span> v<span class="token punctuation">)</span> <span class="token punctuation">{</span>
     <span class="token function">printf</span><span class="token punctuation">(</span><span class="token string">"%d\\n"</span><span class="token punctuation">,</span> n<span class="token punctuation">)</span><span class="token punctuation">;</span>
@@ -2715,7 +2942,7 @@ balances<span class="token punctuation">[</span><span class="token string">"Bob"
 <span class="token keyword">#include</span> <span class="token string">"main.h"</span>        <span class="token comment">// local file</span>
 <span class="token keyword">#include</span> <span class="token operator">&lt;</span>vector<span class="token operator">&gt;</span>        <span class="token comment">// system file</span>
 
-<span class="token comment">// Define constants (v0.01 prefers typed constants to #define):</span>
+<span class="token comment">// Define constants (v0.1.0 prefers typed constants to #define):</span>
 <span class="token keyword">static const</span> int64 COIN <span class="token operator">=</span> <span class="token number">100000000</span><span class="token punctuation">;</span>            <span class="token comment">// 1 BTC in satoshis</span>
 <span class="token keyword">static const unsigned int</span> MAX_SIZE <span class="token operator">=</span> <span class="token number">0x02000000</span><span class="token punctuation">;</span>  <span class="token comment">// 32 MB size cap</span>
 
@@ -2726,7 +2953,7 @@ balances<span class="token punctuation">[</span><span class="token string">"Bob"
     <span class="token comment">// Unix/Linux code</span>
 <span class="token keyword">#endif</span>
 
-<span class="token comment">// Macros (inline code substitution), from v0.01's util.h:</span>
+<span class="token comment">// Macros (inline code substitution), from v0.1.0's util.h:</span>
 <span class="token keyword">#define</span> foreach  BOOST_FOREACH          <span class="token comment">// shorter name</span>
 <span class="token keyword">#define</span> loop     <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token punctuation">;</span><span class="token punctuation">;</span><span class="token punctuation">)</span>              <span class="token comment">// loop forever</span>
 <span class="token keyword">#define</span> <span class="token function">BEGIN</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">char</span><span class="token operator">*</span><span class="token punctuation">)</span><span class="token operator">&amp;</span><span class="token punctuation">(</span>a<span class="token punctuation">)</span><span class="token punctuation">)</span>
@@ -2780,23 +3007,24 @@ balances<span class="token punctuation">[</span><span class="token string">"Bob"
 <span class="token comment">// Automatic cleanup with smart pointers:</span>
 auto_ptr<span class="token operator">&lt;</span><span class="token class-name">CBlock</span><span class="token operator">&gt;</span> <span class="token function">pblock</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">CBlock</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>
 <span class="token comment">// automatically deleted when out of scope</span>
-<span class="token comment">// (v0.01 does this in main.cpp; C++11 later deprecated auto_ptr)</span>
+<span class="token comment">// (v0.1.0 does this in main.cpp; C++11 later deprecated auto_ptr)</span>
 
 <span class="token comment">// Stack allocation (automatic cleanup):</span>
 <span class="token class-name">CBlock</span> block<span class="token punctuation">;</span>  <span class="token comment">// created on stack</span>
 <span class="token comment">// deleted automatically when function returns</span></pre>
   </section>
-  
+${readingPathsHtml}
   <!-- Blank page before Part II -->
   <section class="blank-page"></section>
 
   <!-- PART II DIVIDER -->
   <section class="part-divider">
     <h1 class="part-title">The Source Code</h1>
-    <p class="part-subtitle">Bitcoin v0.01 — annotated and explained</p>
+    <p class="part-subtitle">Bitcoin v0.1.0 — annotated and explained</p>
   </section>
 
   <!-- RESOURCES CHAPTER -->
+  <section class="blank-page chapter-verso"></section>
   ${generateResourcesChapter()}
 
   <!-- CHAPTERS -->
@@ -2807,7 +3035,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     <h1 class="chapter-title">What Came After</h1>
     
     <p class="lead">
-      You've now studied Bitcoin at its origin—the pristine v0.01 code that launched
+      You've now studied Bitcoin at its origin—the pristine v0.1.0 code that launched
       a monetary revolution. But Bitcoin didn't stop evolving on January 9, 2009.{{cite:bitcoin-core-history}}{{cite:nakamoto-windows-only}}
       Over seventeen years, the codebase has grown from roughly 20,000 lines of C++ to
       more than 300,000 (counting tests and bundled libraries), with hundreds of contributors refining Satoshi's vision. Here's a chronological
@@ -2871,7 +3099,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>v0.3.21</strong></td>
           <td>Apr 27, 2011</td>
-          <td>First major release under Gavin Andresen. UPnP, and <strong>DNS seeding</strong> for finding peers—the beginning of the end for v0.01's IRC bootstrap.{{cite:gavin-0-3-21}}</td>
+          <td>First major release under Gavin Andresen. UPnP, and <strong>DNS seeding</strong> for finding peers—the beginning of the end for v0.1.0's IRC bootstrap.{{cite:gavin-0-3-21}}</td>
         </tr>
       </tbody>
     </table>
@@ -3109,12 +3337,12 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         <tr>
           <td><strong>Jul 2010</strong></td>
           <td>OP_RETURN Bug</td>
-          <td><em>Introduced by: Satoshi (v0.1)</em> — A flaw in script evaluation let anyone spend anyone's coins using OP_RETURN. Present since day one but undiscovered. Fixed in v0.3.5 by running scriptSig and scriptPubKey separately; Satoshi also disabled multiple opcodes in the same emergency soft fork.{{cite:cve-2010-5141}}{{cite:opcode-disable-2010}}</td>
+          <td><em>Introduced by: Satoshi (v0.1.0)</em> — A flaw in script evaluation let anyone spend anyone's coins using OP_RETURN. Present since day one but undiscovered. Fixed in v0.3.5 by running scriptSig and scriptPubKey separately; Satoshi also disabled multiple opcodes in the same emergency soft fork.{{cite:cve-2010-5141}}{{cite:opcode-disable-2010}}</td>
         </tr>
         <tr>
           <td><strong>Aug 2010</strong></td>
           <td>Value Overflow</td>
-          <td><em>Introduced by: Satoshi (v0.1)</em> — Integer overflow created 184 billion BTC in block 74638. Missing overflow check in transaction validation. A patched client (v0.3.10) was released within five hours; the corrected chain overtook the bad one the next day.{{cite:overflow-bug-2010}}</td>
+          <td><em>Introduced by: Satoshi (v0.1.0)</em> — Integer overflow created 184 billion BTC in block 74638. Missing overflow check in transaction validation. A patched client (v0.3.10) was released within five hours; the corrected chain overtook the bad one the next day.{{cite:overflow-bug-2010}}</td>
         </tr>
         <tr>
           <td><strong>Mar 2013</strong></td>
@@ -3145,14 +3373,14 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     <p>
       Looking at the big picture, these are the most significant architectural
-      departures from the v0.01 code you just studied:
+      departures from the v0.1.0 code you just studied:
     </p>
 
     <table class="color-key">
       <thead>
         <tr>
           <th>Component</th>
-          <th>v0.01</th>
+          <th>v0.1.0</th>
           <th>Modern Bitcoin Core</th>
         </tr>
       </thead>
@@ -3208,7 +3436,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     <h2>Recommended Study Path</h2>
 
     <p>
-      Having mastered v0.01, here's a suggested progression based on your interests:
+      Having mastered v0.1.0, here's a suggested progression based on your interests:
     </p>
 
     <ul>
@@ -3241,6 +3469,9 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
     </p>
   </section>
 
+  <!-- GLOSSARY — every chapter's Key Terms, merged -->
+  ${backGlossaryHtml}
+
   <!-- INDEX — starts on left side of spread -->
   ${indexHtml}
 
@@ -3255,7 +3486,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     <p>
       <strong>About this edition.</strong>
-      <em>Bitcoin v0.01 Alpha — Annotated Edition</em> presents the first public Bitcoin release
+      <em>Bitcoin v0.1.0 — Annotated Edition</em> presents the first public Bitcoin release
       (January 2009) as a single volume: original C++ source and headers with inline commentary,
       introductory primers, and reference material. The line-by-line annotations are designed for
       continuous reading alongside the code, not as a bare source listing.
@@ -3263,12 +3494,12 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     <p>
       <strong>Source material.</strong>
-      Program text is reproduced from Satoshi Nakamoto’s v0.01 Alpha tree. Source code is
+      Program text is reproduced from Satoshi Nakamoto’s v0.1.0 tree. Source code is
       copyright © 2009 Satoshi Nakamoto and licensed under the MIT/X11 License unless noted
       in individual files. Commentary, selection, and book design are additional material to
       that release.
     </p>
-
+${sourceVerificationHtml()}
     <p>
       <strong>Copyright and license.</strong>
       The annotations, introductory primers, selection, and book design are © 2026 PirateHash
@@ -3331,7 +3562,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
         if (el.id === 'introduction') pastFront = true;
         if (pastFront) el.remove();
       });
-      document.title = 'Front Matter — Bitcoin v0.01 Alpha';
+      document.title = 'Front Matter — Bitcoin v0.1.0';
       return;
     }
 
@@ -3355,7 +3586,7 @@ auto_ptr<span class="token operator">&lt;</span><span class="token class-name">C
 
     var titleEl = keep.querySelector('h1.chapter-title, h1');
     if (titleEl) {
-      document.title = titleEl.textContent.trim() + ' — Bitcoin v0.01 Alpha';
+      document.title = titleEl.textContent.trim() + ' — Bitcoin v0.1.0';
     }
   })();
   </script>
@@ -3381,7 +3612,7 @@ function generateResourcesChapter() {
   return `
     <section class="chapter" id="rc-resources">
       <span class="section-title">rc/ (Resources)</span>
-      <span class="chapter-title">Bitcoin v0.01 Alpha</span>
+      <span class="chapter-title">Bitcoin v0.1.0</span>
 
       <header class="chapter-header">
         <h1 class="chapter-title">rc/ (Resources)</h1>
@@ -3403,7 +3634,7 @@ function generateResourcesChapter() {
 
     <section class="chapter rc-resources-grid">
       <span class="section-title">rc/ (Resources)</span>
-      <span class="chapter-title">Bitcoin v0.01 Alpha</span>
+      <span class="chapter-title">Bitcoin v0.1.0</span>
 
       ${resourcesHtml}
 

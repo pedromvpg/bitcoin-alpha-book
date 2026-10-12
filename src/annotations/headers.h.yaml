@@ -5,7 +5,7 @@ title: "The Gathering of Includes"
 
 introduction: |
   <p>
-    Every C++ source file in Bitcoin v0.01 begins the same way: <code>#include "headers.h"</code>.
+    Every C++ source file in Bitcoin v0.1.0 begins the same way: <code>#include "headers.h"</code>.
     This single file pulls in the entire dependency graph — the operating system, the cryptographic
     library, the GUI framework, the standard library, and every Bitcoin-specific header — in one
     carefully ordered block. It is the table of contents for everything Bitcoin needs to exist.
@@ -28,7 +28,7 @@ introduction: |
     the system.
   </p>
   <p>
-    This file also reveals that Bitcoin v0.01 was a <em>Windows-only</em> application.{{cite:nakamoto-windows-only}} The
+    This file also reveals that Bitcoin v0.1.0 was a <em>Windows-only</em> application.{{cite:nakamoto-windows-only}} The
     <code>windows.h</code>, <code>winsock2.h</code>, and <code>mswsock.h</code> includes are
     unconditional — there is no <code>#ifdef _WIN32</code> guard offering a Linux alternative.
     Satoshi developed and released Bitcoin exclusively for Windows. The Linux port came later,
@@ -67,11 +67,11 @@ annotations:
 
   - line: 36
     type: margin
-    text: "<code class=\"variable\">BOUNDSCHECK</code> set to 1 was apparently meant to enable runtime bounds checking — but nothing anywhere in v0.01 references the macro. It is a dead switch: the safety feature it names was never wired in. Had it been live, it would trade performance for safety — out-of-bounds access throwing rather than silently corrupting memory. In a financial system, silent corruption is far worse than a crash."
+    text: "<code class=\"variable\">BOUNDSCHECK</code> set to 1 was apparently meant to enable runtime bounds checking — but nothing anywhere in v0.1.0 references the macro. It is a dead switch: the safety feature it names was never wired in. Had it been live, it would trade performance for safety — out-of-bounds access throwing rather than silently corrupting memory. In a financial system, silent corruption is far worse than a crash."
 
   - line: 37
     type: margin
-    text: "C++ Standard Library containers and algorithms. The STL provides the data structures Bitcoin is built on: <code class=\"type\">map</code> for the block index, the wallet, and the memory pool of unconfirmed transactions (v0.01 has no separate UTXO set), <code class=\"type\">vector</code> for transaction inputs/outputs, <code class=\"type\">set</code> for unique peer addresses, <code class=\"type\">deque</code> for message queues, <code class=\"type\">string</code> and <code class=\"type\">sstream</code> for serialization. These nine includes are the backbone of every data structure in the system."
+    text: "C++ Standard Library containers and algorithms. The STL provides the data structures Bitcoin is built on: <code class=\"type\">map</code> for the block index, the wallet, and the memory pool of unconfirmed transactions (v0.1.0 has no separate UTXO set), <code class=\"type\">vector</code> for transaction inputs/outputs, <code class=\"type\">set</code> for unique peer addresses, <code class=\"type\">deque</code> for message queues, <code class=\"type\">string</code> and <code class=\"type\">sstream</code> for serialization. These nine includes are the backbone of every data structure in the system."
 
   - line: 46
     type: margin
@@ -119,3 +119,19 @@ conclusion: |
     ordering — serialization, cryptography, scripting, storage, networking, consensus, UI —
     remains the fundamental structure of Bitcoin to this day.
   </p>
+
+glossary:
+  - term: "precompiled header"
+    definition: "A header whose parsed contents the compiler saves to disk once and reuses for every source file, sparing it from re-reading large library headers each time."
+  - term: "#pragma hdrstop"
+    definition: "A compiler directive marking where the precompiled portion of a header ends; everything included above it can be compiled once and cached."
+  - term: "_WIN32_WINNT"
+    definition: "A macro telling the Windows headers which minimum Windows version to target; headers.h sets it to 0x0400, the value for Windows NT 4.0."
+  - term: "Winsock"
+    definition: "Microsoft's implementation of the Berkeley sockets interface, included through winsock2.h and started with WSAStartup before Bitcoin opens any network connection."
+  - term: "OpenSSL"
+    definition: "The open-source cryptography library that supplies Bitcoin v0.1.0's elliptic-curve signatures, SHA-256, RIPEMD-160, and secure random numbers."
+  - term: "wxWidgets"
+    definition: "The C++ GUI toolkit that draws Bitcoin's windows, dialogs, and controls; the makefiles link its 2.8 libraries, named wxmsw28 and wxbase28."
+  - term: "Boost"
+    definition: "A widely used collection of C++ libraries; headers.h pulls in its foreach, lexical_cast, tuple, and array components."

@@ -64,7 +64,7 @@ annotations:
 
   - line: 137
     type: margin
-    text: "<code class=\"function\">Transform()</code>—the compression function, called once per 64-byte block of input. Bitcoin mining is essentially: set up a block header (80 bytes, which pads to two 64-byte blocks), call Transform three times—twice for the first SHA-256, once for the second—check if the result is below target, increment nonce, repeat. That is exactly what v0.01's <code>BitcoinMiner</code> does. ASICs implement Transform directly in hardware—billions of transforms per second per chip."
+    text: "<code class=\"function\">Transform()</code>—the compression function, called once per 64-byte block of input. Bitcoin mining is essentially: set up a block header (80 bytes, which pads to two 64-byte blocks), call Transform three times—twice for the first SHA-256, once for the second—check if the result is below target, increment nonce, repeat. That is exactly what v0.1.0's <code>BitcoinMiner</code> does. ASICs implement Transform directly in hardware—billions of transforms per second per chip."
 
   - line: 142
     type: margin

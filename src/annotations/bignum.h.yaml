@@ -52,7 +52,7 @@ annotations:
 
   - line: 80
     type: margin
-    text: "<code class=\"function\">BN_clear_free()</code>—secure memory wiping. Unlike regular <code class=\"function\">free()</code>, this overwrites memory with zeros before releasing it. CBigNum rarely holds secrets in v0.01, but the habit is sound: a number wiped on release cannot leak through later memory inspection. The same paranoid cleanup appears throughout Bitcoin's key-handling code."
+    text: "<code class=\"function\">BN_clear_free()</code>—secure memory wiping. Unlike regular <code class=\"function\">free()</code>, this overwrites memory with zeros before releasing it. CBigNum rarely holds secrets in v0.1.0, but the habit is sound: a number wiped on release cannot leak through later memory inspection. The same paranoid cleanup appears throughout Bitcoin's key-handling code."
 
   - line: 85
     type: margin
@@ -88,7 +88,7 @@ annotations:
 
   - line: 370
     type: margin
-    text: "Bit shift operators. In v0.01 their main users are Script's OP_2MUL, OP_2DIV, OP_LSHIFT, and OP_RSHIFT (script.cpp) and <code>SetHex()</code> above, which shifts in four bits per hex digit. (The halving's <code>nSubsidy >>= (nBestHeight / 210000)</code> is a plain 64-bit shift, <code>bnProofOfWorkLimit</code>'s <code>~uint256(0) >> 32</code> is a <code>uint256</code> shift, and retargeting uses <code>*=</code>/<code>/=</code>.) OpenSSL's <code class=\"function\">BN_lshift()</code> and <code class=\"function\">BN_rshift()</code> handle arbitrarily large shifts correctly—you can shift a 256-bit number by 200 bits without overflow issues."
+    text: "Bit shift operators. In v0.1.0 their main users are Script's OP_2MUL, OP_2DIV, OP_LSHIFT, and OP_RSHIFT (script.cpp) and <code>SetHex()</code> above, which shifts in four bits per hex digit. (The halving's <code>nSubsidy >>= (nBestHeight / 210000)</code> is a plain 64-bit shift, <code>bnProofOfWorkLimit</code>'s <code>~uint256(0) >> 32</code> is a <code>uint256</code> shift, and retargeting uses <code>*=</code>/<code>/=</code>.) OpenSSL's <code class=\"function\">BN_lshift()</code> and <code class=\"function\">BN_rshift()</code> handle arbitrarily large shifts correctly—you can shift a 256-bit number by 200 bits without overflow issues."
 
   - line: 427
     type: margin

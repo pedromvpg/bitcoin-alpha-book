@@ -9,6 +9,12 @@
  *   - `line:` / `lines:` anchors exist in the referenced source file
  *   - annotation `type` is valid (margin | block | highlight) and the
  *     required fields for that type are present
+ *   - `glossary:` entries are {term, definition} (missing glossary = warning)
+ *   - every step in src/reading-paths.yaml resolves to a source line
+ *
+ * Before any of that, the source tree itself is verified against the committed
+ * src/source-manifest.json (scripts/source-manifest.mjs) — line anchors are
+ * only meaningful against the exact v0.1.0 bytes.
  *
  * Why this exists: the build silently DROPS annotations it cannot place
  * (e.g. a margin note with no `type:`). Ten uiproject.fbp annotations were
@@ -24,12 +30,15 @@ import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import yaml from 'js-yaml';
+import { verifyTree } from './source-manifest.mjs';
+import { resolveStep } from './symbols.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = join(__dirname, '..');
 const ANNOTATIONS_DIR = join(ROOT_DIR, 'src', 'annotations');
 const SOURCE_DIR = join(ROOT_DIR, 'src', 'bitcoin-0.01', 'src');
 const REFERENCES_PATH = join(ROOT_DIR, 'src', 'references.yaml');
+const READING_PATHS_PATH = join(ROOT_DIR, 'src', 'reading-paths.yaml');
 
 const VALID_TYPES = new Set(['margin', 'block', 'highlight']);
 const CITE_RE = /\{\{cite:([a-zA-Z0-9][a-zA-Z0-9_-]*)\}\}/g;
@@ -43,7 +52,7 @@ function loadGlobalKeys() {
   return new Set(Object.keys(refs));
 }
 
-function validateFile(fname, globalKeys) {
+function validateFile(fname, globalKeys, warnings = []) {
   const path = join(ANNOTATIONS_DIR, fname);
   let doc;
   try {
@@ -94,6 +103,25 @@ function validateFile(fname, globalKeys) {
     }
   });
 
+  // Glossary ("Key Terms") shape; a chapter without one is only a warning
+  if (doc.glossary === undefined || (Array.isArray(doc.glossary) && doc.glossary.length === 0)) {
+    warnings.push('no glossary: (Key Terms) entries');
+  } else if (!Array.isArray(doc.glossary)) {
+    issues.push('glossary: must be a list of {term, definition}');
+  } else {
+    doc.glossary.forEach((g, i) => {
+      if (!g || typeof g.term !== 'string' || typeof g.definition !== 'string') {
+        issues.push(`glossary[${i}]: needs string term and definition`);
+        return;
+      }
+      for (const m of g.definition.matchAll(CITE_RE)) {
+        if (!globalKeys.has(m[1]) && !localKeys.has(m[1])) {
+          issues.push(`unknown cite key "${m[1]}" in glossary[${i}]`);
+        }
+      }
+    });
+  }
+
   // Line anchors against the actual source file (skip directories like rc/)
   const srcPath = join(SOURCE_DIR, expectedFile);
   if (existsSync(srcPath)) {
@@ -122,17 +150,56 @@ function validateFile(fname, globalKeys) {
 }
 
 function main() {
+  const sourceProblems = verifyTree();
+  if (sourceProblems.length) {
+    console.log('✗ src/bitcoin-0.01/src does not match src/source-manifest.json (run npm run fetch)');
+    for (const p of sourceProblems) console.log(`    - ${p}`);
+    console.error('\nAnnotation validation FAILED: source tree is not the verified v0.1.0 release');
+    process.exit(1);
+  }
+
   const globalKeys = loadGlobalKeys();
   const files = readdirSync(ANNOTATIONS_DIR)
     .filter((f) => f.endsWith('.yaml') && !f.startsWith('_'))
     .sort();
 
   let total = 0;
+  let warned = 0;
   for (const fname of files) {
-    const issues = validateFile(fname, globalKeys);
+    const warnings = [];
+    const issues = validateFile(fname, globalKeys, warnings);
     if (issues.length) {
       total += issues.length;
       console.log(`✗ ${fname}`);
+      for (const issue of issues) console.log(`    - ${issue}`);
+    }
+    if (warnings.length) {
+      warned += warnings.length;
+      console.log(`! ${fname}`);
+      for (const w of warnings) console.log(`    - warning: ${w}`);
+    }
+  }
+
+  // Reading paths: every step must resolve to a definition or source line
+  if (existsSync(READING_PATHS_PATH)) {
+    const issues = [];
+    let doc = null;
+    try {
+      doc = yaml.load(readFileSync(READING_PATHS_PATH, 'utf8'));
+    } catch (err) {
+      issues.push(`YAML parse error: ${err.message}`);
+    }
+    for (const path of doc?.paths || []) {
+      if (!path.id || !path.title) issues.push('path missing id or title');
+      (path.steps || []).forEach((step, i) => {
+        const r = resolveStep(step);
+        if (r.error) issues.push(`${path.id} step ${i + 1}: ${r.error}`);
+        if (!step.note) issues.push(`${path.id} step ${i + 1}: missing note`);
+      });
+    }
+    if (issues.length) {
+      total += issues.length;
+      console.log('✗ reading-paths.yaml');
       for (const issue of issues) console.log(`    - ${issue}`);
     }
   }
@@ -141,7 +208,8 @@ function main() {
     console.error(`\nAnnotation validation FAILED: ${total} issue(s) in ${files.length} files`);
     process.exit(1);
   }
-  console.log(`✓ Annotation validation passed (${files.length} files, ${globalKeys.size} reference keys)`);
+  const warnNote = warned ? `, ${warned} warning(s)` : '';
+  console.log(`✓ Annotation validation passed (${files.length} files, ${globalKeys.size} reference keys${warnNote})`);
 }
 
 main();

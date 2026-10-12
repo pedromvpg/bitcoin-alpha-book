@@ -78,7 +78,7 @@ annotations:
 
   - line: 206
     type: margin
-    text: "Division by <code class=\"constant\">CENT</code>, not <code class=\"constant\">COIN</code>. Bitcoin has two constants: <code class=\"constant\">COIN</code> (100,000,000 satoshis = 1 BTC) and <code class=\"constant\">CENT</code> (1,000,000 satoshis = 0.01 BTC). The division here means <code class=\"function\">FormatMoney()</code> displays with 2 decimal places (cents), not 8 (satoshis). This was a v0.1 design choice—early Bitcoin showed values like '50.00 BTC' rather than '50.00000000 BTC'. Modern Bitcoin software often shows more precision."
+    text: "Division by <code class=\"constant\">CENT</code>, not <code class=\"constant\">COIN</code>. Bitcoin has two constants: <code class=\"constant\">COIN</code> (100,000,000 satoshis = 1 BTC) and <code class=\"constant\">CENT</code> (1,000,000 satoshis = 0.01 BTC). The division here means <code class=\"function\">FormatMoney()</code> displays with 2 decimal places (cents), not 8 (satoshis). This was a v0.1.0 design choice—early Bitcoin showed values like '50.00 BTC' rather than '50.00000000 BTC'. Modern Bitcoin software often shows more precision."
 
   - line: 218
     type: margin
@@ -132,3 +132,21 @@ conclusion: |
     The approach is both robust and conservative—exactly what you want for
     infrastructure that must run without human intervention for decades.
   </p>
+
+glossary:
+  - term: "entropy"
+    definition: "Unpredictable input, such as timing jitter or system statistics, fed into a random number generator so its output cannot be guessed by an attacker."
+  - term: "RandAddSeed"
+    definition: "The function that mixes the CPU performance counter, and at most every five minutes a hash of Windows performance data, into OpenSSL's random pool."
+  - term: "rejection sampling"
+    definition: "Discarding random draws that fall beyond the largest multiple of the desired range, so that taking the remainder gives every result an equal chance."
+  - term: "strprintf"
+    definition: "A printf-style formatter that returns a std::string, trying a 50,000-byte stack buffer first and doubling a heap buffer until the output fits."
+  - term: "error()"
+    definition: "A logging helper that prints its formatted message prefixed with \"ERROR:\" and always returns false, so callers can write return error(...) in one line."
+  - term: "FormatMoney"
+    definition: "The function that turns an integer amount of satoshis into display text with two decimal places, comma thousands separators, and an optional plus sign."
+  - term: "GetAdjustedTime"
+    definition: "The node's notion of network time: the local system clock plus the median offset reported by peers, used for timestamps and the two-hour future-block limit."
+  - term: "AddTimeData"
+    definition: "The function that records each new peer's clock offset once per IP address and, after at least five samples, adopts their median as the node's time offset."

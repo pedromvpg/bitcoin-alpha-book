@@ -1,0 +1,2 @@
+# Committed v0.1.0 archive: keep bytes (CRLF) exactly as released — see src/source-manifest.json
+src/bitcoin-0.1.0*/** -text

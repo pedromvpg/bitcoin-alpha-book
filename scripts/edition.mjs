@@ -5,7 +5,11 @@
  * propagate them to: cover, spine, title page, colophon, home hero, review
  * chrome, and (via syncEditionInHtml) any stale built HTML still on disk.
  */
-export const EDITION = 'v0.3.7';
+
+import { readFileSync, statSync } from 'fs';
+import { fileURLToPath } from 'url';
+
+export const EDITION = 'v0.3.8';
 
 /**
  * Annotations credit — which models authored / revised the commentary.
@@ -13,8 +17,35 @@ export const EDITION = 'v0.3.7';
 export const ANNOTATIONS_CREDIT =
   'Annotations by Claude Sonnet 4.6 (Revised by Opus 4.6, GPT 5.6 Sol, Grok 4.5, Kimi K3, Opus 5.5)';
 
+const EDITION_PATH = fileURLToPath(import.meta.url);
+let liveCache = { mtimeMs: -1, edition: EDITION, credit: ANNOTATIONS_CREDIT };
+
+/**
+ * Current values straight from this file on disk. ES module bindings above
+ * are frozen at import time, so long-running processes (preview server) use
+ * this to pick up an edition bump without a restart.
+ */
+export function liveEdition() {
+  try {
+    const { mtimeMs } = statSync(EDITION_PATH);
+    if (mtimeMs !== liveCache.mtimeMs) {
+      const src = readFileSync(EDITION_PATH, 'utf8');
+      const pick = (name, fallback) => {
+        const m = src.match(new RegExp(`export const ${name}\\s*=\\s*(['"\`])([\\s\\S]*?)\\1`));
+        return m ? m[2] : fallback;
+      };
+      liveCache = {
+        mtimeMs,
+        edition: pick('EDITION', EDITION),
+        credit: pick('ANNOTATIONS_CREDIT', ANNOTATIONS_CREDIT),
+      };
+    }
+  } catch { /* keep last known values */ }
+  return { edition: liveCache.edition, credit: liveCache.credit };
+}
+
 /** Cache-bust / equality key for preview + review shells. */
-export function editionKey(edition = EDITION, credit = ANNOTATIONS_CREDIT) {
+export function editionKey(edition = liveEdition().edition, credit = liveEdition().credit) {
   return `${edition}\0${credit}`;
 }
 
@@ -25,7 +56,7 @@ export function editionKey(edition = EDITION, credit = ANNOTATIONS_CREDIT) {
  */
 export function syncEditionInHtml(
   html,
-  { edition = EDITION, credit = ANNOTATIONS_CREDIT } = {},
+  { edition = liveEdition().edition, credit = liveEdition().credit } = {},
 ) {
   if (!html) return html;
   let out = html;
@@ -40,12 +71,6 @@ export function syncEditionInHtml(
   out = out.replace(
     /Book edition:\s*[^\s.<][^<]*?(?=\.?<\/|\.(?:\s|&nbsp;|<))/g,
     `Book edition: ${edition}`,
-  );
-
-  // Spine version span
-  out = out.replace(
-    /(<span class="spine-version">)[\s\S]*?(<\/span>)/g,
-    `$1${edition}$2`,
   );
 
   // Dedicated credit elements

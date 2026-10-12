@@ -7,7 +7,7 @@ introduction: |
   <p>
     This file is not Satoshi's code. It is Crypto++ 5.5.2, written by Wei Dai,
     who adapted it from Steve Reid's public domain SHA-1 implementation.{{cite:crypto-pp-wei-dai}} Three
-    authors, two algorithms, one file. In v0.01 it has exactly one customer: the
+    authors, two algorithms, one file. In v0.1.0 it has exactly one customer: the
     CPU miner, which calls <code>SHA256::Transform</code> directly for speed.
     Everywhere else — transaction IDs, block validation, Merkle roots, addresses —
     Bitcoin hashes with OpenSSL's SHA-256 (<code>Hash()</code> in util.h). Two
@@ -100,7 +100,7 @@ annotations:
 
   - line: 141
     type: margin
-    text: "<code>SHA256::Transform</code>: the miner's engine. In v0.01 only <code>BitcoinMiner</code> calls this Crypto++ routine (through <code>BlockSHA256</code> in main.cpp), because hashing a pre-formatted header block by block is faster. Every node validates hashes with OpenSSL's SHA-256 instead (<code>Hash()</code> in util.h). Satoshi made the two check each other: before broadcasting a block, the miner asserts <code>hash == pblock-&gt;GetHash()</code>. Had this code contained a wrong rotation or an off-by-one, the miner would have produced blocks the network rejects—wasted work, not a chain split. Consensus rests on the SHA-256 algorithm, not on this particular copy of it."
+    text: "<code>SHA256::Transform</code>: the miner's engine. In v0.1.0 only <code>BitcoinMiner</code> calls this Crypto++ routine (through <code>BlockSHA256</code> in main.cpp), because hashing a pre-formatted header block by block is faster. Every node validates hashes with OpenSSL's SHA-256 instead (<code>Hash()</code> in util.h). Satoshi made the two check each other: before broadcasting a block, the miner asserts <code>hash == pblock-&gt;GetHash()</code>. Had this code contained a wrong rotation or an off-by-one, the miner would have produced blocks the network rejects—wasted work, not a chain split. Consensus rests on the SHA-256 algorithm, not on this particular copy of it."
 
   - line: 141
     type: highlight
@@ -124,7 +124,7 @@ annotations:
 
   - line: 316
     type: margin
-    text: "SSE2-accelerated SHA-512: inline assembly for x86. Wei Dai wrote a hand-optimized MMX/SSE2 implementation that operates on two 64-bit words simultaneously using 128-bit XMM registers. The macros SSE2_S0_S1, SSE2_s0, SSE2_s1 implement the sigma functions entirely in SIMD instructions. This is 2007-era performance engineering — before compiler auto-vectorization was reliable, hand-written assembly was the only way to fully exploit Intel's vector units. Bitcoin v0.01 ships this code but never calls it."
+    text: "SSE2-accelerated SHA-512: inline assembly for x86. Wei Dai wrote a hand-optimized MMX/SSE2 implementation that operates on two 64-bit words simultaneously using 128-bit XMM registers. The macros SSE2_S0_S1, SSE2_s0, SSE2_s1 implement the sigma functions entirely in SIMD instructions. This is 2007-era performance engineering — before compiler auto-vectorization was reliable, hand-written assembly was the only way to fully exploit Intel's vector units. Bitcoin v0.1.0 ships this code but never calls it."
 
   - line: 511
     type: margin
@@ -133,7 +133,7 @@ annotations:
 conclusion: |
   <p>
     <code>sha.cpp</code> holds the routine that found Bitcoin's first blocks:
-    <code>SHA256::Transform</code>, the engine of v0.01's CPU miner. Validation
+    <code>SHA256::Transform</code>, the engine of v0.1.0's CPU miner. Validation
     never depended on this copy — nodes checked every hash with OpenSSL — and
     Bitcoin Core later replaced the Crypto++ code with its own implementation.
     What has never changed is the SHA-256 <em>algorithm</em> itself. Every block

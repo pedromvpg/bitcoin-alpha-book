@@ -14,7 +14,8 @@ introduction: |
   <p>
     Satoshi described the core structure in Section 2 of the whitepaper: "We define
     an electronic coin as a chain of digital signatures. Each owner transfers the
-    coin to the next by digitally signing a hash of the previous transaction."{{cite:nakamoto-whitepaper}}
+    coin to the next by digitally signing a hash of the previous transaction and
+  the public key of the next owner and adding these to the end of the coin."{{cite:nakamoto-whitepaper}}
     The classes here—<code>CTransaction</code>, <code>CTxIn</code>, <code>CTxOut</code>—implement
     that vision in C++, turning abstract cryptographic concepts into working code.
   </p>
@@ -39,7 +40,7 @@ annotations:
   # Constants - the economic parameters
   - line: 17
     type: margin
-    text: "<code>MAX_SIZE</code> = 32 MB (0x02000000 bytes). This general-purpose limit applies to blocks, transactions, and scripts. Notably, this is NOT the famous '1 MB block size limit'—that was introduced by Satoshi in July 2010 (commit a30b56e, at first only as a mining limit) and made a validation rule that September (commits 8c9479c and 172f006), over a year after v0.1. The 1 MB limit was likely a temporary anti-spam measure that became permanent, eventually causing the 'block size wars' and the Bitcoin Cash fork in 2017. In v0.1, blocks could theoretically reach 32 MB, though mining code limited them to 16 MB (MAX_SIZE/2)."
+    text: "<code>MAX_SIZE</code> = 32 MB (0x02000000 bytes). This general-purpose limit applies to blocks, transactions, and scripts. Notably, this is NOT the famous '1 MB block size limit'—that was introduced by Satoshi in July 2010 (commit a30b56e, at first only as a mining limit) and made a validation rule that September (commits 8c9479c and 172f006), over a year after v0.1. The 1 MB limit was likely a temporary anti-spam measure that became permanent, eventually causing the 'block size wars' and the Bitcoin Cash fork in 2017. In v0.1.0, blocks could theoretically reach 32 MB, though mining code limited them to 16 MB (MAX_SIZE/2)."
 
   - line: 18
     type: margin
@@ -101,11 +102,11 @@ annotations:
 
   - line: 193
     type: margin
-    text: "<code>CTxIn</code>—how coins are consumed. Each input contains: (1) a COutPoint referencing which output to spend, (2) a scriptSig providing proof of ownership (typically a signature), and (3) nSequence for transaction replacement (mostly unused in v0.1). When a transaction is validated, each CTxIn must reference an existing, unspent output, and the scriptSig must satisfy that output's spending conditions. This is the 'chain of digital signatures' from the whitepaper.{{cite:nakamoto-whitepaper}}"
+    text: "<code>CTxIn</code>—how coins are consumed. Each input contains: (1) a COutPoint referencing which output to spend, (2) a scriptSig providing proof of ownership (typically a signature), and (3) nSequence for transaction replacement (mostly unused in v0.1.0). When a transaction is validated, each CTxIn must reference an existing, unspent output, and the scriptSig must satisfy that output's spending conditions. This is the 'chain of digital signatures' from the whitepaper.{{cite:nakamoto-whitepaper}}"
 
   - line: 198
     type: margin
-    text: "<code class=\"variable\">nSequence</code> — per-input sequence number. <code>UINT_MAX</code> means final; lower values were reserved for future replacement / relative lock-time. In v0.01 almost everything uses <code>UINT_MAX</code>; later upgrades (BIP 68/112 at consensus, BIP 125 as mempool policy) gave this field real meaning."
+    text: "<code class=\"variable\">nSequence</code> — per-input sequence number. <code>UINT_MAX</code> means final; lower values were reserved for future replacement / relative lock-time. In v0.1.0 almost everything uses <code>UINT_MAX</code>; later upgrades (BIP 68/112 at consensus, BIP 125 as mempool policy) gave this field real meaning."
 
   - line: 274
     type: margin
@@ -118,7 +119,7 @@ annotations:
 
   - line: 363
     type: margin
-    text: "<code class=\"variable\">nLockTime</code> — in v0.01, the block height the chain must pass before the transaction is final (a timestamp interpretation came later). <code>0</code> means immediate. Combined with non-final <code class=\"variable\">nSequence</code>, this is the primitive behind payment channels and later CLTV — present from day one.{{cite:nakamoto-script-types}}"
+    text: "<code class=\"variable\">nLockTime</code> — in v0.1.0, the block height the chain must pass before the transaction is final (a timestamp interpretation came later). <code>0</code> means immediate. Combined with non-final <code class=\"variable\">nSequence</code>, this is the primitive behind payment channels and later CLTV — present from day one.{{cite:nakamoto-script-types}}"
 
   - line: 393
     type: margin
@@ -126,7 +127,7 @@ annotations:
 
   - line: 398
     type: margin
-    text: "<code class=\"function\">IsFinal()</code> — true when <code class=\"variable\">nLockTime</code> is zero or below the current height, or every input is final. Honest miners skip non-final transactions, but in v0.01 no validation rule (<code class=\"function\">CheckBlock</code>, <code class=\"function\">AcceptBlock</code>, <code class=\"function\">ConnectBlock</code>) rejects a block containing one yet."
+    text: "<code class=\"function\">IsFinal()</code> — true when <code class=\"variable\">nLockTime</code> is zero or below the current height, or every input is final. Honest miners skip non-final transactions, but in v0.1.0 no validation rule (<code class=\"function\">CheckBlock</code>, <code class=\"function\">AcceptBlock</code>, <code class=\"function\">ConnectBlock</code>) rejects a block containing one yet."
 
   - line: 437
     type: margin
@@ -138,7 +139,7 @@ annotations:
 
   - line: 504
     type: margin
-    text: "<code>GetMinFee()</code>—calculates the minimum required fee. Transaction fees are implicit: total inputs minus total outputs. Since inputs don't store amounts (only references), nodes must look up each referenced output to calculate the fee. This elegant design means fees don't bloat transaction size. In v0.1, the minimum was 0.01 BTC plus 0.01 BTC per full 1000 bytes, waived for transactions under 10KB among a block's first ~100. The wallet applies the discounted rule when sending (so small payments go free), and miners enforce the fee beyond the free allowance. As Satoshi later wrote: 'Free transactions are nice and we can keep it that way if people don't abuse them.'{{cite:nakamoto-free-transactions}}"
+    text: "<code>GetMinFee()</code>—calculates the minimum required fee. Transaction fees are implicit: total inputs minus total outputs. Since inputs don't store amounts (only references), nodes must look up each referenced output to calculate the fee. This elegant design means fees don't bloat transaction size. In v0.1.0, the minimum was 0.01 BTC plus 0.01 BTC per full 1000 bytes, waived for transactions under 10KB among a block's first ~100. The wallet applies the discounted rule when sending (so small payments go free), and miners enforce the fee beyond the free allowance. As Satoshi later wrote: 'Free transactions are nice and we can keep it that way if people don't abuse them.'{{cite:nakamoto-free-transactions}}"
 
   - line: 574
     type: margin
@@ -253,6 +254,6 @@ glossary:
   - term: "coinbase maturity"
     definition: "The rule (COINBASE_MATURITY, 100 blocks) that freshly mined coins may not be spent until their block is buried 100 deep."
   - term: "nLockTime"
-    definition: "The transaction field that, in v0.01, gives the block height the chain must pass before the transaction is final; zero means it is immediately final. Later versions also let it hold a timestamp."
+    definition: "The transaction field that, in v0.1.0, gives the block height the chain must pass before the transaction is final; zero means it is immediately final. Later versions also let it hold a timestamp."
   - term: "satoshi"
     definition: "The smallest money unit in this code, one hundred-millionth of a bitcoin (COIN = 100,000,000), used as the integer unit for all amounts."

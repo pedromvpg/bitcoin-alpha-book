@@ -1,147 +1,79 @@
 /**
- * Fetch Bitcoin v0.01 Alpha source code
- * Downloads from the official archive and extracts to src/bitcoin-0.01/
+ * Fetch Bitcoin v0.1.0 source code
+ *
+ * Copies the committed Nakamoto Institute archive of bitcoin-0.1.0 (January 3,
+ * 2009) into src/bitcoin-0.01/ and verifies it against src/source-manifest.json.
+ *
+ * Earlier versions downloaded github.com/trottier/original-bitcoin — but that
+ * repo's master branch is v0.1.3, not v0.1.0 (net.cpp alone differs by ~140
+ * lines), so annotations anchored to v0.1.0 line numbers drifted in CI and on
+ * Netlify. The committed archive is the canonical source; no network needed.
+ *
+ * An existing tree that already verifies is left untouched (src/bitcoin-0.01/
+ * may be a local git clone — its .git is never removed).
  */
 
-import { createWriteStream, existsSync, mkdirSync, rmSync } from 'fs';
-import { pipeline } from 'stream/promises';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import https from 'https';
-import AdmZip from 'adm-zip';
+import { SOURCE_TREE_DIR, verifyTree, loadManifest } from './source-manifest.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const ROOT_DIR = join(__dirname, '..');
 
-// Bitcoin v0.01 source archive URL (from bitcointalk archive)
-const BITCOIN_SOURCE_URL = 'https://bitcointalk.org/bitcoin-0.01.zip';
-const MIRROR_URL = 'https://github.com/trottier/original-bitcoin/archive/refs/heads/master.zip';
-
+const ARCHIVE_DIR = join(ROOT_DIR, 'src', 'bitcoin-0.1.0 January 3, 2009 Alpha Nakamoto Institute');
 const OUTPUT_DIR = join(ROOT_DIR, 'src', 'bitcoin-0.01');
-const TEMP_ZIP = join(ROOT_DIR, 'temp-bitcoin.zip');
 
-async function downloadFile(url, dest) {
-  return new Promise((resolve, reject) => {
-    const file = createWriteStream(dest);
-    
-    const request = (urlStr) => {
-      https.get(urlStr, (response) => {
-        // Handle redirects
-        if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location) {
-          file.close();
-          request(response.headers.location);
-          return;
-        }
-        
-        if (response.statusCode !== 200) {
-          reject(new Error(`Failed to download: ${response.statusCode}`));
-          return;
-        }
-        
-        response.pipe(file);
-        file.on('finish', () => {
-          file.close();
-          resolve();
-        });
-      }).on('error', (err) => {
-        file.close();
-        reject(err);
-      });
-    };
-    
-    request(url);
-  });
-}
-
-async function extractZip(zipPath, destDir) {
-  const zip = new AdmZip(zipPath);
-  const entries = zip.getEntries();
-  
-  // Find the root folder in the zip
-  let rootFolder = '';
-  for (const entry of entries) {
-    if (entry.isDirectory && entry.entryName.split('/').length === 2) {
-      rootFolder = entry.entryName;
-      break;
-    }
-  }
-  
-  // Extract and flatten
-  for (const entry of entries) {
-    if (entry.isDirectory) continue;
-    
-    let targetPath = entry.entryName;
-    if (rootFolder && targetPath.startsWith(rootFolder)) {
-      targetPath = targetPath.substring(rootFolder.length);
-    }
-    
-    // Skip non-source files
-    const ext = targetPath.split('.').pop()?.toLowerCase();
-    const validExtensions = ['cpp', 'h', 'c', 'txt', 'rc', 'vc', 'fbp'];
-    const isValidFile = validExtensions.includes(ext) || 
-                        targetPath.toLowerCase().includes('makefile') ||
-                        targetPath.toLowerCase().includes('readme');
-    
-    if (!isValidFile) continue;
-    
-    const fullPath = join(destDir, targetPath);
-    const dir = dirname(fullPath);
-    
-    if (!existsSync(dir)) {
-      mkdirSync(dir, { recursive: true });
-    }
-    
-    zip.extractEntryTo(entry, dir, false, true, false, entry.name);
+function copyTree(from, to) {
+  mkdirSync(to, { recursive: true });
+  for (const name of readdirSync(from)) {
+    if (name === '.DS_Store') continue;
+    const src = join(from, name);
+    const dest = join(to, name);
+    if (statSync(src).isDirectory()) copyTree(src, dest);
+    else copyFileSync(src, dest);
   }
 }
 
-async function main() {
-  console.log('🪙  Bitcoin v0.01 Alpha Source Fetcher\n');
-  
-  // Clean up existing
-  if (existsSync(OUTPUT_DIR)) {
-    console.log('📁 Cleaning existing source directory...');
-    rmSync(OUTPUT_DIR, { recursive: true });
+function main() {
+  console.log('🪙  Bitcoin v0.1.0 Source Fetcher\n');
+
+  if (existsSync(SOURCE_TREE_DIR) && verifyTree(SOURCE_TREE_DIR).length === 0) {
+    console.log(`✅ src/bitcoin-0.01/src already verified (tree ${loadManifest().treeHash})`);
+    return;
   }
-  mkdirSync(OUTPUT_DIR, { recursive: true });
-  
-  // Try to download
-  console.log('📥 Downloading Bitcoin v0.01 source code...');
-  try {
-    await downloadFile(MIRROR_URL, TEMP_ZIP);
-    console.log('✅ Download complete');
-  } catch (err) {
-    console.error('❌ Failed to download:', err.message);
-    console.log('   Trying alternate source...');
-    try {
-      await downloadFile(BITCOIN_SOURCE_URL, TEMP_ZIP);
-      console.log('✅ Download complete from alternate source');
-    } catch (err2) {
-      console.error('❌ All download sources failed');
-      console.log('\n📋 Manual download instructions:');
-      console.log('   1. Download from: https://github.com/trottier/original-bitcoin');
-      console.log('   2. Extract to: src/bitcoin-0.01/');
-      process.exit(1);
-    }
-  }
-  
-  // Extract
-  console.log('📦 Extracting source files...');
-  try {
-    await extractZip(TEMP_ZIP, OUTPUT_DIR);
-    console.log('✅ Extraction complete');
-  } catch (err) {
-    console.error('❌ Extraction failed:', err.message);
+
+  if (!existsSync(ARCHIVE_DIR)) {
+    console.error(`❌ Missing committed archive: ${ARCHIVE_DIR}`);
     process.exit(1);
   }
-  
-  // Clean up temp file
-  if (existsSync(TEMP_ZIP)) {
-    rmSync(TEMP_ZIP);
+
+  const archiveProblems = verifyTree(join(ARCHIVE_DIR, 'src'));
+  if (archiveProblems.length) {
+    console.error('❌ Committed archive does not match src/source-manifest.json:');
+    for (const p of archiveProblems) console.error(`    - ${p}`);
+    process.exit(1);
   }
-  
-  console.log('\n🎉 Bitcoin v0.01 source code ready in src/bitcoin-0.01/');
+
+  if (existsSync(SOURCE_TREE_DIR)) {
+    console.log('📁 Replacing src/bitcoin-0.01/src (did not match the manifest)...');
+    rmSync(SOURCE_TREE_DIR, { recursive: true });
+  }
+
+  console.log('📦 Copying bitcoin-0.1.0 source from the committed archive...');
+  copyTree(join(ARCHIVE_DIR, 'src'), SOURCE_TREE_DIR);
+  for (const name of ['license.txt', 'readme.txt']) {
+    copyFileSync(join(ARCHIVE_DIR, name), join(OUTPUT_DIR, name));
+  }
+
+  const problems = verifyTree(SOURCE_TREE_DIR);
+  if (problems.length) {
+    console.error('❌ Copied tree failed verification:');
+    for (const p of problems) console.error(`    - ${p}`);
+    process.exit(1);
+  }
+  console.log(`\n🎉 Bitcoin v0.1.0 source ready in src/bitcoin-0.01/ (tree ${loadManifest().treeHash})`);
 }
 
-main().catch(console.error);
+main();

@@ -336,8 +336,8 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
   const logoCss    = logoDataUri ? `url("${logoDataUri}")` : 'none';
   /* Footer (donation + logo) is in normal flow; only bottom safe inset here */
   const backBottomPad = BLEED + 0.625;
-  const spineLogoN = Math.min(spine * 0.98, 0.78) * 1.5; // inches: thickness across spine (after -90° rotation)
-  const spineLogoAlong = Math.min(TRIM_H * 0.4, 4.5) * 1.5; // inches along spine after rotation (keeps clear of title)
+  const spineLogoN = Math.min(spine * 0.98, 0.78) * 1.3; // inches: thickness across spine (after -90° rotation)
+  const spineLogoAlong = Math.min(TRIM_H * 0.4, 4.5) * 1.3; // inches along spine after rotation (keeps clear of title)
   const markZone = MARK_LEN + MARK_GAP;             // 0.3125in
 
   // Canvas – the full document including crop-mark zone on all sides
@@ -381,15 +381,15 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
   }
 
   // ── Spine typography scale ──
-  const spinePt  = spine >= 0.6 ? 20 : spine >= 0.35 ? 16 : 12;
-  const subPt    = spine >= 0.6 ? 15 : spine >= 0.35 ? 12 : 9;
+  const spinePt  = spine >= 0.6 ? 17 : spine >= 0.35 ? 14 : 11;
+  const subPt    = spine >= 0.6 ? 12.5 : spine >= 0.35 ? 10 : 8;
   const spineGap = spine >= 0.5 ? 18 : 10;
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Bitcoin v0.01 Alpha — Annotated Edition — Cover</title>
+  <title>Bitcoin v0.1.0 — Annotated Edition — Cover</title>
   <style>${basisFontFaces()}</style>
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -636,7 +636,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       background-repeat: no-repeat;
       background-position: center;
       background-size: contain;
-      transform: rotate(90deg) scale(1.5);
+      transform: rotate(90deg) scale(1.3);
       transform-origin: center center;
       filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.34))
               drop-shadow(0 0 48px rgba(255, 255, 255, 0.2))
@@ -658,7 +658,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
       gap: ${spineGap}px;
       white-space: nowrap;
       padding-top: ${px(BLEED + 0.35)}px;
-      padding-bottom: ${px(0.2)}px;
+      padding-bottom: ${px(0.45)}px;
     }
 
     .spine-title {
@@ -672,28 +672,19 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
 
     .spine-edition {
       font-family: 'Basis Grotesque Mono Pro', monospace;
-      font-size: ${Math.max(5, Math.min(spinePt - 8, subPt - 6))}pt;
+      font-size: ${Math.max(7, Math.min(spinePt - 7, subPt - 3))}pt;
       font-weight: 400;
       color: #8a8a8a;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.32em;
       text-transform: uppercase;
       margin-top: ${spineGap * 1.5}px;
-    }
-
-    .spine-version {
-      font-family: 'Basis Grotesque Mono Pro', monospace;
-      font-size: ${Math.max(5, Math.min(spinePt - 8, subPt - 6))}pt;
-      font-weight: 400;
-      color: #555555;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
     }
 
     .spine-subtitle {
       font-family: 'Basis Grotesque Mono Pro', monospace;
       font-size: ${Math.max(subPt + 0.75, spinePt - 0.75)}pt;
       font-weight: 600;
-      color: #ffffff;
+      color: #c8c8c8;
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
@@ -803,7 +794,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
 
     .book-title {
       font-family: 'Basis Grotesque Mono Pro', monospace;
-      font-size: 34pt;
+      font-size: 42pt;
       font-weight: 700;
       color: #ffffff;
       letter-spacing: 0.05em;
@@ -863,7 +854,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
 
     .annotations-credit {
       font-family: 'Inter', sans-serif;
-      font-size: 7pt;
+      font-size: 5.5pt;
       font-weight: 500;
       color: #c6c6c6;
       letter-spacing: 0.04em;
@@ -944,7 +935,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
     <!-- Back cover -->
     <div class="cover-back" id="cover-back" data-cover-panel="back">
       <div class="back-copy">
-        <p class="back-edition-lead"><strong>Annotated edition — ${EDITION}.</strong> The complete v0.01 Alpha source with commentary embedded in the listing — context anchored to the lines it explains, not siloed in a separate appendix.</p>
+        <p class="back-edition-lead"><strong>Annotated edition — ${EDITION}.</strong> The complete v0.1.0 source with commentary embedded in the listing — context anchored to the lines it explains, not siloed in a separate appendix.</p>
         <p class="back-description">On January 3, 2009, Satoshi Nakamoto launched Bitcoin with a single executable and these 20,000 lines of C++.<br><br>This volume walks that first public release file by file. Explanations appear inline: annotation blocks break the code flow where they belong, so you read the original source and the commentary as one continuous thread — data structures, algorithms, and design choices spelled out without leaving the program in front of you.</p>
         <p class="back-copyright">Source code copyright © 2009 Satoshi Nakamoto · MIT/X11 License</p>
       </div>
@@ -960,9 +951,8 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
     <div class="cover-spine" id="cover-spine" data-cover-panel="spine">
       <div class="spine-inner">
         <span class="spine-title">Bitcoin</span>
-        <span class="spine-subtitle">v0.01 Alpha</span>
-        <span class="spine-edition">Annotated edition</span>
-        <span class="spine-version">${EDITION}</span>
+        <span class="spine-subtitle">v0.1.0</span>
+        <span class="spine-edition">Annotated edition — ${EDITION}</span>
       </div>
       <div class="spine-logo-wrap" role="presentation">
         <div class="spine-logo" role="img" aria-label="PirateHash"></div>
@@ -973,7 +963,7 @@ function buildCoverHtml(pageCount, logoDataUri, part2SourceToc, donationCover) {
     <div class="cover-front" id="cover-front" data-cover-panel="front">
       <div class="front-main">
         <h1 class="book-title">BITCOIN</h1>
-        <p class="book-subtitle">v0.01 Alpha</p>
+        <p class="book-subtitle">v0.1.0</p>
         <div class="book-edition-block">
           <p class="book-edition-label">Annotated edition — ${EDITION}</p>
         </div>

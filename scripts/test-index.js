@@ -118,10 +118,11 @@ async function testIndex() {
   
   // Test 9: Test with Puppeteer (if available)
   console.log('9. Testing page number resolution with Puppeteer...');
+  let browser = null;
   try {
     const puppeteer = await import('puppeteer');
     
-    const browser = await puppeteer.default.launch({
+    browser = await puppeteer.default.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
@@ -179,8 +180,6 @@ async function testIndex() {
       return results;
     });
     
-    await browser.close();
-    
     // Display results
     const hasPageNumbers = indexData.some(d => d.pageNumbers.length > 0);
     
@@ -200,6 +199,9 @@ async function testIndex() {
     
   } catch (err) {
     console.log(`   ⚠ Skipped (Puppeteer error: ${err.message})\n`);
+  } finally {
+    // Always close Chromium — a timeout used to leave it open and the test never exited
+    if (browser) await browser.close().catch(() => {});
   }
   
   console.log('═══════════════════════════════════════');

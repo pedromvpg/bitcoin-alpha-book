@@ -24,17 +24,7 @@ import { spawn, execFileSync } from 'child_process';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync, readdirSync, statSync, readFileSync, writeFileSync } from 'fs';
-import {
-  EDITION,
-  ANNOTATIONS_CREDIT,
-  syncEditionInHtml,
-} from './edition.mjs';
-import { buildCover } from './build-cover.js';
-import {
-  renderContentReviewHtml,
-  renderReviewChapterHtml,
-  clearReviewChapterCache,
-} from './content-review.mjs';
+import { liveEdition, syncEditionInHtml } from './edition.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -62,25 +52,84 @@ const COVER_SOURCE_PATHS = [
   TYPEFACE_CSS_PATH,
 ];
 
+/** Inputs that should trigger a book rebuild when newer than the built book HTML */
+const BOOK_HTML_PATH = join(OUTPUT_DIR, 'bitcoin-alpha-book.html');
+const BOOK_SOURCE_PATHS = [
+  join(__dirname, 'build.js'),
+  join(__dirname, 'edition.mjs'),
+  join(__dirname, 'ecc-figures.mjs'),
+  join(__dirname, 'source-file-order.mjs'),
+  join(__dirname, 'rc-gallery.mjs'),
+  join(ROOT_DIR, 'src', 'references.yaml'),
+  join(ROOT_DIR, 'src', 'annotations'),
+  STYLES_DIR,
+];
+
+/** Newest mtime among paths; directories count their direct children. */
+function newestMtime(paths) {
+  let newest = 0;
+  for (const p of paths) {
+    if (!existsSync(p)) continue;
+    const st = statSync(p);
+    newest = Math.max(newest, st.mtimeMs);
+    if (st.isDirectory()) {
+      for (const name of readdirSync(p)) {
+        newest = Math.max(newest, statSync(join(p, name)).mtimeMs);
+      }
+    }
+  }
+  return newest;
+}
+
+function isStale(outPath, sourcePaths) {
+  if (!existsSync(outPath)) return true;
+  return newestMtime(sourcePaths) > statSync(outPath).mtimeMs;
+}
+
 function coverNeedsRebuild() {
-  if (!existsSync(COVER_HTML_PATH)) return true;
-  const outM = statSync(COVER_HTML_PATH).mtimeMs;
-  return COVER_SOURCE_PATHS.some(p => existsSync(p) && statSync(p).mtimeMs > outM);
+  return isStale(COVER_HTML_PATH, COVER_SOURCE_PATHS);
+}
+
+/**
+ * Run a build script in a fresh Node process. In-process re-imports can't
+ * refresh their transitive imports (edition.mjs etc.), so a child process is
+ * the only way to guarantee the latest code and edition strings.
+ */
+function runNodeScript(script, args = [], { quiet = false } = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [join(__dirname, script), ...args], {
+      cwd: ROOT_DIR,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: process.env,
+    });
+    let log = '';
+    const append = (buf) => {
+      const s = buf.toString();
+      log += s;
+      if (!quiet) process.stdout.write(s);
+    };
+    child.stdout.on('data', append);
+    child.stderr.on('data', append);
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) resolve({ ok: true, log });
+      else reject(new Error(`${script} exited with code ${code}${quiet ? `\n${log.slice(-2000)}` : ''}`));
+    });
+  });
 }
 
 let coverBuildQueue = Promise.resolve();
 
 function ensureLatestCover({ force = false } = {}) {
-  coverBuildQueue = coverBuildQueue.then(async () => {
+  const job = coverBuildQueue.then(async () => {
     if (!force && !coverNeedsRebuild()) return;
     console.log(`   ↻ Rebuilding cover for preview${force ? ' (forced)' : ''}…`);
-    // Cache-bust so edits to build-cover.js / edition.mjs apply without restarting the server
-    const { buildCover } = await import(`./build-cover.js?t=${Date.now()}`);
-    const { EDITION: edition } = await import(`./edition.mjs?t=${Date.now()}`);
-    await buildCover({ previewDonation: true, quiet: true });
-    console.log(`   ✓ Cover rebuilt (${edition})`);
+    await runNodeScript('build-cover.js', ['--preview-donation'], { quiet: true });
+    console.log(`   ✓ Cover rebuilt (${liveEdition().edition})`);
   });
-  return coverBuildQueue;
+  // Keep the queue alive even if this job fails
+  coverBuildQueue = job.catch(() => {});
+  return job;
 }
 
 function sendNoStore(res) {
@@ -226,7 +275,7 @@ function injectCoverPreviewChrome(html) {
   <button type="button" id="cover-rebuild-btn">Rebuild</button>
   <span class="status" id="cover-rebuild-status"></span>
   <span class="grow"></span>
-  <span class="edition">${EDITION}</span>
+  <span class="edition">${liveEdition().edition}</span>
 </div>
 <div id="cover-inspect-hilite" aria-hidden="true"></div>
 <aside id="cover-inspect-panel" aria-live="polite">
@@ -583,7 +632,7 @@ app.post('/api/cover/rebuild', async (req, res) => {
   try {
     await ensureLatestCover({ force: true });
     sendNoStore(res);
-    res.json({ ok: true, edition: EDITION });
+    res.json({ ok: true, edition: liveEdition().edition });
   } catch (err) {
     console.error('Forced cover rebuild failed:', err);
     sendNoStore(res);
@@ -637,37 +686,32 @@ app.get('/cover.pdf', async (req, res) => {
 let bookBuildQueue = Promise.resolve();
 
 /** Run scripts/build.js (same as npm run build); serialised so clicks don't pile up. */
-function runBookBuild() {
-  bookBuildQueue = bookBuildQueue.then(
-    () =>
-      new Promise((resolve, reject) => {
-        console.log('   ↻ Rebuilding book for review…');
-        const child = spawn(process.execPath, [join(__dirname, 'build.js')], {
-          cwd: ROOT_DIR,
-          stdio: ['ignore', 'pipe', 'pipe'],
-          env: process.env,
-        });
-        let log = '';
-        const append = (buf) => {
-          const s = buf.toString();
-          log += s;
-          process.stdout.write(s);
-        };
-        child.stdout.on('data', append);
-        child.stderr.on('data', append);
-        child.on('error', reject);
-        child.on('close', (code) => {
-          if (code === 0) {
-            clearReviewChapterCache();
-            console.log(`   ✓ Book rebuilt (${EDITION})`);
-            resolve({ ok: true, log });
-          } else {
-            reject(new Error(`build.js exited with code ${code}`));
-          }
-        });
-      }),
-  );
-  return bookBuildQueue;
+function runBookBuild({ force = true } = {}) {
+  const job = bookBuildQueue.then(async () => {
+    if (!force && !isStale(BOOK_HTML_PATH, BOOK_SOURCE_PATHS)) return { ok: true, skipped: true };
+    console.log(`   ↻ Rebuilding book${force ? ' (forced)' : ' (sources changed)'}…`);
+    const result = await runNodeScript('build.js');
+    (await loadReview()).clearReviewChapterCache();
+    console.log(`   ✓ Book rebuilt (${liveEdition().edition})`);
+    return result;
+  });
+  // Keep the queue alive even if this job fails
+  bookBuildQueue = job.catch(() => {});
+  return job;
+}
+
+const REVIEW_MODULE_PATH = join(__dirname, 'content-review.mjs');
+let reviewModule = null;
+let reviewModuleMtime = -1;
+
+/** content-review.mjs, re-imported whenever the file changes on disk. */
+async function loadReview() {
+  const { mtimeMs } = statSync(REVIEW_MODULE_PATH);
+  if (!reviewModule || mtimeMs !== reviewModuleMtime) {
+    reviewModule = await import(`./content-review.mjs?v=${mtimeMs}`);
+    reviewModuleMtime = mtimeMs;
+  }
+  return reviewModule;
 }
 
 app.post('/api/review/rebuild', async (req, res) => {
@@ -676,7 +720,7 @@ app.post('/api/review/rebuild', async (req, res) => {
     // Cover page count / spine may have changed with the new book-meta
     await ensureLatestCover({ force: false });
     sendNoStore(res);
-    res.json({ ok: true, edition: EDITION });
+    res.json({ ok: true, edition: liveEdition().edition });
   } catch (err) {
     console.error('Book rebuild failed:', err);
     sendNoStore(res);
@@ -688,9 +732,26 @@ app.post('/api/review/rebuild', async (req, res) => {
 app.get('/cover', serveCover);
 app.get('/cover.html', serveCover);
 
-/** Serve built book HTML with edition.mjs strings rewritten over stale builds. */
-function serveSyncedBookHtml(filename) {
-  return (req, res) => {
+/**
+ * Serve built book HTML with edition.mjs strings rewritten over stale builds.
+ * With autoBuild, rebuilds first when build.js / styles / annotations changed.
+ */
+function serveSyncedBookHtml(filename, { autoBuild = false } = {}) {
+  return async (req, res) => {
+    if (autoBuild) {
+      try {
+        await runBookBuild({ force: false });
+      } catch (err) {
+        console.error('Book rebuild failed:', err);
+        sendNoStore(res);
+        return res.status(500).type('html').send(`
+          <html><body style="font-family:system-ui;padding:2em;text-align:center">
+            <h1>Book rebuild failed</h1>
+            <p>${String(err.message || err)}</p>
+          </body></html>
+        `);
+      }
+    }
     const p = join(OUTPUT_DIR, filename);
     if (!existsSync(p)) return res.status(404).send('Book not yet built. Run npm run build.');
     sendNoStore(res);
@@ -698,7 +759,7 @@ function serveSyncedBookHtml(filename) {
   };
 }
 
-app.get('/bitcoin-alpha-book.html', serveSyncedBookHtml('bitcoin-alpha-book.html'));
+app.get('/bitcoin-alpha-book.html', serveSyncedBookHtml('bitcoin-alpha-book.html', { autoBuild: true }));
 app.get('/bitcoin-alpha-book-print.html', serveSyncedBookHtml('bitcoin-alpha-book-print.html'));
 
 // ── Static file serving ─────────────────────────────────────────────
@@ -836,9 +897,10 @@ app.get('/', (req, res) => {
 });
 
 // ── Content review (continuous scroll, live YAML — no print build) ───
-app.get('/review', (req, res) => {
+app.get('/review', async (req, res) => {
   try {
     const bypassCache = req.query.reload === '1' || req.query.reload === 'true';
+    const { renderContentReviewHtml } = await loadReview();
     sendNoStore(res);
     res.type('html').send(renderContentReviewHtml({ bypassCache }));
   } catch (err) {
@@ -853,8 +915,9 @@ app.get('/review', (req, res) => {
   }
 });
 
-app.get('/api/review/chapter/:id', (req, res) => {
+app.get('/api/review/chapter/:id', async (req, res) => {
   try {
+    const { renderReviewChapterHtml } = await loadReview();
     const html = renderReviewChapterHtml(req.params.id);
     if (!html) {
       sendNoStore(res);
@@ -872,6 +935,7 @@ app.get('/api/review/chapter/:id', (req, res) => {
 // ── Book preview (DTP chrome) ────────────────────────────────────────
 app.get('/book', (req, res) => {
   const chrome = join(ROOT_DIR, 'templates', 'preview.html');
+  sendNoStore(res);
   if (existsSync(chrome)) return res.sendFile(chrome);
 
   // Fallback: serve raw book HTML if chrome template is missing

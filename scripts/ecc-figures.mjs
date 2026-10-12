@@ -457,18 +457,26 @@ function finiteFieldScaleFigure() {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  let stipple = '';
-  // Keep dense enough for print, but bounded — 28k <circle>s made a 16MB HTML that stalled Paged.js.
-  const nDots = 3600; // upper half; mirrored → ~7200 visible
+  // Dots are zero-length round-cap strokes batched into a few <path>s (bucketed by
+  // size/opacity) — far fewer bytes than one <circle> each. 28k <circle>s once made
+  // a 16MB HTML that stalled Paged.js; this keeps ~28k dots to a few hundred KB.
+  const nDots = 14000; // upper half; mirrored → ~28000 visible
+  const R_BUCKETS = [0.62, 0.86, 1.1]; // stroke widths (dot diameters)
+  const O_BUCKETS = [0.62, 0.78, 0.94];
+  const buckets = R_BUCKETS.map(() => O_BUCKETS.map(() => []));
   for (let k = 0; k < nDots; k++) {
     const x = ox + pad + rand() * (plot - 2 * pad);
     const yTop = oy + pad + rand() * (midY - oy - pad - seam);
     const yBot = oy + plot - (yTop - oy);
-    const op = 0.68 + 0.3 * rand();
-    const rr = 0.58 + 0.38 * rand();
-    stipple += `<circle cx="${x.toFixed(2)}" cy="${yTop.toFixed(2)}" r="${rr.toFixed(2)}" fill="${STROKE.curve}" opacity="${op.toFixed(2)}"/>`;
-    stipple += `<circle cx="${x.toFixed(2)}" cy="${yBot.toFixed(2)}" r="${rr.toFixed(2)}" fill="${STROKE.curve}" opacity="${op.toFixed(2)}"/>`;
+    const oi = Math.floor(rand() * O_BUCKETS.length);
+    const ri = Math.floor(rand() * R_BUCKETS.length);
+    const xs = x.toFixed(1);
+    buckets[ri][oi].push(`M${xs} ${yTop.toFixed(1)}h0M${xs} ${yBot.toFixed(1)}h0`);
   }
+  let stipple = '';
+  R_BUCKETS.forEach((w, ri) => O_BUCKETS.forEach((op, oi) => {
+    stipple += `<path d="${buckets[ri][oi].join('')}" fill="none" stroke="${STROKE.curve}" stroke-width="${w}" stroke-linecap="round" opacity="${op}"/>`;
+  }));
   const clipId = 'ff-scale-secp-clip';
   const panelC = `
     <defs>
@@ -637,13 +645,13 @@ function pointDoubleFigure() {
 function pointOpsGridFigure() {
   const COLS = 2;
   const ROWS = 2;
-  const pw = 360;
-  const ph = 245;
-  const gapX = 22;
-  const gapY = 56;
-  const titleH = 38; // room under panel titles
-  const padTop = 12;
-  const padBot = 16;
+  const pw = 420;
+  const ph = 460;
+  const gapX = 96;
+  const gapY = 168;
+  const titleH = 46; // room under panel titles
+  const padTop = 8;
+  const padBot = 8;
   const W = COLS * pw + (COLS - 1) * gapX;
   const H = padTop + ROWS * (ph + titleH) + (ROWS - 1) * gapY + padBot;
   const view = OP_VIEW;
@@ -661,14 +669,14 @@ function pointOpsGridFigure() {
         return `
           ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${ECC_CYAN}" stroke-width="1.35" fill="none" stroke-dasharray="4 3"${VEC}/>` : ''}
           ${reflectionGuide(proj, RPRIME_ADD.x, RPRIME_ADD.y, R_ADD.y, 'g-add')}
-          ${dot(proj, P_ADD.x, P_ADD.y, 3.6)}
-          ${dot(proj, Q_ADD.x, Q_ADD.y, 3.6)}
-          ${dot(proj, RPRIME_ADD.x, RPRIME_ADD.y, 3.6)}
-          ${dot(proj, R_ADD.x, R_ADD.y, 3.6)}
-          ${label(proj, P_ADD.x, P_ADD.y, 'P', -14, -6, 10)}
-          ${label(proj, Q_ADD.x, Q_ADD.y, 'Q', 6, -6, 10)}
-          ${label(proj, RPRIME_ADD.x, RPRIME_ADD.y, "R′", 6, 12, 10)}
-          ${label(proj, R_ADD.x, R_ADD.y, 'R', 6, -6, 10)}`;
+          ${dot(proj, P_ADD.x, P_ADD.y, 5.2)}
+          ${dot(proj, Q_ADD.x, Q_ADD.y, 5.2)}
+          ${dot(proj, RPRIME_ADD.x, RPRIME_ADD.y, 5.2)}
+          ${dot(proj, R_ADD.x, R_ADD.y, 5.2)}
+          ${label(proj, P_ADD.x, P_ADD.y, 'P', -18, -8, 15)}
+          ${label(proj, Q_ADD.x, Q_ADD.y, 'Q', 8, -8, 15)}
+          ${label(proj, RPRIME_ADD.x, RPRIME_ADD.y, "R′", 8, 16, 15)}
+          ${label(proj, R_ADD.x, R_ADD.y, 'R', 8, -8, 15)}`;
       },
     },
     {
@@ -683,12 +691,12 @@ function pointOpsGridFigure() {
         return `
           ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${STROKE.tangent}" stroke-width="1.35" fill="none" stroke-dasharray="4 3"${VEC}/>` : ''}
           ${reflectionGuide(proj, RPRIME_DBL.x, RPRIME_DBL.y, R2_DBL.y, 'g-dbl')}
-          ${dot(proj, P_DBL.x, P_DBL.y, 3.6)}
-          ${dot(proj, RPRIME_DBL.x, RPRIME_DBL.y, 3.6)}
-          ${dot(proj, R2_DBL.x, R2_DBL.y, 3.6)}
-          ${label(proj, P_DBL.x, P_DBL.y, 'P', -14, -6, 10)}
-          ${label(proj, RPRIME_DBL.x, RPRIME_DBL.y, "R′", 6, 12, 10)}
-          ${label(proj, R2_DBL.x, R2_DBL.y, '2P', 6, -6, 10)}`;
+          ${dot(proj, P_DBL.x, P_DBL.y, 5.2)}
+          ${dot(proj, RPRIME_DBL.x, RPRIME_DBL.y, 5.2)}
+          ${dot(proj, R2_DBL.x, R2_DBL.y, 5.2)}
+          ${label(proj, P_DBL.x, P_DBL.y, 'P', -18, -8, 15)}
+          ${label(proj, RPRIME_DBL.x, RPRIME_DBL.y, "R′", 8, 16, 15)}
+          ${label(proj, R2_DBL.x, R2_DBL.y, '2P', 8, -8, 15)}`;
       },
     },
     {
@@ -701,11 +709,11 @@ function pointOpsGridFigure() {
         return `
           <line x1="${top.x.toFixed(2)}" y1="${top.y.toFixed(2)}" x2="${bot.x.toFixed(2)}" y2="${bot.y.toFixed(2)}"
             stroke="${ECC_CYAN}" stroke-width="1.35" fill="none" stroke-dasharray="4 3"${VEC}/>
-          ${dot(proj, P.x, P.y, 3.6)}
-          ${dot(proj, nP.x, nP.y, 3.6)}
-          ${label(proj, P.x, P.y, 'P', 8, -6, 10)}
-          ${label(proj, nP.x, nP.y, '−P', 8, 12, 10)}
-          <text x="${top.x.toFixed(2)}" y="${(top.y + 14).toFixed(2)}" font-family="${FONT_MONO}" font-size="12" font-weight="600" text-anchor="middle" fill="${STROKE.panelTitle}">𝒪</text>`;
+          ${dot(proj, P.x, P.y, 5.2)}
+          ${dot(proj, nP.x, nP.y, 5.2)}
+          ${label(proj, P.x, P.y, 'P', 10, -8, 15)}
+          ${label(proj, nP.x, nP.y, '−P', 10, 16, 15)}
+          <text x="${top.x.toFixed(2)}" y="${(top.y + 18).toFixed(2)}" font-family="${FONT_MONO}" font-size="16" font-weight="600" text-anchor="middle" fill="${STROKE.panelTitle}">𝒪</text>`;
       },
     },
     {
@@ -724,15 +732,15 @@ function pointOpsGridFigure() {
         return `
           ${ext ? `<path d="${linePath(proj, ext.a.x, ext.a.y, ext.b.x, ext.b.y)}" stroke="${ECC_CYAN}" stroke-width="1.35" fill="none" stroke-dasharray="4 3"${VEC}/>` : ''}
           ${reflectionGuide(proj, Sp.x, Sp.y, S.y, 'g-sub')}
-          ${dot(proj, P.x, P.y, 3.6)}
-          ${dot(proj, Q.x, Q.y, 3.2)}
-          ${dot(proj, nQ.x, nQ.y, 3.6)}
-          ${dot(proj, Sp.x, Sp.y, 3.6)}
-          ${dot(proj, S.x, S.y, 3.6)}
-          ${label(proj, P.x, P.y, 'P', -14, -6, 10)}
-          ${label(proj, Q.x, Q.y, 'Q', 6, -6, 9)}
-          ${label(proj, nQ.x, nQ.y, '−Q', 6, 12, 10)}
-          ${label(proj, S.x, S.y, 'P−Q', 6, -6, 10)}`;
+          ${dot(proj, P.x, P.y, 5.2)}
+          ${dot(proj, Q.x, Q.y, 4.4)}
+          ${dot(proj, nQ.x, nQ.y, 5.2)}
+          ${dot(proj, Sp.x, Sp.y, 5.2)}
+          ${dot(proj, S.x, S.y, 5.2)}
+          ${label(proj, P.x, P.y, 'P', -18, -8, 15)}
+          ${label(proj, Q.x, Q.y, 'Q', 8, -8, 13)}
+          ${label(proj, nQ.x, nQ.y, '−Q', 8, 16, 15)}
+          ${label(proj, S.x, S.y, 'P−Q', 8, -8, 15)}`;
       },
     },
   ];
@@ -751,7 +759,7 @@ function pointOpsGridFigure() {
       return { x: p.x + ox, y: p.y + oy + titleH };
     };
     body += `
-      <text x="${(ox + pw / 2).toFixed(1)}" y="${(oy + 12).toFixed(1)}" font-family="${FONT_MONO}" font-size="11" font-weight="600" text-anchor="middle" fill="${STROKE.panelTitle}">${panel.title}</text>
+      <text x="${(ox + pw / 2).toFixed(1)}" y="${(oy + 18).toFixed(1)}" font-family="${FONT_MONO}" font-size="15" font-weight="600" text-anchor="middle" fill="${STROKE.panelTitle}">${panel.title}</text>
       <g stroke-linecap="round" stroke-linejoin="round">
         ${curveAndAxes(off, view, 0.25)}
         ${panel.draw(off)}

@@ -1,0 +1,95 @@
+# Reading Paths — guided tours through the v0.1.0 source.
+#
+# Rendered as the "Reading Paths" chapter at the end of Part I (scripts/build.js).
+# Each step points at a definition (`symbol:` — the qualified name exactly as
+# defined, e.g. "CBlock::AcceptBlock" or "SendMoney") or at a specific line
+# (`file:` + `line:`). The build prints the page number of that line; the
+# validator (npm run validate) fails if a step cannot be resolved.
+#
+# Notes are plain-HTML prose in the book's voice; facts must match the source.
+
+paths:
+  - id: transaction
+    title: "The Life of a Transaction"
+    intro: |
+      Follow one payment from the moment its sender clicks <em>Send</em> to the
+      moment another node accepts it and passes it on.
+    steps:
+      - symbol: "CSendDialog::OnButtonSend"
+        note: "The Send button. Parses the amount and the Bitcoin address, then builds a standard pay-to-public-key-hash <code>scriptPubKey</code> for the recipient and calls <code>SendMoney</code>."
+      - symbol: "SendMoney"
+        note: "The orchestrator: create and sign the transaction, mark the coins it spends, accept it locally, and broadcast it."
+      - symbol: "CreateTransaction"
+        note: "Selects coins from the wallet, adds a change output, signs every input, and loops until the fee is sufficient."
+      - symbol: "SignSignature"
+        note: "Hashes the transaction, solves the previous output's <code>scriptPubKey</code> to produce the <code>scriptSig</code>, then test-runs both with <code>EvalScript</code>."
+      - symbol: "CommitTransactionSpent"
+        note: "Adds the new transaction to the wallet and marks every coin it consumed as spent on disk."
+      - symbol: "CWalletTx::RelayWalletTransaction"
+        note: "Relays the transaction, preceded by any unconfirmed transactions it depends on, to every connected peer."
+      - file: "main.cpp"
+        line: 1868
+        note: "On the receiving node: the <code>tx</code> message handler accepts the transaction, adds it to the wallet if it pays us, relays it onward, and retries any orphans that were waiting for it."
+      - symbol: "CTransaction::AcceptTransaction"
+        note: "Mempool admission: reject loose coinbases and duplicates, check for conflicts, connect the inputs, then add to the memory pool."
+      - symbol: "CTransaction::ConnectInputs"
+        note: "Looks up each previous output, enforces coinbase maturity, verifies the signature, and refuses outputs that are already spent."
+      - symbol: "VerifySignature"
+        note: "Joins the input's <code>scriptSig</code> and the previous output's <code>scriptPubKey</code> into one script and runs it."
+      - symbol: "EvalScript"
+        note: "The script interpreter itself: a stack machine whose <code>OP_CHECKSIG</code> finally checks the ECDSA signature."
+
+  - id: mining
+    title: "Mining a Block"
+    intro: |
+      Follow a block from an empty template on the miner's machine to the tip
+      of every node's best chain.
+    steps:
+      - symbol: "BitcoinMiner"
+        note: "The mining loop. Builds a coinbase paying a fresh key, gathers transactions from the memory pool, and fills in the block header."
+      - symbol: "GetNextWorkRequired"
+        note: "Computes the difficulty target for the next block, retargeting every 2016 blocks."
+      - symbol: "CBlock::GetBlockValue"
+        note: "The block reward: the subsidy, halving every 210,000 blocks, plus the fees of the included transactions."
+      - symbol: "BlockSHA256"
+        note: "The hot loop's hash. The miner increments the nonce and double-hashes the prebuilt header until the result falls below the target."
+      - symbol: "ProcessBlock"
+        note: "A found block is handled exactly as if it had arrived from a peer. Checks it, accepts it, then adopts any orphans that were waiting for it."
+      - symbol: "CBlock::CheckBlock"
+        note: "Context-free checks: size, timestamp, a single coinbase first, valid transactions, proof of work, and merkle root."
+      - symbol: "CBlock::AcceptBlock"
+        note: "Contextual checks against the previous block, then writes the block to disk, indexes it, and relays it if it is now the best chain."
+      - symbol: "CBlock::AddToBlockIndex"
+        note: "Extends the best chain directly, or triggers a reorganization when a side branch has grown longer."
+      - symbol: "CBlock::ConnectBlock"
+        note: "Connects every transaction's inputs, marking their previous outputs spent in the transaction index."
+      - symbol: "Reorganize"
+        note: "Disconnects blocks back to the fork point and connects the longer branch, returning orphaned transactions to the memory pool."
+
+  - id: network
+    title: "A Node Joins the Network"
+    intro: |
+      Follow a freshly started node from loading its files to its first
+      conversation with a peer.
+    steps:
+      - symbol: "CMyApp::OnInit2"
+        note: "Startup. Loads the address book, the block index, and the wallet, then starts networking and, if enabled, the miner."
+      - symbol: "LoadBlockIndex"
+        note: "Reads the block index from disk; on first run, builds the genesis block with its <em>Times</em> headline and writes it out."
+      - symbol: "StartNode"
+        note: "Binds the listening socket on port 8333, discovers the external IP, and launches the IRC seeding, socket, connection, and message threads."
+      - symbol: "ThreadIRCSeed"
+        note: "Joins <code>#bitcoin</code> on <code>chat.freenode.net</code>; nicknames beginning with <code>u</code> encode peers' IP addresses, which are decoded and stored."
+      - symbol: "AddAddress"
+        note: "Records a newly learned peer address in memory and in the address database."
+      - symbol: "ThreadOpenConnections2"
+        note: "Picks addresses to dial and opens outbound connections up to the connection limit."
+      - symbol: "ConnectNode"
+        note: "Opens a TCP socket to a peer and wraps it in a new <code>CNode</code>, whose constructor immediately queues a <code>version</code> message."
+      - symbol: "ThreadSocketHandler2"
+        note: "The <code>select()</code> loop that accepts inbound connections and moves bytes between sockets and each node's buffers."
+      - symbol: "ThreadMessageHandler2"
+        note: "Polls every node in turn, processing received messages and sending queued ones."
+      - file: "main.cpp"
+        line: 1705
+        note: "The <code>version</code> handler: negotiates the protocol version and, from a full node, requests blocks with <code>getblocks</code>. Synchronization begins."

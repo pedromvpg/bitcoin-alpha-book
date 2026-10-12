@@ -47,7 +47,7 @@ introduction: |
 annotations:
   - line: 20
     type: margin
-    text: "<code>//// later figure out how these are persisted</code> -- Satoshi's own TODO comment, preserved verbatim. This reveals the marketplace was still in the design phase when v0.01 shipped. <code class=\"variable\">mapMyProducts</code> holds your own listed products in memory, but there is no code to save them to disk. Restart the client and your listings vanish. Satoshi never got around to adding BDB persistence for marketplace data the way he did for wallet transactions."
+    text: "<code>//// later figure out how these are persisted</code> -- Satoshi's own TODO comment, preserved verbatim. This reveals the marketplace was still in the design phase when v0.1.0 shipped. <code class=\"variable\">mapMyProducts</code> holds your own listed products in memory, but there is no code to save them to disk. Restart the client and your listings vanish. Satoshi never got around to adding BDB persistence for marketplace data the way he did for wallet transactions."
 
   - line: 26
     type: margin
@@ -110,10 +110,28 @@ conclusion: |
     undermined confidence in Bitcoin itself.
   </p>
   <p>
-    The marketplace's ghost lives on in Bitcoin's DNA. The <code class=\"type\">CProduct</code>
-    and <code class=\"type\">CReview</code> classes are still compiled into v0.01. The
+    The marketplace's ghost lives on in Bitcoin's DNA. The <code class="type">CProduct</code>
+    and <code class="type">CReview</code> classes are still compiled into v0.1.0. The
     UI has product listing dialogs (see ui.h). The P2P protocol has message types for
     advertising products. All of it functional enough to hint at what might have been,
     incomplete enough to remind us that even Satoshi had to choose what to ship and
     what to cut.
   </p>
+
+glossary:
+  - term: "atom propagation"
+    definition: "The wave-by-wave process in AddAtomsAndPropagate that adds atoms to a user, then passes any newly forwarded atoms to everyone that user reviewed, until no one forwards anything new."
+  - term: "zero atom"
+    definition: "The atom numbered 0, sent by a reviewer who has no outgoing atoms of their own; its recipient records it but never forwards it further."
+  - term: "origin atom"
+    definition: "An atom added with fOrigin set, meaning the user created it; it is recorded and queued for forwarding at once, a path only the commented-out mining-reward code in main.cpp would have used."
+  - term: "trust link"
+    definition: "An entry in a user's vLinksOut, added by AcceptReview when that user reviews someone, forming the directed edges along which reputation atoms flow."
+  - term: "AdvertInsert"
+    definition: "The function that adds a product to mapProducts, or replaces an existing entry with the same hash only when the incoming listing carries a higher nSequence."
+  - term: "AcceptReview"
+    definition: "The routine run on each incoming review message that verifies its signature, appends it to the recipient's stored reviews, records the reviewer's trust link, and propagates atoms."
+  - term: "summary product"
+    definition: "A product listing with no details or order form, the only kind CheckProduct accepts; the check also stamps it with the seller's current atom count from the review database."
+  - term: "CReviewDB"
+    definition: "The CDB subclass for reviews.dat, storing each user's atom state under a \"user\" key and the reviews they have received under a \"reviews\" key."

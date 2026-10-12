@@ -75,7 +75,7 @@ annotations:
 
   - line: 118
     type: margin
-    text: "Transaction filter dropdown with four choices: <code>'All'</code>, <code>'Sent'</code>, <code>'Received'</code>, and <code>'In Progress'</code>. Note the call to <code class=\"function\">Hide()</code> on line 122 — this filter was created but hidden in v0.01, suggesting Satoshi built it for future use but did not consider it ready. The filter categories reveal the transaction states he was tracking internally."
+    text: "Transaction filter dropdown with four choices: <code>'All'</code>, <code>'Sent'</code>, <code>'Received'</code>, and <code>'In Progress'</code>. Note the call to <code class=\"function\">Hide()</code> on line 122 — this filter was created but hidden in v0.1.0, suggesting Satoshi built it for future use but did not consider it ready. The filter categories reveal the transaction states he was tracking internally."
 
   - line: 133
     type: margin
@@ -95,7 +95,7 @@ annotations:
 
   - line: 341
     type: margin
-    text: "<code class=\"type\">COptionsDialogBase</code> — the entire options dialog contains a single configurable setting: <code>'Optional transaction fee you give to the nodes that process your transactions.'</code> The text field <code class=\"variable\">m_textCtrlTransactionFee</code> is just 70 pixels wide. In v0.01, this fee was purely voluntary. Satoshi kept the interface minimal — one setting, clearly explained in plain language."
+    text: "<code class=\"type\">COptionsDialogBase</code> — the entire options dialog contains a single configurable setting: <code>'Optional transaction fee you give to the nodes that process your transactions.'</code> The text field <code class=\"variable\">m_textCtrlTransactionFee</code> is just 70 pixels wide. In v0.1.0, this fee was purely voluntary. Satoshi kept the interface minimal — one setting, clearly explained in plain language."
 
   - line: 402
     type: margin
@@ -103,7 +103,7 @@ annotations:
 
   - line: 476
     type: margin
-    text: "<code class=\"type\">CSendDialogBase</code> — the payment dialog. The instructional text at line 495 reveals a key v0.01 feature: <code>'Enter the recipient's IP address (e.g. 123.45.6.7) for online transfer with comments and confirmation, or bitcoin address...'</code> In the original design, the <em>primary</em> way to send Bitcoin was by IP address — a direct TCP connection to the recipient for interactive payment with comments. Sending to a Bitcoin address was the fallback. This IP-based payment was removed in later versions due to security concerns (no authentication, man-in-the-middle attacks)."
+    text: "<code class=\"type\">CSendDialogBase</code> — the payment dialog. The instructional text at line 495 reveals a key v0.1.0 feature: <code>'Enter the recipient's IP address (e.g. 123.45.6.7) for online transfer with comments and confirmation, or bitcoin address...'</code> In the original design, the <em>primary</em> way to send Bitcoin was by IP address — a direct TCP connection to the recipient for interactive payment with comments. Sending to a Bitcoin address was the fallback. This IP-based payment was removed in later versions due to security concerns (no authentication, man-in-the-middle attacks)."
 
   - line: 635
     type: margin
@@ -128,7 +128,7 @@ conclusion: |
     the product editor with 20 form fields, the poker dialog, the escrow list — these
     are not stubs or placeholders. They are fully laid-out interfaces for features
     Satoshi designed in wxFormBuilder's visual editor, generated into code, and shipped
-    in the v0.01 binary. The gap between what was visible and what was built reveals
+    in the v0.1.0 binary. The gap between what was visible and what was built reveals
     a roadmap that was never publicly announced.
   </p>
   <p>
@@ -153,3 +153,19 @@ conclusion: |
     — that payments should be interactive — may yet prove correct, as Lightning Network
     invoices now serve a similar purpose.
   </p>
+
+glossary:
+  - term: "generated code"
+    definition: "Source written by a tool rather than a person; uibase.cpp opens with PLEASE DO \"NOT\" EDIT THIS FILE! because wxFormBuilder overwrites it whenever the design is regenerated."
+  - term: "Connect()"
+    definition: "The wxWidgets call that binds an event on a widget to a handler method at run time; uibase.cpp makes 200 such calls, each undone by a matching Disconnect() in a destructor."
+  - term: "wxNotebook"
+    definition: "A tabbed container widget; in v0.1.0 the main window's notebook holds a single All Transactions page containing the transaction list."
+  - term: "report mode"
+    definition: "The wxLC_REPORT style that makes a wxListCtrl show rows under column headings, like a spreadsheet; the main transaction list combines it with descending sort order."
+  - term: "wxHtmlWindow"
+    definition: "A wxWidgets widget that renders simple HTML; the Transaction Details dialog uses one so ui.cpp can lay out a transaction's status, amounts, and addresses as markup."
+  - term: "wxStaticBitmap"
+    definition: "A non-interactive widget that simply displays an image; the Send Coins dialog uses a 16-pixel one to show the check icon beside a valid address."
+  - term: "hidden widget"
+    definition: "A control the generated code creates and then immediately hides with Hide(), as with the main window's transaction filter and the four marketplace list panels."

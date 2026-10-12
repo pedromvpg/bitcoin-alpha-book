@@ -1,5 +1,5 @@
 /**
- * Canonical order of Bitcoin v0.01 source files (Part II) — keep in sync with book build.
+ * Canonical order of Bitcoin v0.1.0 source files (Part II) — keep in sync with book build.
  */
 export const SOURCE_FILE_ORDER = [
   'base58.h',

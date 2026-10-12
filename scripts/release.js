@@ -21,7 +21,8 @@
  */
 
 import { execSync } from 'child_process';
-import { mkdirSync, copyFileSync, existsSync, unlinkSync, statSync } from 'fs';
+import { mkdirSync, copyFileSync, existsSync, unlinkSync, statSync, readFileSync, writeFileSync } from 'fs';
+import { createHash } from 'crypto';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -103,6 +104,9 @@ async function release() {
 
   clearDeliverables();
 
+  // Pre-flight: Satoshi quotes must match primary sources (skips if corpus absent)
+  run('Pre-flight — Verify Satoshi quotations', 'check:quotes');
+
   // ── Pipeline ──────────────────────────────────────────────────────────────
   run('Step 1/6 — Build HTML', 'build');
   run('Step 2/6 — Generate book PDF', 'pdf');
@@ -133,6 +137,14 @@ async function release() {
     console.log(`   ✓ ${label} (${src})`);
     copied++;
   }
+
+  // SHA256SUMS — `shasum -a 256 -c SHA256SUMS` inside the release folder.
+  // (A PDF cannot carry its own hash; this file is the published record.)
+  const sums = DELIVERABLES
+    .map(({ src }) => `${createHash('sha256').update(readFileSync(join(releaseDir, src))).digest('hex')}  ${src}`)
+    .join('\n') + '\n';
+  writeFileSync(join(releaseDir, 'SHA256SUMS'), sums);
+  console.log('   ✓ SHA256SUMS');
 
   console.log(`\n✨ Release complete — ${copied}/${DELIVERABLES.length} files`);
   console.log(`   Folder: releases/${stamp}/\n`);

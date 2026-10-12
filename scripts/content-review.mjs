@@ -5,7 +5,7 @@
  * - Source chapters live from YAML (intros, line notes, conclusions)
  */
 
-import { readFileSync, readdirSync, existsSync } from 'fs';
+import { readFileSync, readdirSync, existsSync, statSync } from 'fs';
 import { join, basename, extname, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import yaml from 'js-yaml';
@@ -14,12 +14,7 @@ import 'prismjs/components/prism-c.js';
 import 'prismjs/components/prism-cpp.js';
 import 'prismjs/components/prism-makefile.js';
 import 'prismjs/components/prism-markup.js';
-import {
-  EDITION,
-  ANNOTATIONS_CREDIT,
-  editionKey,
-  syncEditionInHtml,
-} from './edition.mjs';
+import { liveEdition, editionKey, syncEditionInHtml } from './edition.mjs';
 import {
   SOURCE_FILE_ORDER as FILE_ORDER,
   chapterIdFromFilename,
@@ -81,7 +76,7 @@ const FALLBACK_PART_DIVIDERS = {
     html: `
       <section class="part-divider chapter" id="part-source">
         <h1 class="part-title">The Source Code</h1>
-        <p class="part-subtitle">Bitcoin v0.01 — annotated and explained</p>
+        <p class="part-subtitle">Bitcoin v0.1.0 — annotated and explained</p>
       </section>`,
   },
 };
@@ -150,8 +145,8 @@ class CitationContext {
   footnotes() {
     if (!this.usedOrder.length) return '';
     const items = this.usedOrder.map(({ number, ref }) => `
-      <li id="${this.chapterId}-fn-${number}" value="${number}">
-        ${formatFootnote(ref)}
+      <li id="${this.chapterId}-fn-${number}" class="footnote" value="${number}">
+        <span class="footnote-text">${formatFootnote(ref)}</span>
       </li>`).join('');
     return `<section class="footnotes"><h4 class="footnotes-title">Sources</h4><ol class="footnotes-list">${items}</ol></section>`;
   }
@@ -667,8 +662,21 @@ const chapterHtmlCache = new Map(); // id → { html, builtAt }
 let shellHtmlCache = null;
 let cachedEditionKey = null;
 
+/** Newest mtime across review inputs: annotation YAML, references, last book build. */
+function inputsFingerprint() {
+  let newest = 0;
+  const bump = (p) => {
+    try { newest = Math.max(newest, statSync(p).mtimeMs); } catch { /* missing */ }
+  };
+  bump(ANNOTATIONS_DIR);
+  for (const name of readdirSync(ANNOTATIONS_DIR)) bump(join(ANNOTATIONS_DIR, name));
+  bump(REFERENCES_PATH);
+  bump(BOOK_HTML_PATH);
+  return newest;
+}
+
 function invalidateIfEditionChanged(bypassCache = false) {
-  const key = editionKey();
+  const key = `${editionKey()}\0${inputsFingerprint()}`;
   if (bypassCache || cachedEditionKey !== key) {
     chapterHtmlCache.clear();
     shellHtmlCache = null;
@@ -708,6 +716,7 @@ export function clearReviewChapterCache() {
 export function renderContentReviewHtml({ bypassCache = false } = {}) {
   invalidateIfEditionChanged(bypassCache);
   if (shellHtmlCache) return syncEditionInHtml(shellHtmlCache);
+  const { edition: EDITION, credit: ANNOTATIONS_CREDIT } = liveEdition();
 
   const {
     chapters,

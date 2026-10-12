@@ -77,7 +77,7 @@ annotations:
 
   - line: 49
     type: margin
-    text: "<code class=\"variable\">fGenerateBitcoins</code> — mining toggle. In v0.01, a typical consumer CPU could find a block in hours to days. Satoshi imagined 'one-CPU-one-vote' as the governance model before GPU mining (2010) and ASICs (2013) made CPU mining irrelevant."
+    text: "<code class=\"variable\">fGenerateBitcoins</code> — mining toggle. In v0.1.0, a typical consumer CPU could find a block in hours to days. Satoshi imagined 'one-CPU-one-vote' as the governance model before GPU mining (2010) and ASICs (2013) made CPU mining irrelevant."
 
   - line: 50
     type: margin
@@ -223,7 +223,7 @@ annotations:
 
   - line: 1655
     type: margin
-    text: "Partial-message wait — if the declared payload is larger than bytes received, rewind the header and sleep. A peer can advertise a huge <code class=\"variable\">nMessageSize</code> and trickle data, pinning memory in <code class=\"variable\">vRecv</code>. Later versions harden this; v0.01 mostly trusts peers.{{cite:rubin-satoshis-version}}"
+    text: "Partial-message wait — if the declared payload is larger than bytes received, rewind the header and sleep. A peer can advertise a huge <code class=\"variable\">nMessageSize</code> and trickle data, pinning memory in <code class=\"variable\">vRecv</code>. Later versions harden this; v0.1.0 mostly trusts peers.{{cite:rubin-satoshis-version}}"
 
   # P2P message handlers
   - line: 1705
@@ -240,7 +240,7 @@ annotations:
 
   - line: 1729
     type: margin
-    text: "<code class=\"variable\">fAskedForBlocks</code> — ask the <em>first</em> full node for <code>getblocks</code>, then never again. Jeremy Rubin's annotations point out that a node should cross-check other peers in case this one lies — v0.01 does not.{{cite:rubin-satoshis-version}}"
+    text: "<code class=\"variable\">fAskedForBlocks</code> — ask the <em>first</em> full node for <code>getblocks</code>, then never again. Jeremy Rubin's annotations point out that a node should cross-check other peers in case this one lies — v0.1.0 does not.{{cite:rubin-satoshis-version}}"
 
   - line: 1748
     type: margin
@@ -400,11 +400,11 @@ annotations:
 
   - line: 2212
     type: margin
-    text: "<code class=\"variable\">++bnExtraNonce</code> in the coinbase <code>scriptSig</code> — runs whenever this process builds a new template: after <code class=\"variable\">nNonce</code> overflow, after the tip moves, or when the mempool changes enough to rebuild. Fresh ExtraNonce entropy changes the merkle root and expands the search space beyond 2³² header nonces. For stock v0.1 miners, each new network tip forces a rebuild, so ExtraNonce often advances roughly once per block seen (Lerner's privacy flaw #3)—which is why non-Patoshi slopes track the chain, while Patoshi's denser slope stands out.{{cite:bitslog-patoshi}}{{cite:waltz-1stbitcoinminer-transcriptions}}"
+    text: "<code class=\"variable\">++bnExtraNonce</code> in the coinbase <code>scriptSig</code> — runs whenever this process builds a new template: after <code class=\"variable\">nNonce</code> overflow, after the tip moves, or when the mempool changes enough to rebuild. Fresh ExtraNonce entropy changes the merkle root and expands the search space beyond 2³² header nonces. For stock v0.1.0 miners, each new network tip forces a rebuild, so ExtraNonce often advances roughly once per block seen (Lerner's privacy flaw #3)—which is why non-Patoshi slopes track the chain, while Patoshi's denser slope stands out.{{cite:bitslog-patoshi}}{{cite:waltz-1stbitcoinminer-transcriptions}}"
 
   - line: 2237
     type: margin
-    text: "Template packing loop stops around <code>MAX_SIZE/2</code> (~16 MB). But the size is only checked between full passes over the mempool: a single pass of the inner loop adds every eligible transaction with no size check, so <code class=\"variable\">nBlockSize</code> can overshoot the limit, even past <code>MAX_SIZE</code> — a latent packing bug noted in annotated v0.01 walkthroughs.{{cite:rubin-satoshis-version}}"
+    text: "Template packing loop stops around <code>MAX_SIZE/2</code> (~16 MB). But the size is only checked between full passes over the mempool: a single pass of the inner loop adds every eligible transaction with no size check, so <code class=\"variable\">nBlockSize</code> can overshoot the limit, even past <code>MAX_SIZE</code> — a latent packing bug noted in annotated v0.1.0 walkthroughs.{{cite:rubin-satoshis-version}}"
 
   - line: 2252
     type: margin
@@ -505,7 +505,7 @@ glossary:
   - term: "mempool"
     definition: "The node's in-memory pool (mapTransactions) of valid but unconfirmed transactions, where they wait for a miner to include them in a block."
   - term: "UTXO"
-    definition: "An unspent transaction output: a coin that has been created but not yet spent. In v0.01, spends are recorded on disk in each transaction's CTxIndex (vSpent) when a block connects."
+    definition: "An unspent transaction output: a coin that has been created but not yet spent. In v0.1.0, spends are recorded on disk in each transaction's CTxIndex (vSpent) when a block connects."
   - term: "coinbase"
     definition: "The special first transaction of a block whose input references nothing (a null prevout) and whose outputs pay the miner the subsidy plus fees."
   - term: "merkle root"

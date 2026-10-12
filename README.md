@@ -1,6 +1,6 @@
-# Bitcoin Alpha v0.01 - Source Code Book
+# Bitcoin v0.1.0 - Source Code Book
 
-A print-ready book containing the complete annotated source code of Bitcoin v0.01, 
+A print-ready book containing the complete annotated source code of Bitcoin v0.1.0, 
 the first public release by Satoshi Nakamoto in January 2009.
 
 ## Specifications
@@ -17,7 +17,7 @@ the first public release by Satoshi Nakamoto in January 2009.
 # Install dependencies
 npm install
 
-# Download Bitcoin v0.01 source code
+# Download Bitcoin v0.1.0 source code
 npm run fetch
 
 # Validate annotations (YAML schema, citations, line anchors) — also runs
@@ -39,18 +39,23 @@ npm run pdf
 ```
 bitcoin-alpha-book/
 ├── src/
-│   ├── bitcoin-0.01/          # Original v0.01 source (fetched, gitignored)
+│   ├── bitcoin-0.01/          # Original v0.1.0 source (fetched, gitignored)
 │   ├── versions/              # Bitcoin Core source trees for every version
 │   │                          #   referenced in "What Came After"
 │   │                          #   (`npm run fetch:versions`, gitignored)
 │   ├── annotations/           # YAML annotation files (one per source file)
+│   ├── reading-paths.yaml     # Guided tours (Reading Paths chapter)
+│   ├── source-manifest.json   # SHA-256 per source file + tree hash
 │   └── references.yaml        # Shared citation registry for {{cite:key}}
 ├── styles/
 │   ├── print.css              # Page dimensions & layout
 │   ├── syntax.css             # Code highlighting theme
 │   └── typography.css         # Fonts & text styles
 ├── scripts/
-│   ├── fetch-source.js        # Downloads Bitcoin v0.01 source
+│   ├── fetch-source.js        # Copies + verifies the committed v0.1.0 source
+│   ├── source-manifest.mjs    # SHA-256 manifest of the source (src/source-manifest.json)
+│   ├── symbols.mjs            # Definitions/callers → "Called from" cross-references
+│   ├── check-quotes.mjs       # Satoshi quotes vs. Nakamoto Institute corpus
 │   ├── fetch-versions.js      # Downloads referenced Bitcoin Core releases
 │   ├── validate-annotations.mjs  # Annotation schema/citation/anchor checks
 │   ├── build.js               # Generates the book HTML (prose + chapters)
@@ -133,7 +138,7 @@ sources:
     author: "Satoshi Nakamoto"
     title: "readme.txt, line 36"
     date: "January 2009"
-    note: "Primary source — distributed with Bitcoin v0.01"
+    note: "Primary source — distributed with Bitcoin v0.1.0"
 ```
 
 Reference fields: `author`, `title`, `date`, `url`, `note`.

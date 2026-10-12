@@ -52,7 +52,7 @@ annotations:
 
   - line: 55
     type: margin
-    text: "<code>OP_RETURN</code> in v0.1 simply jumps to the end of the script—it does NOT fail. Because scriptSig and scriptPubKey were run as one concatenated script (script.cpp:1126), a scriptSig of <code>OP_1 OP_RETURN</code> skipped the owner's lock entirely and left true on the stack: anyone could spend anyone's coins. Satoshi fixed this in v0.3.5 (July 2010) by making OP_RETURN fail outright.{{cite:cve-2010-5141}} That fix later made OP_RETURN outputs a clean, provably unspendable place to embed data without bloating the UTXO set: standard at 40 bytes in 2014 (later 80), as policy, not consensus.{{cite:bitcoin-core-history}} Bitcoin Core 30 (2025) lifted the default cap,{{cite:core-30-release-notes}} reigniting an unresolved tension in Bitcoin's identity: is it purely a monetary system, or also a data layer? The question isn't technical but philosophical—what should Bitcoin be?"
+    text: "<code>OP_RETURN</code> in v0.1.0 simply jumps to the end of the script—it does NOT fail. Because scriptSig and scriptPubKey were run as one concatenated script (script.cpp:1126), a scriptSig of <code>OP_1 OP_RETURN</code> skipped the owner's lock entirely and left true on the stack: anyone could spend anyone's coins. Satoshi fixed this in v0.3.5 (July 2010) by making OP_RETURN fail outright.{{cite:cve-2010-5141}} That fix later made OP_RETURN outputs a clean, provably unspendable place to embed data without bloating the UTXO set: standard at 40 bytes in 2014 (later 80), as policy, not consensus.{{cite:bitcoin-core-history}} Bitcoin Core 30 (2025) lifted the default cap,{{cite:core-30-release-notes}} reigniting an unresolved tension in Bitcoin's identity: is it purely a monetary system, or also a data layer? The question isn't technical but philosophical—what should Bitcoin be?"
 
   - line: 69
     type: margin
@@ -80,7 +80,7 @@ annotations:
 
   - line: 141
     type: margin
-    text: "<code class=\"constant\">OP_SINGLEBYTE_END = 0xF0</code> — Satoshi reserved an escape hatch: in v0.01 any byte ≥ 0xF0 begins a two-byte opcode (see <code>GetOp</code>, line 491), leaving room for thousands of future instructions. The wallet's template placeholders <code>OP_PUBKEY</code> and <code>OP_PUBKEYHASH</code> live up there, beyond anything a real script could contain. The double-byte scheme was later removed."
+    text: "<code class=\"constant\">OP_SINGLEBYTE_END = 0xF0</code> — Satoshi reserved an escape hatch: in v0.1.0 any byte ≥ 0xF0 begins a two-byte opcode (see <code>GetOp</code>, line 491), leaving room for thousands of future instructions. The wallet's template placeholders <code>OP_PUBKEY</code> and <code>OP_PUBKEYHASH</code> live up there, beyond anything a real script could contain. The double-byte scheme was later removed."
 
   - line: 327
     type: margin
@@ -127,7 +127,7 @@ glossary:
   - term: "Turing-complete"
     definition: "Describes a language that can loop forever; Script deliberately has no loops or recursion, so every script's running time is provably bounded."
   - term: "OP_RETURN"
-    definition: "The opcode that in v0.01 merely ended script execution, letting anyone spend any coin; v0.3.5 (July 2010) made it fail immediately, which later gave a clean way to embed data in provably unspendable outputs."
+    definition: "The opcode that in v0.1.0 merely ended script execution, letting anyone spend any coin; v0.3.5 (July 2010) made it fail immediately, which later gave a clean way to embed data in provably unspendable outputs."
   - term: "OP_HASH160"
     definition: "The opcode computing RIPEMD160(SHA256(x)), the 20-byte hash of a public key that a Bitcoin address encodes."
   - term: "multisig"

@@ -12,7 +12,7 @@ introduction: |
   </p>
   <p>
     The XML you see here defines every button, menu, text field, and dialog
-    that made up the Bitcoin v0.1 experience on Windows. wxFormBuilder would
+    that made up the Bitcoin v0.1.0 experience on Windows. wxFormBuilder would
     read this file and generate the corresponding C++ code (<code>uibase.cpp</code>
     and <code>uibase.h</code>), which Satoshi then extended with Bitcoin-specific
     logic in <code>ui.cpp</code>.
@@ -115,7 +115,7 @@ annotations:
     type: margin
     text: |
       <p>
-        <strong>Transaction fee configuration.</strong> Even in v0.1, Satoshi
+        <strong>Transaction fee configuration.</strong> Even in v0.1.0, Satoshi
         included optional transaction fees—described as money "you give to the
         nodes that process your transactions." Fees were optional because blocks
         weren't full yet. The setting reveals foresight: Satoshi knew that
@@ -156,3 +156,13 @@ conclusion: |
     every wallet that followed: the address display, the send dialog, the
     transaction list. This XML file is where cryptocurrency user experience began.
   </p>
+
+glossary:
+  - term: "wxFormBuilder"
+    definition: "A free visual designer for wxWidgets interfaces; Satoshi laid out every window in it, and its April 16, 2008 build generated uibase.cpp and uibase.h from this project file."
+  - term: ".fbp project file"
+    definition: "wxFormBuilder's XML save format, recording each window, widget, and setting as nested object and property elements; this one describes sixteen top-level windows in 11,825 lines."
+  - term: "sizer"
+    definition: "A wxWidgets layout manager that arranges child widgets in rows, columns, or grids and resizes them with the window; this project nests 58 box sizers and 3 flex-grid sizers."
+  - term: "Load From Resource"
+    definition: "The bitmap source chosen for the toolbar buttons, which makes the generated code fetch images such as send20 by name from resources compiled into the executable rather than from files on disk."
